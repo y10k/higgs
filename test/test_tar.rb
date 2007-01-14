@@ -10,7 +10,7 @@ module Tank::Test
   # for ident(1)
   CVS_ID = '$Id$'
 
-  class TestTarReader < RUNIT::TestCase
+  class TarReaderTest < RUNIT::TestCase
     def setup
       # tar
       FileUtils.mkdir_p('foo')
@@ -110,7 +110,7 @@ module Tank::Test
     end
   end
 
-  class TestTarWriter < RUNIT::TestCase
+  class TarWriterTest < RUNIT::TestCase
     def setup
       # contents of tar
       FileUtils.mkdir_p('foo')
