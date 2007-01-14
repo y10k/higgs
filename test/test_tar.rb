@@ -7,10 +7,10 @@ require 'rubyunit'
 require 'tank/tar'
 
 module Tank::Test
-  # for ident(1)
-  CVS_ID = '$Id$'
-
   class TarReaderTest < RUNIT::TestCase
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def setup
       # tar
       FileUtils.mkdir_p('foo')
@@ -110,7 +110,142 @@ module Tank::Test
     end
   end
 
+  class TarReaderTypeflagTest < RUNIT::TestCase
+    # for ident(1)
+    CVS_ID = '$Id$'
+
+    include File::Constants
+    include Tank::TarBlock
+
+    def setup
+      @head = {
+        :path => 'foo',
+        :typeflag => nil,
+        :mode => 0100644, # -rw-r--r--
+        :uid => Process.euid,
+        :gid => Process.egid,
+        :size => 0,
+        :mtime => Time.now
+      }
+    end
+
+    def teardown
+      FileUtils.rm_f('foo.tar')
+    end
+
+    def test_typeflag_REGTYPE
+      @head[:typeflag] = REGTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', 'r') {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(REGTYPE, tar.read_header[:typeflag])
+      }
+    end
+
+    def test_typeflag_AREGTYPE
+      @head[:typeflag] = AREGTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', RDONLY) {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(REGTYPE, tar.read_header[:typeflag])
+      }
+    end
+
+    def test_typeflag_LNKTYPE
+      @head[:typeflag] = LNKTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', RDONLY) {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(LNKTYPE, tar.read_header[:typeflag])
+      }
+    end
+
+    def test_typeflag_SYMTYPE
+      @head[:typeflag] = SYMTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', RDONLY) {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(SYMTYPE, tar.read_header[:typeflag])
+      }
+    end
+
+    def test_typeflag_CHRTYPE
+      @head[:typeflag] = CHRTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', RDONLY) {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(CHRTYPE, tar.read_header[:typeflag])
+      }
+    end
+
+    def test_typeflag_BLKTYPE
+      @head[:typeflag] = BLKTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', RDONLY) {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(BLKTYPE, tar.read_header[:typeflag])
+      }
+    end
+
+    def test_typeflag_DIRTYPE
+      @head[:typeflag] = DIRTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', RDONLY) {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(DIRTYPE, tar.read_header[:typeflag])
+      }
+    end
+
+    def test_typeflag_FIFOTYPE
+      @head[:typeflag] = FIFOTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', RDONLY) {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(FIFOTYPE, tar.read_header[:typeflag])
+      }
+    end
+
+    def test_typeflag_CONTTYPE
+      @head[:typeflag] = CONTTYPE
+      File.open('foo.tar', 'w') {|output|
+        tar = Tank::TarWriter.new(output)
+        tar.write_header(@head)
+      }
+      File.open('foo.tar', RDONLY) {|input|
+        tar = Tank::TarReader.new(input)
+        assert_equal(CONTTYPE, tar.read_header[:typeflag])
+      }
+    end
+  end
+
   class TarWriterTest < RUNIT::TestCase
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def setup
       # contents of tar
       FileUtils.mkdir_p('foo')

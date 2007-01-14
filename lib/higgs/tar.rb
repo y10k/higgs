@@ -200,15 +200,27 @@ module Tank
     end
 
     def write_header(entry)
-      case (entry[:ftype])
-      when 'file'
-	name = entry[:path]
-	typeflag = REGTYPE
-      when 'directory'
-	name = entry[:path] + '/'
-	typeflag = DIRTYPE
+      if (entry.include? :ftype) then
+        case (entry[:ftype])
+        when 'file'
+          entry[:typeflag] = REGTYPE
+        when 'directory'
+          entry[:typeflag] = DIRTYPE
+        else
+          raise TarNonPortableFileTypeError, "non-portable file type: #{entry[:ftype]}"
+        end
+      end
+      if (entry.include? :typeflag) then
+        case (entry[:typeflag])
+        when REGTYPE, AREGTYPE, LNKTYPE, SYMTYPE, CHRTYPE, BLKTYPE, FIFOTYPE, CONTTYPE
+          name = entry[:path]
+        when DIRTYPE
+          name = entry[:path] + '/'
+        else
+          raise "unknown typeflag: #{entry[:typeflag].inspect}"
+        end
       else
-	raise TarNonPortableFileTypeError, "non-portable file type: #{entry[:ftype]}"
+        raise 'not defined typeflag'
       end
       if (name.length > 100) then
 	raise TarTooLongPathError, "too long path: #{name}"
@@ -227,7 +239,7 @@ module Tank
       prefix = ''
       head = [
 	name, mode, uid, gid, size, mtime,
-	chksum, typeflag, linkname, MAGIC, VERSION,
+	chksum, entry[:typeflag], linkname, MAGIC, VERSION,
 	uname, gname, devmajor, devminor, prefix
       ].pack(HEAD_FMT)
       head += "\0" * 12
@@ -239,7 +251,6 @@ module Tank
       @output.write(head)
       nil
     end
-    private :write_header
 
     def add_file(path)
       stat = File.stat(path)
