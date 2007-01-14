@@ -1,0 +1,16 @@
+# -*- Ruby -*-
+
+# for idnet(1)
+CVS_ID = '$Id$'
+
+task :default => [ :test ]
+
+task :test do
+  for unittest_rb in Dir['test_*.rb']
+    ruby unittest_rb
+  end
+end
+
+rule '.test' => [ '.rb' ] do |t|
+  ruby t.source
+end
