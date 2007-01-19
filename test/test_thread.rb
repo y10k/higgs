@@ -19,6 +19,7 @@ module Tank::Test
 
     def test_start_wait
       latch = Tank::Latch.new
+
       lock = Mutex.new
       count = 0
       th_grp = ThreadGroup.new
@@ -28,8 +29,10 @@ module Tank::Test
           lock.synchronize{ count += 1 }
         }
       end
+
       sleep(DELTA_T)
       assert_equal(0, lock.synchronize{ count })
+
       latch.start
       timeout(DELTA_T) { ThreadsWait.all_waits(*th_grp.list) }
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
@@ -47,20 +50,24 @@ module Tank::Test
 
     def test_wait
       barrier = Tank::Barrier.new(NUM_OF_THREADS)
+
       lock = Mutex.new
       count = 0
-      th_grp = ThreadGroup.new
       th_new = proc{
         Thread.new{
           barrier.wait
           lock.synchronize{ count += 1 }
         }
       }
+
+      th_grp = ThreadGroup.new
       (NUM_OF_THREADS - 1).times do
         th_grp.add(th_new.call)
       end
+
       sleep(DELTA_T)
       assert_equal(0, lock.synchronize{ count })
+
       th_grp.add(th_new.call)
       timeout(DELTA_T) { ThreadsWait.all_waits(*th_grp.list) }
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
@@ -85,7 +92,6 @@ module Tank::Test
 
       lock = Mutex.new
       count = 0
-      th_num = 10
       th_grp = ThreadGroup.new
       NUM_OF_THREADS.times do
         th_grp.add Thread.new{
@@ -96,6 +102,7 @@ module Tank::Test
 
       sleep(DELTA_T)
       assert_equal(0, lock.synchronize{ count })
+
       latch.start
       timeout(DELTA_T) { ThreadsWait.all_waits(*th_grp.list) }
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
