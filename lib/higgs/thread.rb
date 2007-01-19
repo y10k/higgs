@@ -78,7 +78,9 @@ module Tank
           until (@state == :done)
             @cond.wait(@lock)
           end
+          return @result
         when :init
+          @state = :working
           # fall through
         else
           raise 'internal error'
