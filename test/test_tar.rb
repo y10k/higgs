@@ -1,7 +1,5 @@
 #!/usr/local/bin/ruby
 
-$: << File.join(File.dirname($0), '..', 'lib')
-
 require 'fileutils'
 require 'rubyunit'
 require 'tank/tar'

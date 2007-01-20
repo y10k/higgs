@@ -4,27 +4,21 @@
 CVS_ID = '$Id$'
 
 LIB_DIR = File.join(File.dirname(__FILE__), '..', 'lib')
-
-def run_ruby(*args)
-  ruby '-I', LIB_DIR, *args
-end
-
-def run_rcov(*args)
-  sh 'rcov', '-I', LIB_DIR, *args
-end
+RCOV_DIR = File.join(File.dirname(__FILE__), 'coverage')
 
 task :default => [ :test ]
 
 task :test do
-  for unittest_rb in Dir['test_*.rb']
-    run_ruby unittest_rb
-  end
+  ruby '-I', LIB_DIR, 'run.rb'
 end
 
 task :rcov do
-  for unittest_rb in Dir['test_*.rb']
-    run_rcov unittest_rb
-  end
+  rm_rf RCOV_DIR
+  sh 'rcov', '-I', LIB_DIR, 'run.rb'
+end
+
+task :clean do
+  rm_rf RCOV_DIR
 end
 
 rule '.test' => [ '.rb' ] do |t|
