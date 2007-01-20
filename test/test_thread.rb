@@ -82,12 +82,33 @@ module Tank::Test
 
     NUM_OF_THREADS = 10
     DELTA_T = 0.1
+    WORK_COUNT = 100
+
+    def frac(n)
+      (n == 0) ? 1 : n * frac(n - 1)
+    end
+    private :frac
+
+    def test_frac
+      assert_equal(1, frac(0))
+      assert_equal(1, frac(1))
+      assert_equal(1 * 2, frac(2))
+      assert_equal(1 * 2 * 3, frac(3))
+      assert_equal(1 * 2 * 3 * 4, frac(4))
+      assert_equal(1 * 2 * 3 * 4 * 5, frac(5))
+      assert_equal(1 * 2 * 3 * 4 * 5 * 6, frac(6))
+      assert_equal(1 * 2 * 3 * 4 * 5 * 6 * 7, frac(7))
+      assert_equal(1 * 2 * 3 * 4 * 5 * 6 * 7 * 8, frac(8))
+      assert_equal(1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9, frac(9))
+      assert_equal(1 * 2 * 3 * 4 * 5 * 6 * 7 * 8 * 9 * 10, frac(10))
+    end
 
     def test_result
       latch = Tank::Latch.new
+      expected_result = frac(WORK_COUNT)
       work = Tank::SharedWork.new{
         latch.wait
-        (1..100).inject(0) {|s, i| s + i }
+        frac(WORK_COUNT)
       }
 
       lock = Mutex.new
@@ -95,7 +116,7 @@ module Tank::Test
       th_grp = ThreadGroup.new
       NUM_OF_THREADS.times do
         th_grp.add Thread.new{
-          assert_equal(5050, work.result)
+          assert_equal(expected_result, work.result)
           lock.synchronize{ count += 1 }
         }
       end
@@ -106,7 +127,7 @@ module Tank::Test
       latch.start
       timeout(DELTA_T) { ThreadsWait.all_waits(*th_grp.list) }
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
-      assert_equal(5050, work.result)
+      assert_equal(expected_result, work.result)
     end
   end
 end
