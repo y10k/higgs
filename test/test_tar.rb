@@ -5,6 +5,26 @@ require 'rubyunit'
 require 'tank/tar'
 
 module Tank::Test
+  class TarBlockTest < RUNIT::TestCase
+    def test_padding_size
+      assert_equal(0,   Tank::TarBlock.padding_size(0))
+
+      assert_equal(511, Tank::TarBlock.padding_size(1))
+      assert_equal(510, Tank::TarBlock.padding_size(2))
+      assert_equal(509, Tank::TarBlock.padding_size(3))
+
+      assert_equal(3,   Tank::TarBlock.padding_size(509))
+      assert_equal(2,   Tank::TarBlock.padding_size(510))
+      assert_equal(1,   Tank::TarBlock.padding_size(511))
+
+      assert_equal(0,   Tank::TarBlock.padding_size(512))
+
+      assert_equal(511, Tank::TarBlock.padding_size(513))
+      assert_equal(510, Tank::TarBlock.padding_size(514))
+      assert_equal(509, Tank::TarBlock.padding_size(515))
+    end
+  end
+
   class TarReaderTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
