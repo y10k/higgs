@@ -11,12 +11,12 @@ module Tank
     def initialize
       @lock = Mutex.new
       @cond = ConditionVariable.new
-      @wait = true
+      @start = false
     end
 
     def start
       @lock.synchronize{
-        @wait = false
+        @start = true
         @cond.broadcast
       }
       nil
@@ -24,7 +24,7 @@ module Tank
 
     def wait
       @lock.synchronize{
-        while (@wait)
+        until (@start)
           @cond.wait(@lock)
         end
       }
