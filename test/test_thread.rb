@@ -5,6 +5,8 @@ require 'tank/thread'
 require 'thwait'
 require 'timeout'
 
+Thread.abort_on_exception = true
+
 module Tank::Test
   class LatchTest < RUNIT::TestCase
     # for ident(1)
@@ -129,13 +131,13 @@ module Tank::Test
       count = 0
 
       th_grp = ThreadGroup.new
-      NUM_OF_THREADS.times do
+      NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
         th_grp.add Thread.new{
           barrier.wait
-          assert_equal(expected_result, work.result)
+          assert_equal(expected_result, work.result, "th#{i}")
           lock.synchronize{ count += 1 }
         }
-      end
+      }
 
       barrier.wait
       assert_equal(0, lock.synchronize{ count })

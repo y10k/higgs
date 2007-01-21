@@ -2,6 +2,11 @@
 
 require 'rubyunit'
 require 'tank/cache'
+require 'tank/thread'
+require 'thwait'
+require 'timeout'
+
+Thread.abort_on_exception = true
 
 module Tank::Test
   class SharedWorkCacheTest < RUNIT::TestCase
@@ -55,6 +60,47 @@ module Tank::Test
       assert_equal(true, @cache.expire(5))
       assert_equal(15, @cache[5])
       assert_equal(2, @calc_calls, 'reload')
+    end
+
+    NUM_OF_THREADS = 10
+    WORK_COUNT = 1000
+
+    def test_calc_race_condition
+      barrier = Tank::Barrier.new(3)
+
+      a = nil
+      th1 = Thread.new{
+        barrier.wait
+        a = calc(WORK_COUNT)
+      }
+
+      b = nil
+      th2 = Thread.new{
+        barrier.wait
+        b = calc(WORK_COUNT)
+      }
+
+      barrier.wait
+      ThreadsWait.all_waits(th1, th2)
+      assert(a != b)
+    end
+
+    def test_multi_thread_fetch
+      expected_result = calc(WORK_COUNT)
+      assert_equal(1, @calc_calls)
+
+      barrier = Tank::Barrier.new(NUM_OF_THREADS + 1)
+      th_grp = ThreadGroup.new
+      NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
+        th_grp.add Thread.new{
+          barrier.wait
+          assert_equal(expected_result, @cache[WORK_COUNT], "th#{i}")
+        }
+      }
+
+      barrier.wait
+      timeout(10) { ThreadsWait.all_waits(*th_grp.list) }
+      assert_equal(2, @calc_calls)
     end
   end
 end
