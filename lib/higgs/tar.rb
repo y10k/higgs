@@ -6,36 +6,49 @@ module Tank
   class TarError < Error
   end
 
+  class TarReadFailError < TarError
+  end
+
   class TarFormatError < TarError
   end
 
-  class TarBlockError < TarFormatError
+  class TarMagicError < TarFormatError
   end
 
-  class TarMagicError < TarBlockError
+  class TarVersionError < TarFormatError
   end
 
-  class TarVersionError < TarBlockError
+  class TarCheckSumError < TarFormatError
   end
 
-  class TarCheckSumError < TarBlockError
+  class TarNonPortableFileTypeError < TarFormatError
   end
 
-  class TarNonPortableFileTypeError < TarBlockError
-  end
-
-  class TarTooLongPathError < TarBlockError
-  end
-
-  class TarDataError < TarFormatError
-  end
-
-  class TarReadFailError < TarDataError
+  class TarTooLongPathError < TarFormatError
   end
 
   module TarBlock
     # for ident(1)
     CVS_ID = '$Id$'
+
+    # tar header format
+    # -
+    # name     : Z100 : null terminated string, primary hard link name
+    # mode     : A8   : octet number format ascii string
+    # uid      : A8   : octet number format ascii string
+    # gid      : A8   : octet number format ascii string
+    # size     : A12  : octet number format ascii string
+    # mtime    : A12  : octet number format ascii string, seconds since epoch date-time (UTC 1970-01-01 00:00:00)
+    # cksum    : A8   : octet number format ascii string
+    # typeflag : a1   : ascii number character (null character is old tar format)
+    # linkname : Z100 : null terminated string, secondly hard link name
+    # magic    : A6   : white space terminated string
+    # version  : a2   : 2 ascii characters
+    # uname    : Z32  : null terminated string
+    # gname    : Z32  : null terminated string
+    # devmajor : Z8   : octet number format ascii string
+    # devminor : Z8   : octet number format ascii string
+    # prefix   : Z155 : null terminated string
 
     # block size
     BLKSIZ = 512
@@ -89,26 +102,28 @@ module Tank
       false
     end
 
-    def read_header(skip_data=false)
-      head = @input.read(BLKSIZ) or return
-      if (head == EOA) then
-	head = @input.read(BLKSIZ)
-	if (! head || head == EOA) then
-	  return nil
-	end
+    def read_header(skip_body=false)
+      head_data = @input.read(BLKSIZ) or return
+      if (head_data == EOA) then
+	next_head_data = @input.read(BLKSIZ)
+        if (next_head_data && next_head_data == EOA) then
+          return nil
+        else
+          raise TarFormatError, "not of EOF: #{head_data.inspect}, #{next_head_data.inspect}"
+        end
       end
       chksum = 0
-      head[0...148].each_byte do |c|
+      head_data[0...148].each_byte do |c|
 	chksum += c
       end
       (' ' * 8).each_byte do |c|
 	chksum += c
       end
-      head[156...BLKSIZ].each_byte do |c|
+      head_data[156...BLKSIZ].each_byte do |c|
 	chksum += c
       end
-      head_list = head.unpack(HEAD_FMT)
-      entry = {}
+      head_list = head_data.unpack(HEAD_FMT)
+      head = {}
       [ :name,
         :mode,
         :uid,
@@ -126,17 +141,17 @@ module Tank
         :devminor,
         :prefix
       ].each_with_index do |k, i|
-        entry[k] = head_list[i]
+        head[k] = head_list[i]
       end
-      if (entry[:typeflag] == AREGTYPE) then
-	entry[:typeflag] = REGTYPE
+      if (head[:typeflag] == AREGTYPE) then
+	head[:typeflag] = REGTYPE
       end
-      if (entry[:magic] != MAGIC) then
-	raise TarMagicError, "unknown format: #{entry[:magic].inspect}"
+      if (head[:magic] != MAGIC) then
+	raise TarMagicError, "unknown format: #{head[:magic].inspect}"
       end
       # why?
-      #if (entry[:version] != VERSION) then
-      #  raise TarVersionError, "unknown version: #{entry[:version].inspect}"
+      #if (head[:version] != VERSION) then
+      #  raise TarVersionError, "unknown version: #{head[:version].inspect}"
       #end
       [ :mode,
         :uid,
@@ -145,40 +160,50 @@ module Tank
         :mtime,
         :chksum
       ].each do |sym|
-	entry[sym] = entry[sym].oct
+	head[sym] = head[sym].oct
       end
-      if (entry[:chksum] != chksum) then
+      if (head[:chksum] != chksum) then
 	raise TarCheckSumError, 'broken tar'
       end
-      entry[:mtime] = Time.at(entry[:mtime])
-      if (skip_data) then
-        skip_size = entry[:size] + padding_size(entry[:size])
+      head[:mtime] = Time.at(head[:mtime])
+      if (skip_body) then
+        skip_size = head[:size] + padding_size(head[:size])
         skip_blocks = skip_size / BLKSIZ
         while (skip_blocks > 0 && @input.read(BLKSIZ))
           skip_blocks -= 1
         end
       end
-      entry
+      head
     end
 
     def fetch
-      entry = read_header or return
-      if (entry[:size] > 0) then
-        entry[:data] = @input.read(entry[:size])
-        unless (entry[:data]) then
+      head_with_body = read_header or return
+      if (head_with_body[:size] > 0) then
+        head_with_body[:data] = @input.read(head_with_body[:size])
+        unless (head_with_body[:data]) then
           raise TarReadFailError, 'failed to read data'
         end
-        padding_size = padding_size(entry[:size])
+        if (head_with_body[:data].size != head_with_body[:size]) then
+          raise TarReadFailError,
+            "mismatch body length: expected #{head_with_body[:size]} but was #{head_with_body[:data].size}"
+        end
+        padding_size = padding_size(head_with_body[:size])
         @input.read(padding_size) if (padding_size > 0)
       else
-        entry[:data] = nil
+        head_with_body[:data] = nil
       end
-      entry
+      head_with_body
     end
 
-    def each
-      while (entry = self.fetch)
-	yield(entry)
+    def each(skip_body=false)
+      if (skip_body) then
+        while (head = read_header(true))
+          yield(head)
+        end
+      else
+        while (head_with_body = fetch)
+          yield(head_with_body)
+        end
       end
       self
     end
@@ -197,6 +222,40 @@ module Tank
 
     def initialize(output)
       @output = output
+    end
+
+    def validate_header(head)
+      # check name
+      unless (head[:name]) then
+        raise TarFormatError, 'not defined name'
+      end
+      if (head[:name].length > 100) then
+        raise TarTooLongPathError, "too long name: #{head[:name]}"
+      end
+
+      # check of mode, uid, gid, devmajor, devminor
+      for key in [ :mode, :uid, :gid, :devmajor, :devminor ]
+        unless (value = head[key]) then
+          raise TarFormatError, "not defined #{key}"
+        end
+        unless ((0x00_0000..0xFF_FFFF).include? head[key]) then
+          raise TarFormatError, "out of range at #{key}: #{head[:key]}"
+        end
+      end
+
+      # check of size, mtime
+      for key in [ :size, :mtime ]
+        unless (head[key]) then
+          raise "not defined #{key}"
+        end
+        unless ((0x0_0000_0000..0xF_FFFF_FFFF).include? head[key]) then
+          raise "out of range at #{key}: #{head[key]}"
+        end
+      end
+
+      # 
+
+      nil
     end
 
     def write_header(entry)
