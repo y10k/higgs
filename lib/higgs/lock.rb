@@ -1,5 +1,6 @@
 # $Id$
 
+require 'singleton'
 require 'sync'
 require 'tank'
 require 'tank/cache'
@@ -61,30 +62,22 @@ module Tank
       @sync = Sync.new
     end
 
-    class ReadOnlyLockHandler
-      def read_only_lock(key)
-      end
-    end
+    class NoWorkLockHandler
+      include Singleton
 
-    class ReadWriteLockHandler
-      def read_only_lock(key)
-      end
-
-      def read_write_lock(key)
+      def lock(key)
       end
     end
 
     def transaction(read_only)
       if (read_only) then
         mode = Sync::SH
-        handler = ReadOnlyLockHandler.new
       else
         mode = Sync::EX
-        handler = ReadWriteLockHandler.new
       end
       LockManager.try_lock(@sync, mode, self)
       begin
-        yield(handler)
+        yield(NoWorkLockHandler.instance)
       ensure
         @sync.unlock
       end
@@ -110,8 +103,8 @@ module Tank
       attr_reader :locked_keys
     end
 
-    module ReadOnlyLock
-      def read_only_lock(key)
+    class ReadOnlyLockHandler < LockHandler
+      def lock(key)
         sync = @cache[key]
         LockManager.try_lock(sync, Sync::SH, @attrs)
         @locked_keys << key
@@ -119,8 +112,8 @@ module Tank
       end
     end
 
-    module ReadWriteLock
-      def read_write_lock(key)
+    class ReadWriteLockHandler < LockHandler
+      def lock(key)
         sync = @cache[key]
         LockManager.try_lock(sync, Sync::EX, @attrs)
         @locked_keys << key
@@ -128,21 +121,12 @@ module Tank
       end
     end
 
-    class ReadOnlyLockHandler < LockHandler
-      include ReadOnlyLock
-    end
-
-    class ReadWriteLockHandler < LockHandler
-      include ReadOnlyLock
-      include ReadWriteLock
-    end
-
     def transaction(read_only=false)
       if (read_only) then
         handler = ReadOnlyLockHandler.new(self, @cache)
       else
         handler = ReadWriteLockHandler.new(self, @cache)
-      end
+     end
       begin
         yield(handler)
       ensure
