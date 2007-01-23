@@ -6,12 +6,19 @@ require 'tank/cache'
 
 module Tank
   class LockError < Error
+    # for ident(1)
+    CVS_ID = '$Id$'
   end
 
   class TryLockTimeoutError < LockError
+    # for ident(1)
+    CVS_ID = '$Id$'
   end
 
   class LockManager
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def initialize(options={})
       @spin_lock_limit = options[:spin_lock_limit] || 0.01
       @try_lock_limit = options[:try_lock_limit] || 10
@@ -46,6 +53,9 @@ module Tank
   end
 
   class GiantLockManager < LockManager
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def initialize(*args)
       super
       @sync = Sync.new
@@ -82,6 +92,9 @@ module Tank
   end
 
   class FineGrainLockManager < LockManager
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def initialize(*args)
       super
       @cache = SharedWorkCache.new{|key| Sync.new }
