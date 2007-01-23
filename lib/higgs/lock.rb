@@ -66,6 +66,7 @@ module Tank
       include Singleton
 
       def lock(key)
+        self
       end
     end
 
