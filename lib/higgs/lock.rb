@@ -21,33 +21,29 @@ module Tank
     CVS_ID = '$Id$'
 
     def initialize(options={})
-      @spin_lock_limit = options[:spin_lock_limit] || 0.01
+      @spin_lock_count = options[:spin_lock_count] || 1000
       @try_lock_limit = options[:try_lock_limit] || 10
       @try_lock_interval = options[:try_lock_interval] || 0.1
     end
 
-    attr_reader :spin_lock_limit
+    attr_reader :spin_lock_count
     attr_reader :try_lock_limit
     attr_reader :try_lock_interval
 
     def self.try_lock(sync, mode, attrs)
       t0 = Time.now
-      loop do
+      c = attrs.spin_lock_count
+      while (c > 0)
         if (sync.try_lock(mode)) then
           return
         end
-        if (Time.now - t0 > attrs.spin_lock_limit) then
-          break
-        end
+        c -= 1
       end
-      loop do
+      while (Time.now - t0 < attrs.try_lock_limit)
         if (sync.try_lock(mode)) then
           return
         end
         sleep(attrs.try_lock_interval)
-        if (Time.now - t0 > attrs.try_lock_limit) then
-          break
-        end
       end
       raise TryLockTimeoutError, 'expired'
     end
