@@ -2,13 +2,10 @@
 
 require 'rubyunit'
 require 'tank/thread'
-require 'thwait'
 require 'timeout'
 
-Thread.abort_on_exception = true
-
 module Tank::Test
-  class LatchTest < RUNIT::TestCase
+  class ThreadLatchTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 
@@ -18,7 +15,7 @@ module Tank::Test
     DELTA_T = 0.1
 
     def test_start_wait
-      latch = Tank::Latch.new
+      latch = Tank::Thread::Latch.new
 
       lock = Mutex.new
       count = 0
@@ -34,12 +31,16 @@ module Tank::Test
       assert_equal(0, lock.synchronize{ count })
 
       latch.start
-      timeout(10) { ThreadsWait.all_waits(*th_grp.list) }
+      timeout(10) {
+        for t in th_grp.list
+          t.join
+        end
+      }
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
     end
   end
 
-  class BarrierTest < RUNIT::TestCase
+  class ThreadBarrierTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 
@@ -49,7 +50,7 @@ module Tank::Test
     DELTA_T = 0.1
 
     def test_wait
-      barrier = Tank::Barrier.new(NUM_OF_THREADS)
+      barrier = Tank::Thread::Barrier.new(NUM_OF_THREADS)
 
       lock = Mutex.new
       count = 0
@@ -69,12 +70,16 @@ module Tank::Test
       assert_equal(0, lock.synchronize{ count })
 
       th_grp.add(th_new.call)
-      timeout(10) { ThreadsWait.all_waits(*th_grp.list) }
+      timeout(10) {
+        for t in th_grp.list
+          t.join
+        end
+      }
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
     end
   end
 
-  class SharedWorkTest < RUNIT::TestCase
+  class ThreadSharedWorkTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 
@@ -98,7 +103,7 @@ module Tank::Test
     end
 
     def test_calc_race_condition
-      barrier = Tank::Barrier.new(3)
+      barrier = Tank::Thread::Barrier.new(3)
 
       a = nil
       th1 = Thread.new{
@@ -113,20 +118,21 @@ module Tank::Test
       }
 
       barrier.wait
-      ThreadsWait.all_waits(th1, th2)
+      th1.join
+      th2.join
       assert(a != b)
     end
 
     def test_result
       expected_result = calc
 
-      latch = Tank::Latch.new
-      work = Tank::SharedWork.new{
+      latch = Tank::Thread::Latch.new
+      work = Tank::Thread::SharedWork.new{
         latch.wait
         calc
       }
 
-      barrier = Tank::Barrier.new(NUM_OF_THREADS + 1)
+      barrier = Tank::Thread::Barrier.new(NUM_OF_THREADS + 1)
       lock = Mutex.new
       count = 0
 
@@ -143,7 +149,11 @@ module Tank::Test
       assert_equal(0, lock.synchronize{ count })
 
       latch.start
-      timeout(10) { ThreadsWait.all_waits(*th_grp.list) }
+      timeout(10) {
+        for t in th_grp.list
+          t.join
+        end
+      }
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
       assert_equal(expected_result, work.result)
     end

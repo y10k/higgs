@@ -22,5 +22,5 @@ task :clean do
 end
 
 rule '.test' => [ '.rb' ] do |t|
-  ruby t.source
+  ruby '-I', LIB_DIR, 'run.rb', '^' + Regexp.quote(t.source) + '$'
 end

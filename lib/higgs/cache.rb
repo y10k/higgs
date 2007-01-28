@@ -1,6 +1,5 @@
 # $Id$
 
-require 'tank'
 require 'tank/thread'
 require 'thread'
 
@@ -19,7 +18,7 @@ module Tank
       work = nil
       @lock.synchronize{
         unless (@cache.include? key) then
-          @cache[key] = SharedWork.new{ @work.call(key) } 
+          @cache[key] = Thread::SharedWork.new{ @work.call(key) } 
         end
         work = @cache[key]
       }
