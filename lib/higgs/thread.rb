@@ -4,10 +4,10 @@ require 'thread'
 
 module Tank
   module Thread
-    class Latch
-      # for ident(1)
-      CVS_ID = '$Id$'
+    # for ident(1)
+    CVS_ID = '$Id$'
 
+    class Latch
       def initialize
         @lock = Mutex.new
         @cond = ConditionVariable.new
@@ -33,9 +33,6 @@ module Tank
     end
 
     class Barrier
-      # for ident(1)
-      CVS_ID = '$Id$'
-
       def initialize(count)
         @count = count
         @lock = Mutex.new
@@ -58,9 +55,6 @@ module Tank
     end
 
     class SharedWork
-      # for ident(1)
-      CVS_ID = '$Id$'
-
       def initialize(&work)
         @work = work
         @lock = Mutex.new

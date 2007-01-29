@@ -7,27 +7,29 @@ require 'tank/tar'
 module Tank::Test
   class TarBlockTest < RUNIT::TestCase
     def test_padding_size
-      assert_equal(0,   Tank::TarBlock.padding_size(0))
+      assert_equal(0,   Tank::Tar::Block.padding_size(0))
 
-      assert_equal(511, Tank::TarBlock.padding_size(1))
-      assert_equal(510, Tank::TarBlock.padding_size(2))
-      assert_equal(509, Tank::TarBlock.padding_size(3))
+      assert_equal(511, Tank::Tar::Block.padding_size(1))
+      assert_equal(510, Tank::Tar::Block.padding_size(2))
+      assert_equal(509, Tank::Tar::Block.padding_size(3))
 
-      assert_equal(3,   Tank::TarBlock.padding_size(509))
-      assert_equal(2,   Tank::TarBlock.padding_size(510))
-      assert_equal(1,   Tank::TarBlock.padding_size(511))
+      assert_equal(3,   Tank::Tar::Block.padding_size(509))
+      assert_equal(2,   Tank::Tar::Block.padding_size(510))
+      assert_equal(1,   Tank::Tar::Block.padding_size(511))
 
-      assert_equal(0,   Tank::TarBlock.padding_size(512))
+      assert_equal(0,   Tank::Tar::Block.padding_size(512))
 
-      assert_equal(511, Tank::TarBlock.padding_size(513))
-      assert_equal(510, Tank::TarBlock.padding_size(514))
-      assert_equal(509, Tank::TarBlock.padding_size(515))
+      assert_equal(511, Tank::Tar::Block.padding_size(513))
+      assert_equal(510, Tank::Tar::Block.padding_size(514))
+      assert_equal(509, Tank::Tar::Block.padding_size(515))
     end
   end
 
   class TarReaderTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
+
+    include Tank::Tar::Block
 
     def setup
       # tar
@@ -42,7 +44,7 @@ module Tank::Test
 
       # target
       @input = File.open('foo.tar', 'rb')
-      @tar = Tank::TarReader.new(@input)
+      @tar = Tank::Tar::Reader.new(@input)
     end
 
     def teardown
@@ -54,36 +56,36 @@ module Tank::Test
 
     def test_tar
       assert((File.exist? 'foo.tar'))
-      assert_equal(true,  (Tank::TarReader.tar? 'foo.tar'))
-      assert_equal(false, (Tank::TarReader.tar? 'foo'))
-      assert_equal(false, (Tank::TarReader.tar? 'foo/bar'))
-      assert_equal(false, (Tank::TarReader.tar? 'baz'))
+      assert_equal(true,  (Tank::Tar::Reader.tar? 'foo.tar'))
+      assert_equal(false, (Tank::Tar::Reader.tar? 'foo'))
+      assert_equal(false, (Tank::Tar::Reader.tar? 'foo/bar'))
+      assert_equal(false, (Tank::Tar::Reader.tar? 'baz'))
     end
 
     def test_fetch
       entry = @tar.fetch
       assert('foo/' == entry[:name] || 'foo' == entry[:name])
-      assert_equal(0,                       entry[:size])
-      assert_equal(File.stat('foo').mtime,  entry[:mtime])
-      assert_equal(Tank::TarBlock::DIRTYPE, entry[:typeflag])
-      assert_equal(Tank::TarBlock::MAGIC,   entry[:magic])
-      assert_equal(nil,                     entry[:data])
+      assert_equal(0,                      entry[:size])
+      assert_equal(File.stat('foo').mtime, entry[:mtime])
+      assert_equal(DIRTYPE,                entry[:typeflag])
+      assert_equal(MAGIC,                  entry[:magic])
+      assert_equal(nil,                    entry[:data])
 
       entry = @tar.fetch
       assert_equal('foo/bar',                  entry[:name])
       assert_equal(5,                          entry[:size])
       assert_equal(File.stat('foo/bar').mtime, entry[:mtime])
-      assert_equal(Tank::TarBlock::REGTYPE,    entry[:typeflag])
-      assert_equal(Tank::TarBlock::MAGIC,      entry[:magic])
+      assert_equal(REGTYPE,                    entry[:typeflag])
+      assert_equal(MAGIC,                      entry[:magic])
       assert_equal("HALO\n",                   entry[:data])
 
       entry = @tar.fetch
-      assert_equal('baz',                   entry[:name])
-      assert_equal(13,                      entry[:size])
-      assert_equal(File.stat('baz').mtime,  entry[:mtime])
-      assert_equal(Tank::TarBlock::REGTYPE, entry[:typeflag])
-      assert_equal(Tank::TarBlock::MAGIC,   entry[:magic])
-      assert_equal("Hello world.\n",        entry[:data])
+      assert_equal('baz',                  entry[:name])
+      assert_equal(13,                     entry[:size])
+      assert_equal(File.stat('baz').mtime, entry[:mtime])
+      assert_equal(REGTYPE,                entry[:typeflag])
+      assert_equal(MAGIC,                  entry[:magic])
+      assert_equal("Hello world.\n",       entry[:data])
 
       entry = @tar.fetch
       assert_equal(nil, entry)
@@ -95,25 +97,25 @@ module Tank::Test
 	case (count)
 	when 0
 	  assert('foo/' == entry[:name] || 'foo' == entry[:name])
-	  assert_equal(0,                       entry[:size])
-	  assert_equal(File.stat('foo').mtime,  entry[:mtime])
-	  assert_equal(Tank::TarBlock::DIRTYPE, entry[:typeflag])
-	  assert_equal(Tank::TarBlock::MAGIC,   entry[:magic])
-	  assert_equal(nil,                     entry[:data])
+	  assert_equal(0,                      entry[:size])
+	  assert_equal(File.stat('foo').mtime, entry[:mtime])
+	  assert_equal(DIRTYPE,                entry[:typeflag])
+	  assert_equal(MAGIC,                  entry[:magic])
+	  assert_equal(nil,                    entry[:data])
 	when 1
 	  assert_equal('foo/bar',                  entry[:name])
 	  assert_equal(5,                          entry[:size])
 	  assert_equal(File.stat('foo/bar').mtime, entry[:mtime])
-	  assert_equal(Tank::TarBlock::REGTYPE,    entry[:typeflag])
-	  assert_equal(Tank::TarBlock::MAGIC,      entry[:magic])
+	  assert_equal(Tank::Tar::Block::REGTYPE,  entry[:typeflag])
+	  assert_equal(Tank::Tar::Block::MAGIC,    entry[:magic])
 	  assert_equal("HALO\n",                   entry[:data])
 	when 2
-	  assert_equal('baz',                   entry[:name])
-	  assert_equal(13,                      entry[:size])
-	  assert_equal(File.stat('baz').mtime,  entry[:mtime])
-	  assert_equal(Tank::TarBlock::REGTYPE, entry[:typeflag])
-	  assert_equal(Tank::TarBlock::MAGIC,   entry[:magic])
-	  assert_equal("Hello world.\n",        entry[:data])
+	  assert_equal('baz',                  entry[:name])
+	  assert_equal(13,                     entry[:size])
+	  assert_equal(File.stat('baz').mtime, entry[:mtime])
+	  assert_equal(REGTYPE,                entry[:typeflag])
+	  assert_equal(MAGIC,                  entry[:magic])
+	  assert_equal("Hello world.\n",       entry[:data])
 	else
 	  raise "unknown data: #{entry.inspect}"
 	end
@@ -125,206 +127,6 @@ module Tank::Test
     def test_close
       @tar.close
       assert(@input.closed?)
-    end
-  end
-
-  class TarReaderTypeflagTest < RUNIT::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
-
-    include File::Constants
-    include Tank::TarBlock
-
-    def setup
-      @head = {
-        :path => 'foo',
-        :typeflag => nil,
-        :mode => 0100644, # -rw-r--r--
-        :uid => Process.euid,
-        :gid => Process.egid,
-        :size => 0,
-        :mtime => Time.now
-      }
-    end
-
-    def teardown
-      FileUtils.rm_f('foo.tar')
-    end
-
-    def test_typeflag_REGTYPE
-      @head[:typeflag] = REGTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', 'r') {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(REGTYPE, tar.read_header[:typeflag])
-      }
-    end
-
-    def test_typeflag_AREGTYPE
-      @head[:typeflag] = AREGTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', RDONLY) {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(REGTYPE, tar.read_header[:typeflag])
-      }
-    end
-
-    def test_typeflag_LNKTYPE
-      @head[:typeflag] = LNKTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', RDONLY) {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(LNKTYPE, tar.read_header[:typeflag])
-      }
-    end
-
-    def test_typeflag_SYMTYPE
-      @head[:typeflag] = SYMTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', RDONLY) {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(SYMTYPE, tar.read_header[:typeflag])
-      }
-    end
-
-    def test_typeflag_CHRTYPE
-      @head[:typeflag] = CHRTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', RDONLY) {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(CHRTYPE, tar.read_header[:typeflag])
-      }
-    end
-
-    def test_typeflag_BLKTYPE
-      @head[:typeflag] = BLKTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', RDONLY) {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(BLKTYPE, tar.read_header[:typeflag])
-      }
-    end
-
-    def test_typeflag_DIRTYPE
-      @head[:typeflag] = DIRTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', RDONLY) {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(DIRTYPE, tar.read_header[:typeflag])
-      }
-    end
-
-    def test_typeflag_FIFOTYPE
-      @head[:typeflag] = FIFOTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', RDONLY) {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(FIFOTYPE, tar.read_header[:typeflag])
-      }
-    end
-
-    def test_typeflag_CONTTYPE
-      @head[:typeflag] = CONTTYPE
-      File.open('foo.tar', 'w') {|output|
-        tar = Tank::TarWriter.new(output)
-        tar.write_header(@head)
-      }
-      File.open('foo.tar', RDONLY) {|input|
-        tar = Tank::TarReader.new(input)
-        assert_equal(CONTTYPE, tar.read_header[:typeflag])
-      }
-    end
-  end
-
-  class TarWriterTest < RUNIT::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
-
-    def setup
-      # contents of tar
-      FileUtils.mkdir_p('foo')
-      File.open('foo/bar', 'wb') {|output|
-	output.print "HALO\n"
-      }
-
-      # target
-      @output = File.open('foo.tar', 'wb')
-      @tar = Tank::TarWriter.new(@output)
-    end
-
-    def teardown
-      @output.close unless @output.closed?
-      #system('cp foo.tar foo_debug.tar') # debug
-      FileUtils.rm_f %w(foo.tar foo/bar)
-      FileUtils.rm_rf('foo')
-    end
-
-    def test_add
-      @tar.add_file('foo')
-      @tar.add_file('foo/bar')
-      data_mtime = Time.now
-      @tar.add_data('baz', "Hello world.\n", data_mtime)
-      @tar.close
-      assert(@output.closed?)
-      File.open('foo.tar') {|input|
-        tar = Tank::TarReader.new(input)
-	count = 0
-	for entry in tar
-	  case (count)
-	  when 0
-	    assert_equal('foo/',                  entry[:name])
-	    assert_equal(0,                       entry[:size])
-	    assert_equal(File.stat('foo').mtime,  entry[:mtime])
-	    assert_equal(Tank::TarBlock::DIRTYPE, entry[:typeflag])
-	    assert_equal(Tank::TarBlock::MAGIC,   entry[:magic])
-	    assert_equal(nil, entry[:data])
-	  when 1
-	    assert_equal('foo/bar',                  entry[:name])
-	    assert_equal(5,                          entry[:size])
-	    assert_equal(File.stat('foo/bar').mtime, entry[:mtime])
-	    assert_equal(Tank::TarBlock::REGTYPE,    entry[:typeflag])
-	    assert_equal(Tank::TarBlock::MAGIC,      entry[:magic])
-	    assert_equal("HALO\n",                   entry[:data])
-	  when 2
-	    assert_equal('baz',                   entry[:name])
-	    assert_equal(13,                      entry[:size])
-	    assert_equal(data_mtime.to_i,         entry[:mtime].to_i)
-	    assert_equal(Tank::TarBlock::REGTYPE, entry[:typeflag])
-	    assert_equal(Tank::TarBlock::MAGIC,   entry[:magic])
-	    assert_equal(Process.euid,            entry[:uid])
-	    assert_equal(Process.egid,            entry[:gid])
-	    assert_equal("Hello world.\n",        entry[:data])
-	  else
-	    raise "unknown data: #{entry.inspect}"
-	  end
-	  count += 1
-	end
-	assert_equal(3, count)
-      }
     end
   end
 end
