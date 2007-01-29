@@ -89,18 +89,34 @@ module Tank
       include Block
       include Enumerable
 
-      def initialize(input)
+      def initialize(input, syscall=false)
         @input = input
+        @syscall = syscall
       end
 
+      attr_accessor :syscall
+
+      def io_read(size)
+        if (@syscall) then
+          begin
+            return @input.sysread(size)
+          rescue EOFError
+            return nil
+          end
+        else
+          return @input.read(size)
+        end
+      end
+      private :io_read
+
       def read_header(skip_body=false)
-        head_data = @input.read(BLKSIZ) or return
+        head_data = io_read(BLKSIZ) or raise FormatError, 'unexpected EOF'
         if (head_data == EOA) then
-          next_head_data = @input.read(BLKSIZ)
+          next_head_data = io_read(BLKSIZ)
           if (next_head_data && next_head_data == EOA) then
             return nil
           else
-            raise TarFormatError, "not of EOF: #{head_data.inspect}, #{next_head_data.inspect}"
+            raise TarFormatError, "not of EOA: #{head_data.inspect}, #{next_head_data.inspect}"
           end
         end
         chksum = 0
@@ -159,10 +175,7 @@ module Tank
         head[:mtime] = Time.at(head[:mtime])
         if (skip_body) then
           skip_size = head[:size] + padding_size(head[:size])
-          skip_blocks = skip_size / BLKSIZ
-          while (skip_blocks > 0 && @input.read(BLKSIZ))
-            skip_blocks -= 1
-          end
+          io_read(skip_size)
         end
         head
       end
@@ -170,16 +183,12 @@ module Tank
       def fetch
         head_with_body = read_header or return
         if (head_with_body[:size] > 0) then
-          head_with_body[:data] = @input.read(head_with_body[:size])
-          unless (head_with_body[:data]) then
-            raise TarReadFailError, 'failed to read data'
+          blocked_size = head_with_body[:size] + padding_size(head_with_body[:size])
+          head_with_body[:data] = io_read(blocked_size) or raise FormatError, 'unexpected EOF'
+          if (head_with_body[:data].size != blocked_size) then
+            raise FormatError, 'mismatch body size'
           end
-          if (head_with_body[:data].size != head_with_body[:size]) then
-            raise TarReadFailError,
-                  "mismatch body length: expected #{head_with_body[:size]} but was #{head_with_body[:data].size}"
-          end
-          padding_size = padding_size(head_with_body[:size])
-          @input.read(padding_size) if (padding_size > 0)
+          head_with_body[:data][head_with_body[:size]...blocked_size] = ''
         else
           head_with_body[:data] = nil
         end

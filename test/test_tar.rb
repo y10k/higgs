@@ -112,8 +112,8 @@ module Tank::Test
 	  assert_equal('foo/bar',                  entry[:name])
 	  assert_equal(5,                          entry[:size])
 	  assert_equal(File.stat('foo/bar').mtime, entry[:mtime])
-	  assert_equal(Tank::Tar::Block::REGTYPE,  entry[:typeflag])
-	  assert_equal(Tank::Tar::Block::MAGIC,    entry[:magic])
+	  assert_equal(REGTYPE,                    entry[:typeflag])
+	  assert_equal(MAGIC,                      entry[:magic])
 	  assert_equal("HALO\n",                   entry[:data])
 	when 2
 	  assert_equal('baz',                  entry[:name])
