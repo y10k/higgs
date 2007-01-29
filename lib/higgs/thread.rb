@@ -56,6 +56,9 @@ module Tank
 
     class SharedWork
       def initialize(&work)
+        unless (work) then
+          raise 'required work block'
+        end
         @work = work
         @lock = Mutex.new
         @cond = ConditionVariable.new

@@ -157,5 +157,11 @@ module Tank::Test
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
       assert_equal(expected_result, work.result)
     end
+
+    def test_no_work_block
+      assert_exception(RuntimeError) {
+        Tank::Thread::SharedWork.new
+      }
+    end
   end
 end

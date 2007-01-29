@@ -9,6 +9,9 @@ module Tank
     CVS_ID = '$Id$'
 
     def initialize(&work)
+      unless (work) then
+        raise 'required work block'
+      end
       @work = work
       @lock = Mutex.new
       @cache = {}

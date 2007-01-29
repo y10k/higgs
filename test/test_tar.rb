@@ -6,6 +6,9 @@ require 'tank/tar'
 
 module Tank::Test
   class TarBlockTest < RUNIT::TestCase
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def test_padding_size
       assert_equal(0,   Tank::Tar::Block.padding_size(0))
 
@@ -133,6 +136,16 @@ module Tank::Test
     def test_close
       @tar.close
       assert(@input.closed?)
+    end
+  end
+
+  class TarReaderSyscallTest < TarReaderTest
+    # for ident(1)
+    CVS_ID = '$Id$'
+
+    def setup
+      super
+      @tar.syscall = true
     end
   end
 end

@@ -1,5 +1,7 @@
 # $Id$
 
+require 'forwardable'
+
 module Tank
   module Tar
     # for ident(1)
@@ -86,6 +88,7 @@ module Tank
     end
 
     class Reader
+      extend Forwardable
       include Block
       include Enumerable
 
@@ -95,6 +98,16 @@ module Tank
       end
 
       attr_accessor :syscall
+
+      def_delegator :@input, :seek
+      def_delegator :@input, :pos
+      def_delegator :@input, :pos=
+
+      def close
+        @input.close
+        @input = nil
+        self
+      end
 
       def io_read(size)
         if (@syscall) then
@@ -206,11 +219,6 @@ module Tank
           end
         end
         self
-      end
-
-      def close
-        @input.close
-        nil
       end
     end
   end

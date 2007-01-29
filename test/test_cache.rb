@@ -107,4 +107,12 @@ module Tank::Test
       assert_equal(2, @calc_calls)
     end
   end
+
+  class SharedWorkCacheNoWorkBlockTest < RUNIT::TestCase
+    def test_no_work_block
+      assert_exception(RuntimeError) {
+        Tank::SharedWorkCache.new
+      }
+    end
+  end
 end
