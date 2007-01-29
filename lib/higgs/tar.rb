@@ -70,6 +70,19 @@ module Tank
         (r > 0) ? BLKSIZ - r : 0
       end
       module_function :padding_size
+
+      def tar?(path)
+        if (File.file? path) then
+          head = File.open(path, 'rb') {|input| input.read(BLKSIZ) }
+          if (head && head.length == BLKSIZ) then
+            if (head.unpack(HEAD_FMT)[9] == MAGIC) then
+              return true
+            end
+          end
+        end
+        false
+      end
+      module_function :tar?
     end
 
     class Reader
@@ -78,18 +91,6 @@ module Tank
 
       def initialize(input)
         @input = input
-      end
-
-      def self.tar?(path)
-        if (File.file? path) then
-          head = File.open(path, 'rb') {|input| input.read(BLKSIZ) }
-          if (head.length == BLKSIZ) then
-            if (head.unpack(HEAD_FMT)[9] == MAGIC) then
-              return true
-            end
-          end
-        end
-        false
       end
 
       def read_header(skip_body=false)

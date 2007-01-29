@@ -23,6 +23,24 @@ module Tank::Test
       assert_equal(510, Tank::Tar::Block.padding_size(514))
       assert_equal(509, Tank::Tar::Block.padding_size(515))
     end
+
+    def test_tar?
+      begin
+        FileUtils.mkdir_p('foo')
+        File.open('foo/bar', 'wb') {|w| w << "HALO\n" }
+        File.open('baz', 'wb') {|w| w << "Hello world.\n" }
+        system('tar cf foo.tar foo baz') # required unix tar command
+
+        assert((File.exist? 'foo.tar'))
+        assert_equal(true,  (Tank::Tar::Block.tar? 'foo.tar'))
+        assert_equal(false, (Tank::Tar::Block.tar? 'foo'))
+        assert_equal(false, (Tank::Tar::Block.tar? 'foo/bar'))
+        assert_equal(false, (Tank::Tar::Block.tar? 'baz'))
+      ensure
+        FileUtils.rm_f %w[ foo.tar foo/bar baz ]
+        FileUtils.rm_rf('foo')
+      end
+    end
   end
 
   class TarReaderTest < RUNIT::TestCase
@@ -34,12 +52,8 @@ module Tank::Test
     def setup
       # tar
       FileUtils.mkdir_p('foo')
-      File.open('foo/bar', 'wb') {|output|
-	output.print "HALO\n"
-      }
-      File.open('baz', 'wb') {|output|
-	output.print "Hello world.\n"
-      }
+      File.open('foo/bar', 'wb') {|w| w << "HALO\n" }
+      File.open('baz', 'wb') {|w| w << "Hello world.\n" }
       system('tar cf foo.tar foo baz') # required unix tar command
 
       # target
@@ -50,16 +64,8 @@ module Tank::Test
     def teardown
       @input.close unless @input.closed?
       #system('cp foo.tar foo_debug.tar') # debug
-      FileUtils.rm_f %w( foo.tar foo/bar baz )
+      FileUtils.rm_f %w[ foo.tar foo/bar baz ]
       FileUtils.rm_rf('foo')
-    end
-
-    def test_tar
-      assert((File.exist? 'foo.tar'))
-      assert_equal(true,  (Tank::Tar::Reader.tar? 'foo.tar'))
-      assert_equal(false, (Tank::Tar::Reader.tar? 'foo'))
-      assert_equal(false, (Tank::Tar::Reader.tar? 'foo/bar'))
-      assert_equal(false, (Tank::Tar::Reader.tar? 'baz'))
     end
 
     def test_fetch
