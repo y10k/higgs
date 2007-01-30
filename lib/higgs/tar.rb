@@ -137,6 +137,7 @@ module Tank
       def_delegator :@io, :pos
       def_delegator :@io, :pos=
       def_delegator :@io, :close
+      def_delegator :@io, :closed?
     end
 
     class Reader < IOHandler
