@@ -52,6 +52,10 @@ module Tank::Test
 
     include Tank::Tar::Block
 
+    def open_for_read(filename)
+      File.open(filename, 'rb')
+    end
+
     def setup
       # tar
       FileUtils.mkdir_p('foo')
@@ -60,7 +64,7 @@ module Tank::Test
       system('tar cf foo.tar foo baz') # required unix tar command
 
       # target
-      @input = File.open('foo.tar', 'rb')
+      @input = open_for_read('foo.tar')
       @tar = Tank::Tar::Reader.new(@input)
     end
 
@@ -143,9 +147,8 @@ module Tank::Test
     # for ident(1)
     CVS_ID = '$Id$'
 
-    def setup
-      super
-      @tar.syscall = true
+    def open_for_read(filename)
+      Tank::Tar::RawIO.new(File.open(filename, 'rb'))
     end
   end
 end

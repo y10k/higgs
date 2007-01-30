@@ -87,45 +87,64 @@ module Tank
       module_function :tar?
     end
 
-    class Reader
+    class RawIO
       extend Forwardable
-      include Block
-      include Enumerable
 
-      def initialize(input, syscall=false)
-        @input = input
-        @syscall = syscall
+      def initialize(io)
+        @io = io
       end
 
-      attr_accessor :syscall
-
-      def_delegator :@input, :seek
-      def_delegator :@input, :pos
-      def_delegator :@input, :pos=
-
-      def close
-        @input.close
-        @input = nil
-        self
-      end
-
-      def io_read(size)
-        if (@syscall) then
-          begin
-            return @input.sysread(size)
-          rescue EOFError
-            return nil
-          end
-        else
-          return @input.read(size)
+      def read(*args)
+        begin
+          @io.sysread(*args)
+        rescue EOFError
+          nil
         end
       end
-      private :io_read
+
+      def write(*args)
+        @io.syswrite(*args)
+      end
+
+      def seek(*args)
+        @io.sysseek(*args)
+      end
+
+      def tell
+        @io.sysseek(0, IO::SEEK_CUR)
+      end
+
+      alias pos tell
+
+      def pos=(pos)
+        @io.sysseek(pos, IO::SEEK_SET)
+      end
+
+      def_delegator :@io, :close
+      def_delegator :@io, :closed?
+    end
+
+    class IOHandler
+      extend Forwardable
+      include Block
+
+      def initialize(io)
+        @io = io
+      end
+
+      def_delegator :@io, :seek
+      def_delegator :@io, :pos
+      def_delegator :@io, :pos=
+      def_delegator :@io, :close
+    end
+
+    class Reader < IOHandler
+      include Enumerable
 
       def read_header(skip_body=false)
-        head_data = io_read(BLKSIZ) or raise FormatError, 'unexpected EOF'
+        head_data = @io.read(BLKSIZ) or raise FormatError, 'unexpected EOF'
         if (head_data == EOA) then
-          next_head_data = io_read(BLKSIZ)
+          next_head_data = @io.read(BLKSIZ)
           if (next_head_data && next_head_data == EOA) then
             return nil
           else
@@ -188,7 +207,7 @@ module Tank
         head[:mtime] = Time.at(head[:mtime])
         if (skip_body) then
           skip_size = head[:size] + padding_size(head[:size])
-          io_read(skip_size)
+          @io.read(skip_size)
         end
         head
       end
@@ -197,7 +216,7 @@ module Tank
         head_with_body = read_header or return
         if (head_with_body[:size] > 0) then
           blocked_size = head_with_body[:size] + padding_size(head_with_body[:size])
-          head_with_body[:data] = io_read(blocked_size) or raise FormatError, 'unexpected EOF'
+          head_with_body[:data] = @io.read(blocked_size) or raise FormatError, 'unexpected EOF'
           if (head_with_body[:data].size != blocked_size) then
             raise FormatError, 'mismatch body size'
           end
