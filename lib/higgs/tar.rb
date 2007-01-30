@@ -133,6 +133,7 @@ module Tank
       end
 
       def_delegator :@io, :seek
+      def_delegator :@io, :tell
       def_delegator :@io, :pos
       def_delegator :@io, :pos=
       def_delegator :@io, :close
