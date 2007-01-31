@@ -46,6 +46,78 @@ module Tank::Test
     end
   end
 
+  class IOReadTest < RUNIT::TestCase
+    def open_for_read(filename)
+      File.open(filename, 'rb')
+    end
+
+    def setup
+      File.open('foo.dat', 'wb') {|w| w << '0123456789' }
+      @io = open_for_read('foo.dat')
+    end
+
+    def teardown
+      @io.close
+      FileUtils.rm_f('foo.dat')
+    end
+
+    def test_read
+      assert_equal(0, @io.tell)
+      assert_equal('0', @io.read(1))
+      assert_equal(1, @io.pos)
+      assert_equal('12', @io.read(2))
+      assert_equal(3, @io.tell)
+      assert_equal('345', @io.read(3))
+      assert_equal(6, @io.pos)
+      assert_equal('6789', @io.read(5))
+      assert_equal(10, @io.tell)
+      assert_equal(nil, @io.read(7))
+      assert_equal(10, @io.tell)
+    end
+
+    def test_seek
+      @io.seek(10)
+      assert_equal(10, @io.tell)
+      assert_equal(nil, @io.read(1))
+      @io.seek(9)
+      assert_equal(9, @io.pos)
+      assert_equal('9', @io.read(1))
+      @io.seek(8)
+      assert_equal(8, @io.tell)
+      assert_equal('8', @io.read(1))
+      @io.seek(7)
+      assert_equal(7, @io.pos)
+      assert_equal('7', @io.read(1))
+      @io.seek(6)
+      assert_equal(6, @io.tell)
+      assert_equal('6', @io.read(1))
+      @io.seek(5)
+      assert_equal(5, @io.pos)
+      assert_equal('5', @io.read(1))
+      @io.seek(4)
+      assert_equal(4, @io.tell)
+      assert_equal('4', @io.read(1))
+      @io.seek(3)
+      assert_equal(3, @io.pos)
+      assert_equal('3', @io.read(1))
+      @io.seek(2)
+      assert_equal(2, @io.tell)
+      assert_equal('2', @io.read(1))
+      @io.seek(1)
+      assert_equal(1, @io.pos)
+      assert_equal('1', @io.read(1))
+      @io.seek(0)
+      assert_equal(0, @io.tell)
+      assert_equal('0', @io.read(1))
+    end
+  end
+
+  class IOSysreadTest < IOReadTest
+    def open_for_read(filename)
+      Tank::Tar::RawIO.new(File.open(filename, 'rb'))
+    end
+  end
+
   class TarReaderTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
