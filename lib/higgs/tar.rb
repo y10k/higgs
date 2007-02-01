@@ -150,7 +150,7 @@ module Tank
           if (next_head_data && next_head_data == EOA) then
             return nil
           else
-            raise TarFormatError, "not of EOA: #{head_data.inspect}, #{next_head_data.inspect}"
+            raise FormatError, "not of EOA: #{head_data.inspect}, #{next_head_data.inspect}"
           end
         end
         chksum = 0
@@ -188,11 +188,11 @@ module Tank
           head[:typeflag] = REGTYPE
         end
         if (head[:magic] != MAGIC) then
-          raise TarMagicError, "unknown format: #{head[:magic].inspect}"
+          raise MagicError, "unknown format: #{head[:magic].inspect}"
         end
         # why?
         #if (head[:version] != VERSION) then
-        #  raise TarVersionError, "unknown version: #{head[:version].inspect}"
+        #  raise VersionError, "unknown version: #{head[:version].inspect}"
         #end
         [ :mode,
           :uid,
@@ -204,7 +204,7 @@ module Tank
           head[sym] = head[sym].oct
         end
         if (head[:chksum] != chksum) then
-          raise TarCheckSumError, 'broken tar'
+          raise CheckSumError, 'broken tar'
         end
         head[:mtime] = Time.at(head[:mtime])
         if (skip_body) then
