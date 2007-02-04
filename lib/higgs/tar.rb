@@ -283,13 +283,13 @@ module Tank
         'socket' => FIFOTYPE
       }
 
-      def add(path, body, options=nil)
+      def add(name, body, options=nil)
         head = {
-          :name => path,
-          :mode => 0100644,	# -rw-r--r--
-          :uid => Process.euid,
-          :gid => Process.egid,
-          :size => body.length,
+          :name     => name,
+          :mode     => 0100644,	# -rw-r--r--
+          :uid      => Process.euid,
+          :gid      => Process.egid,
+          :size     => body.length,
           :typeflag => REGTYPE
         }
         if (options) then
