@@ -62,7 +62,7 @@ module Tank::Test
     end
 
     NUM_OF_THREADS = 10
-    WORK_COUNT = 1000
+    WORK_COUNT = 10000
 
     def test_calc_race_condition
       barrier = Tank::Thread::Barrier.new(3)
