@@ -49,15 +49,15 @@ module Tank
       BLKSIZ = 512
 
       # unix tar format parameters
-      MAGIC = 'ustar'
-      VERSION = '00'
-      REGTYPE = '0'
+      MAGIC    = 'ustar'
+      VERSION  = '00'
+      REGTYPE  = '0'
       AREGTYPE = "\0"
-      LNKTYPE = '1'
-      SYMTYPE = '2'
-      CHRTYPE = '3'
-      BLKTYPE = '4'
-      DIRTYPE = '5'
+      LNKTYPE  = '1'
+      SYMTYPE  = '2'
+      CHRTYPE  = '3'
+      BLKTYPE  = '4'
+      DIRTYPE  = '5'
       FIFOTYPE = '6'
       CONTTYPE = '7'
 
@@ -165,22 +165,9 @@ module Tank
         end
         head_list = head_data.unpack(HEAD_FMT)
         head = {}
-        [ :name,
-          :mode,
-          :uid,
-          :gid,
-          :size,
-          :mtime,
-          :chksum,
-          :typeflag,
-          :linkname,
-          :magic,
-          :version,
-          :uname,
-          :gname,
-          :devmajor,
-          :devminor,
-          :prefix
+        [ :name, :mode, :uid, :gid, :size, :mtime,
+          :chksum, :typeflag, :linkname, :magic, :version,
+          :uname, :gname, :devmajor, :devminor, :prefix
         ].each_with_index do |k, i|
           head[k] = head_list[i]
         end
@@ -251,21 +238,21 @@ module Tank
         if (name.length > 100) then
           raise TooLongPathError, "too long path: #{head[:name]}"
         end
-        mode = format('%-8o', head[:mode])
-        uid = format('%-8o', head[:uid])
-        gid = format('%-8o', head[:gid])
-        size = format('%-12o', head[:size])
-        mtime = format('%-12o', head[:mtime].to_i)
+        mode     = format('%-8o', head[:mode])
+        uid      = format('%-8o', head[:uid])
+        gid      = format('%-8o', head[:gid])
+        size     = format('%-12o', head[:size])
+        mtime    = format('%-12o', head[:mtime].to_i)
         dummy_chksum = ' ' * 8
         typeflag = head[:typeflag]
         linkname = head[:linkname] || ''
-        magic = head[:magic] || MAGIC
-        version = head[:version] || VERSION
-        uname = head[:uname] || ''
-        gname = head[:gname] || ''
+        magic    = head[:magic] || MAGIC
+        version  = head[:version] || VERSION
+        uname    = head[:uname] || ''
+        gname    = head[:gname] || ''
         devmajor = head[:devmajor] || ''
         devminor = head[:devminor] || ''
-        prefix = ''
+        prefix   = ''
         head = [
           name, mode, uid, gid, size, mtime,
           dummy_chksum, typeflag, linkname, magic, version,
@@ -305,8 +292,12 @@ module Tank
           :size => body.length,
           :typeflag => REGTYPE
         }
-        head.update(options) if options
-        head[:mtime] = Time.now unless (head.include? :mtime)
+        if (options) then
+          head.update(options) 
+        end
+        unless (head.include? :mtime) then
+          head[:mtime] = Time.now
+        end
         yield(head) if block_given?
         write_header(head)
         body += "\0" * padding_size(body.length)
