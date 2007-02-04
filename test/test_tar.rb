@@ -298,4 +298,74 @@ module Tank::Test
       Tank::Tar::RawIO.new(File.open(filename, 'wb'))
     end
   end
+
+  class TarHeaderTest < RUNIT::TestCase
+    include Tank::Tar::Block
+
+    def setup
+      @output = File.open('foo.tar', 'wb')
+      @input = File.open('foo.tar', 'rb')
+      @writer = Tank::Tar::Writer.new(@output)
+      @reader = Tank::Tar::Reader.new(@input)
+    end
+
+    def teardown
+      @output.close unless @output.closed?
+      @input.close unless @input.closed?
+      FileUtils.rm_f('foo.tar')
+    end
+
+    def test_read_header_FormatError_unexpected_EOF
+      assert_equal(0, @input.stat.size)
+      assert_exception(Tank::Tar::FormatError) { @reader.read_header }
+    end
+
+    def test_read_header_FormatError_too_short_header
+      @output.write("foo\n")
+      @output.flush
+      assert_equal(4, @input.stat.size)
+      assert_exception(Tank::Tar::FormatError) { @reader.read_header }
+    end
+
+    def test_read_header_FormatError_not_of_EOA
+      @output.write("\0" * BLKSIZ)
+      @output.flush
+      assert_equal(BLKSIZ, @input.stat.size)
+      assert_exception(Tank::Tar::FormatError) { @reader.read_header }
+    end
+
+    def test_read_header_typeflag_AREGTYPE
+      @writer.add('foo', "Hello world.\n", :typeflag => AREGTYPE)
+      @output.flush
+      assert_equal(BLKSIZ * 2, @input.stat.size)
+      head = @reader.read_header
+      assert_equal(BLKSIZ, @input.pos)
+      assert_equal('foo', head[:name])
+      assert_equal(REGTYPE, head[:typeflag], 'AREGTYPE -> REGTYPE')
+    end
+
+    def test_read_header_MagicError_unknown_format
+      @writer.add('foo', "Hello world.\n", :magic => 'unknown')
+      @output.flush
+      assert_equal(BLKSIZ * 2, @input.stat.size)
+      assert_exception(Tank::Tar::MagicError) { @reader.read_header }
+      assert_equal(BLKSIZ, @input.pos)
+    end
+
+    def test_read_header_CheckSumError_broken_tar
+      @writer.add('foo', "Hello world.\n", :chksum => 0)
+      @output.flush
+      assert_equal(BLKSIZ * 2, @input.stat.size)
+      assert_exception(Tank::Tar::CheckSumError) { @reader.read_header }
+      assert_equal(BLKSIZ, @input.pos)
+    end
+
+    def test_read_header_skip_body
+      @writer.add('foo', "Hello world.\n")
+      @output.flush
+      assert_equal(BLKSIZ * 2, @input.stat.size)
+      @reader.read_header(true)
+      assert_equal(BLKSIZ * 2, @input.pos)
+    end
+  end
 end
