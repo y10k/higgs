@@ -215,18 +215,18 @@ module Tank
       end
 
       def fetch
-        head_with_body = read_header or return
-        if (head_with_body[:size] > 0) then
-          blocked_size = head_with_body[:size] + padding_size(head_with_body[:size])
-          head_with_body[:data] = @io.read(blocked_size) or raise FormatError, 'unexpected EOF'
-          if (head_with_body[:data].size != blocked_size) then
+        head_and_body = read_header or return
+        if (head_and_body[:size] > 0) then
+          blocked_size = head_and_body[:size] + padding_size(head_and_body[:size])
+          head_and_body[:body] = @io.read(blocked_size) or raise FormatError, 'unexpected EOF'
+          if (head_and_body[:body].size != blocked_size) then
             raise FormatError, 'mismatch body size'
           end
-          head_with_body[:data][head_with_body[:size]...blocked_size] = ''
+          head_and_body[:body][head_and_body[:size]...blocked_size] = ''
         else
-          head_with_body[:data] = nil
+          head_and_body[:body] = nil
         end
-        head_with_body
+        head_and_body
       end
 
       def each(skip_body=false)
@@ -235,11 +235,121 @@ module Tank
             yield(head)
           end
         else
-          while (head_with_body = fetch)
-            yield(head_with_body)
+          while (head_and_body = fetch)
+            yield(head_and_body)
           end
         end
         self
+      end
+    end
+
+    class Writer < IOHandler
+      include Block
+
+      def write_header(head)
+        name = head[:name] or raise Error, "required name: #{head.inspect}"
+        if (name.length > 100) then
+          raise TooLongPathError, "too long path: #{head[:name]}"
+        end
+        mode = format('%-8o', head[:mode])
+        uid = format('%-8o', head[:uid])
+        gid = format('%-8o', head[:gid])
+        size = format('%-12o', head[:size])
+        mtime = format('%-12o', head[:mtime].to_i)
+        dummy_chksum = ' ' * 8
+        typeflag = head[:typeflag]
+        linkname = head[:linkname] || ''
+        magic = head[:magic] || MAGIC
+        version = head[:version] || VERSION
+        uname = head[:uname] || ''
+        gname = head[:gname] || ''
+        devmajor = head[:devmajor] || ''
+        devminor = head[:devminor] || ''
+        prefix = ''
+        head = [
+          name, mode, uid, gid, size, mtime,
+          dummy_chksum, typeflag, linkname, magic, version,
+          uname, gname, devmajor, devminor, prefix
+        ].pack(HEAD_FMT)
+        head += "\0" * 12
+        chksum = 0
+        head.each_byte do |c|
+          chksum += c
+        end
+        head[148, 8] = format('%-8o', chksum)
+        @io.write(head)
+        nil
+      end
+
+      def write_EOA
+        @io.write(EOA * 2)
+        nil
+      end
+
+      FTYPE_TO_TAR = {
+        'file' => REGTYPE,
+        'directory' => DIRTYPE,
+        'characterSpecial' => CHRTYPE,
+        'blockSpecial' => BLKTYPE,
+        'fifo' => FIFOTYPE,
+        'link' => SYMTYPE,
+        'socket' => FIFOTYPE
+      }
+
+      def add_file(path)
+        stat = File.stat(path)
+        unless (FTYPE_TO_TAR.include? stat.ftype) then
+          raise Error, "unknown file type: #{stat.ftype}"
+        end
+        head = {
+          :name => path,
+          :mode => stat.mode,
+          :uid => stat.uid,
+          :gid => stat.gid,
+          :size => (stat.file?) ? stat.size : 0,
+          :mtime => stat.mtime,
+          :typeflag => FTYPE_TO_TAR[stat.ftype]
+        }
+        yield(head) if block_given?
+        write_header(head)
+        if (stat.ftype == 'file') then
+          File.open(path, 'rb') {|input|
+            chunk_size = BLKSIZ * 128
+            remaining_size = stat.size
+            while (remaining_size > chunk_size)
+              data = input.read(chunk_size) or raise Error, 'unexpected EOF'
+              @io.write(data)
+              remaining_size -= chunk_size
+            end
+            data = input.read(chunk_size) or raise Error, 'unexpected EOF'
+            data += "\0" * padding_size(stat.size)
+            @io.write(data)
+          }
+        end
+        nil
+      end
+
+      def add_data(path, data, options=nil)
+        head = {
+          :name => path,
+          :mode => 0100644,	# -rw-r--r--
+          :uid => Process.euid,
+          :gid => Process.egid,
+          :size => data.length,
+          :mtime => Time.now,
+          :typeflag => REGTYPE
+        }
+        head.update(options) if options
+        yield(head) if block_given?
+        write_header(head)
+        data += "\0" * padding_size(data.length)
+        @io.write(data)
+        nil
+      end
+
+      def close
+        write_EOA
+        super
       end
     end
   end

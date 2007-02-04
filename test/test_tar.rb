@@ -148,61 +148,61 @@ module Tank::Test
     end
 
     def test_fetch
-      entry = @tar.fetch
-      assert('foo/' == entry[:name] || 'foo' == entry[:name])
-      assert_equal(0,                      entry[:size])
-      assert_equal(File.stat('foo').mtime, entry[:mtime])
-      assert_equal(DIRTYPE,                entry[:typeflag])
-      assert_equal(MAGIC,                  entry[:magic])
-      assert_equal(nil,                    entry[:data])
+      head_and_body = @tar.fetch
+      assert('foo/' == head_and_body[:name] || 'foo' == head_and_body[:name])
+      assert_equal(0,                      head_and_body[:size])
+      assert_equal(File.stat('foo').mtime, head_and_body[:mtime])
+      assert_equal(DIRTYPE,                head_and_body[:typeflag])
+      assert_equal(MAGIC,                  head_and_body[:magic])
+      assert_equal(nil,                    head_and_body[:body])
 
-      entry = @tar.fetch
-      assert_equal('foo/bar',                  entry[:name])
-      assert_equal(5,                          entry[:size])
-      assert_equal(File.stat('foo/bar').mtime, entry[:mtime])
-      assert_equal(REGTYPE,                    entry[:typeflag])
-      assert_equal(MAGIC,                      entry[:magic])
-      assert_equal("HALO\n",                   entry[:data])
+      head_and_body = @tar.fetch
+      assert_equal('foo/bar',                  head_and_body[:name])
+      assert_equal(5,                          head_and_body[:size])
+      assert_equal(File.stat('foo/bar').mtime, head_and_body[:mtime])
+      assert_equal(REGTYPE,                    head_and_body[:typeflag])
+      assert_equal(MAGIC,                      head_and_body[:magic])
+      assert_equal("HALO\n",                   head_and_body[:body])
 
-      entry = @tar.fetch
-      assert_equal('baz',                  entry[:name])
-      assert_equal(13,                     entry[:size])
-      assert_equal(File.stat('baz').mtime, entry[:mtime])
-      assert_equal(REGTYPE,                entry[:typeflag])
-      assert_equal(MAGIC,                  entry[:magic])
-      assert_equal("Hello world.\n",       entry[:data])
+      head_and_body = @tar.fetch
+      assert_equal('baz',                  head_and_body[:name])
+      assert_equal(13,                     head_and_body[:size])
+      assert_equal(File.stat('baz').mtime, head_and_body[:mtime])
+      assert_equal(REGTYPE,                head_and_body[:typeflag])
+      assert_equal(MAGIC,                  head_and_body[:magic])
+      assert_equal("Hello world.\n",       head_and_body[:body])
 
-      entry = @tar.fetch
-      assert_equal(nil, entry)
+      head_and_body = @tar.fetch
+      assert_equal(nil, head_and_body)
     end
 
     def test_each
       count = 0
-      @tar.each do |entry|
+      @tar.each do |head_and_body|
 	case (count)
 	when 0
-	  assert('foo/' == entry[:name] || 'foo' == entry[:name])
-	  assert_equal(0,                      entry[:size])
-	  assert_equal(File.stat('foo').mtime, entry[:mtime])
-	  assert_equal(DIRTYPE,                entry[:typeflag])
-	  assert_equal(MAGIC,                  entry[:magic])
-	  assert_equal(nil,                    entry[:data])
+	  assert('foo/' == head_and_body[:name] || 'foo' == head_and_body[:name])
+	  assert_equal(0,                      head_and_body[:size])
+	  assert_equal(File.stat('foo').mtime, head_and_body[:mtime])
+	  assert_equal(DIRTYPE,                head_and_body[:typeflag])
+	  assert_equal(MAGIC,                  head_and_body[:magic])
+	  assert_equal(nil,                    head_and_body[:body])
 	when 1
-	  assert_equal('foo/bar',                  entry[:name])
-	  assert_equal(5,                          entry[:size])
-	  assert_equal(File.stat('foo/bar').mtime, entry[:mtime])
-	  assert_equal(REGTYPE,                    entry[:typeflag])
-	  assert_equal(MAGIC,                      entry[:magic])
-	  assert_equal("HALO\n",                   entry[:data])
+	  assert_equal('foo/bar',                  head_and_body[:name])
+	  assert_equal(5,                          head_and_body[:size])
+	  assert_equal(File.stat('foo/bar').mtime, head_and_body[:mtime])
+	  assert_equal(REGTYPE,                    head_and_body[:typeflag])
+	  assert_equal(MAGIC,                      head_and_body[:magic])
+	  assert_equal("HALO\n",                   head_and_body[:body])
 	when 2
-	  assert_equal('baz',                  entry[:name])
-	  assert_equal(13,                     entry[:size])
-	  assert_equal(File.stat('baz').mtime, entry[:mtime])
-	  assert_equal(REGTYPE,                entry[:typeflag])
-	  assert_equal(MAGIC,                  entry[:magic])
-	  assert_equal("Hello world.\n",       entry[:data])
+	  assert_equal('baz',                  head_and_body[:name])
+	  assert_equal(13,                     head_and_body[:size])
+	  assert_equal(File.stat('baz').mtime, head_and_body[:mtime])
+	  assert_equal(REGTYPE,                head_and_body[:typeflag])
+	  assert_equal(MAGIC,                  head_and_body[:magic])
+	  assert_equal("Hello world.\n",       head_and_body[:body])
 	else
-	  raise "unknown data: #{entry.inspect}"
+	  raise "unknown data: #{head_and_body.inspect}"
 	end
 	count += 1
       end
@@ -221,6 +221,71 @@ module Tank::Test
 
     def open_for_read(filename)
       Tank::Tar::RawIO.new(File.open(filename, 'rb'))
+    end
+  end
+
+  class TarWriterTest < RUNIT::TestCase
+    include Tank::Tar::Block
+
+    def setup
+      # contents of tar
+      FileUtils.mkdir_p('foo')
+      File.open('foo/bar', 'wb') {|w| w << "HALO\n" }
+
+      # target
+      @output = File.open('foo.tar', 'wb')
+      @tar = Tank::Tar::Writer.new(@output)
+    end
+
+    def teardown
+      @output.close unless @output.closed?
+      #system('cp foo.tar foo_debug.tar') # debug
+      FileUtils.rm_f %w(foo.tar foo/bar)
+      FileUtils.rm_rf('foo')
+    end
+
+    def test_add
+      @tar.add_file('foo')
+      @tar.add_file('foo/bar')
+      timestamp = Time.now
+      @tar.add_data('baz', "Hello world.\n", :mtime => timestamp)
+      @tar.close
+      assert(@output.closed?)
+      File.open('foo.tar') {|r|
+        tar = Tank::Tar::Reader.new(r)
+	count = 0
+	for head_and_body in tar
+	  case (count)
+	  when 0
+	    assert_equal('foo',                  head_and_body[:name])
+	    assert_equal(0,                      head_and_body[:size])
+	    assert_equal(File.stat('foo').mtime, head_and_body[:mtime])
+	    assert_equal(DIRTYPE,                head_and_body[:typeflag])
+	    assert_equal(MAGIC,                  head_and_body[:magic])
+	    assert_equal(nil,                    head_and_body[:body])
+	  when 1
+	    assert_equal('foo/bar',                  head_and_body[:name])
+	    assert_equal(5,                          head_and_body[:size])
+	    assert_equal(File.stat('foo/bar').mtime, head_and_body[:mtime])
+	    assert_equal(REGTYPE,                    head_and_body[:typeflag])
+	    assert_equal(MAGIC,                      head_and_body[:magic])
+	    assert_equal("HALO\n",                   head_and_body[:body])
+	  when 2
+	    assert_equal('baz',            head_and_body[:name])
+	    assert_equal(13,               head_and_body[:size])
+	    assert_equal(timestamp.to_i,   head_and_body[:mtime].to_i)
+	    assert_equal(REGTYPE,          head_and_body[:typeflag])
+	    assert_equal(MAGIC,            head_and_body[:magic])
+	    assert_equal(Process.euid,     head_and_body[:uid])
+	    assert_equal(Process.egid,     head_and_body[:gid])
+	    assert_equal("Hello world.\n", head_and_body[:body])
+	  else
+	    raise "unknown data: #{head_and_body.inspect}"
+	  end
+	  count += 1
+	end
+	assert_equal(3, count)
+      }
     end
   end
 end
