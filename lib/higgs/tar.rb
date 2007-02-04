@@ -59,7 +59,7 @@ module Tank
       BLKTYPE  = '4'
       DIRTYPE  = '5'
       FIFOTYPE = '6'
-      CONTTYPE = '7'
+      CONTTYPE = '7'            # reserved
 
       # for pack/unpack
       HEAD_FMT = 'Z100 A8 A8 A8 A12 A12 A8 a1 Z100 A6 a2 Z32 Z32 Z8 Z8 Z155'
