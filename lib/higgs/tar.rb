@@ -296,6 +296,24 @@ module Tank
         'socket' => FIFOTYPE
       }
 
+      def add(path, body, options=nil)
+        head = {
+          :name => path,
+          :mode => 0100644,	# -rw-r--r--
+          :uid => Process.euid,
+          :gid => Process.egid,
+          :size => body.length,
+          :mtime => Time.now,
+          :typeflag => REGTYPE
+        }
+        head.update(options) if options
+        yield(head) if block_given?
+        write_header(head)
+        body += "\0" * padding_size(body.length)
+        @io.write(body)
+        nil
+      end
+
       def add_file(path)
         stat = File.stat(path)
         unless (FTYPE_TO_TAR.include? stat.ftype) then
@@ -317,33 +335,15 @@ module Tank
             chunk_size = BLKSIZ * 128
             remaining_size = stat.size
             while (remaining_size > chunk_size)
-              data = input.read(chunk_size) or raise Error, 'unexpected EOF'
-              @io.write(data)
+              s = input.read(chunk_size) or raise Error, 'unexpected EOF'
+              @io.write(s)
               remaining_size -= chunk_size
             end
-            data = input.read(chunk_size) or raise Error, 'unexpected EOF'
-            data += "\0" * padding_size(stat.size)
-            @io.write(data)
+            s = input.read(chunk_size) or raise Error, 'unexpected EOF'
+            s += "\0" * padding_size(stat.size)
+            @io.write(s)
           }
         end
-        nil
-      end
-
-      def add_data(path, data, options=nil)
-        head = {
-          :name => path,
-          :mode => 0100644,	# -rw-r--r--
-          :uid => Process.euid,
-          :gid => Process.egid,
-          :size => data.length,
-          :mtime => Time.now,
-          :typeflag => REGTYPE
-        }
-        head.update(options) if options
-        yield(head) if block_given?
-        write_header(head)
-        data += "\0" * padding_size(data.length)
-        @io.write(data)
         nil
       end
 

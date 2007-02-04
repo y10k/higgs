@@ -248,7 +248,7 @@ module Tank::Test
       @tar.add_file('foo')
       @tar.add_file('foo/bar')
       timestamp = Time.now
-      @tar.add_data('baz', "Hello world.\n", :mtime => timestamp)
+      @tar.add('baz', "Hello world.\n", :mtime => timestamp)
       @tar.close
       assert(@output.closed?)
       File.open('foo.tar') {|r|
