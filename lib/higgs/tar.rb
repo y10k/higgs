@@ -265,18 +265,22 @@ module Tank
         devmajor = head[:devmajor] || ''
         devminor = head[:devminor] || ''
         prefix   = ''
-        head = [
+        header = [
           name, mode, uid, gid, size, mtime,
           dummy_chksum, typeflag, linkname, magic, version,
           uname, gname, devmajor, devminor, prefix
         ].pack(HEAD_FMT)
-        head += "\0" * 12
-        chksum = 0
-        head.each_byte do |c|
-          chksum += c
+        header += "\0" * 12
+        if (head.include? :chksum) then
+          chksum = head[:chksum]
+        else
+          chksum = 0
+          header.each_byte do |c|
+            chksum += c
+          end
         end
-        head[148, 8] = format('%-8o', chksum)
-        @io.write(head)
+        header[148, 8] = format('%-8o', chksum)
+        @io.write(header)
         nil
       end
 
