@@ -227,13 +227,17 @@ module Tank::Test
   class TarWriterTest < RUNIT::TestCase
     include Tank::Tar::Block
 
+    def open_for_write(filename)
+      File.open(filename, 'wb')
+    end
+
     def setup
       # contents of tar
       FileUtils.mkdir_p('foo')
       File.open('foo/bar', 'wb') {|w| w << "HALO\n" }
 
       # target
-      @output = File.open('foo.tar', 'wb')
+      @output = open_for_write('foo.tar')
       @tar = Tank::Tar::Writer.new(@output)
     end
 
@@ -286,6 +290,12 @@ module Tank::Test
 	end
 	assert_equal(3, count)
       }
+    end
+  end
+
+  class TarWriterSyscallTest < TarWriterTest
+    def open_for_write(filename)
+      Tank::Tar::RawIO.new(File.open(filename, 'wb'))
     end
   end
 end

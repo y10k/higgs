@@ -303,10 +303,10 @@ module Tank
           :uid => Process.euid,
           :gid => Process.egid,
           :size => body.length,
-          :mtime => Time.now,
           :typeflag => REGTYPE
         }
         head.update(options) if options
+        head[:mtime] = Time.now unless (head.include? :mtime)
         yield(head) if block_given?
         write_header(head)
         body += "\0" * padding_size(body.length)
