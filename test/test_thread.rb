@@ -77,6 +77,12 @@ module Tank::Test
       }
       assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
     end
+
+    def test_not_recycle
+      barrier = Tank::Thread::Barrier.new(1)
+      barrier.wait
+      assert_exception(RuntimeError) { barrier.wait }
+    end
   end
 
   class ThreadSharedWorkTest < RUNIT::TestCase

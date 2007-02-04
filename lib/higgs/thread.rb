@@ -41,13 +41,17 @@ module Tank
 
       def wait
         @lock.synchronize{
-          @count -= 1
           if (@count > 0) then
-            while (@count > 0)
-              @cond.wait(@lock)
+            @count -= 1
+            if (@count > 0) then
+              while (@count > 0)
+                @cond.wait(@lock)
+              end
+            else
+              @cond.broadcast
             end
           else
-            @cond.broadcast
+            raise 'not recycle'
           end
         }
         nil

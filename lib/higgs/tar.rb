@@ -25,6 +25,9 @@ module Tank
     class TooLongPathError < FormatError
     end
 
+    class IOError < Error
+    end
+
     module Block
       # tar header format
       # -
@@ -144,7 +147,13 @@ module Tank
       include Enumerable
 
       def read_header(skip_body=false)
-        head_data = @io.read(BLKSIZ) or raise FormatError, 'unexpected EOF'
+        head_data = @io.read(BLKSIZ)
+        unless (head_data) then
+          raise FormatError, 'unexpected EOF'
+        end
+        if (head_data.length != BLKSIZ) then
+          raise FormatError, 'too short header'
+        end
         if (head_data == EOA) then
           next_head_data = @io.read(BLKSIZ)
           if (next_head_data && next_head_data == EOA) then
@@ -205,7 +214,10 @@ module Tank
         head_and_body = read_header or return
         if (head_and_body[:size] > 0) then
           blocked_size = head_and_body[:size] + padding_size(head_and_body[:size])
-          head_and_body[:body] = @io.read(blocked_size) or raise FormatError, 'unexpected EOF'
+          head_and_body[:body] = @io.read(blocked_size)
+          unless (head_and_body) then
+            raise FormatError, 'unexpected EOF'
+          end
           if (head_and_body[:body].size != blocked_size) then
             raise FormatError, 'mismatch body size'
           end
@@ -234,9 +246,9 @@ module Tank
       include Block
 
       def write_header(head)
-        name = head[:name] or raise Error, "required name: #{head.inspect}"
+        name = head[:name] or raise FormatError, "required name: #{head.inspect}"
         if (name.length > 100) then
-          raise TooLongPathError, "too long path: #{head[:name]}"
+          raise TooLongPathError, "too long path: #{name}"
         end
         mode     = format('%-8o', head[:mode])
         uid      = format('%-8o', head[:uid])
@@ -310,7 +322,7 @@ module Tank
       def add_file(path)
         stat = File.stat(path)
         unless (FTYPE_TO_TAR.include? stat.ftype) then
-          raise Error, "unknown file type: #{stat.ftype}"
+          raise FormatError, "unknown file type: #{stat.ftype}"
         end
         head = {
           :name => path,
@@ -330,11 +342,11 @@ module Tank
             chunk_size = BLKSIZ * 128
             remaining_size = stat.size
             while (remaining_size > chunk_size)
-              s = input.read(chunk_size) or raise Error, 'unexpected EOF'
+              s = input.read(chunk_size) or raise IOError, 'unexpected EOF'
               @io.write(s)
               remaining_size -= chunk_size
             end
-            s = input.read(chunk_size) or raise Error, 'unexpected EOF'
+            s = input.read(chunk_size) or raise IOError, 'unexpected EOF'
             s += "\0" * padding_size(stat.size)
             @io.write(s)
           }
