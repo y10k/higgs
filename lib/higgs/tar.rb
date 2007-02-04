@@ -298,7 +298,9 @@ module Tank
         unless (head.include? :mtime) then
           head[:mtime] = Time.now
         end
-        yield(head) if block_given?
+        if (block_given?) then
+          yield(head)
+        end
         write_header(head)
         body += "\0" * padding_size(body.length)
         @io.write(body)
@@ -319,7 +321,9 @@ module Tank
           :mtime => stat.mtime,
           :typeflag => FTYPE_TO_TAR[stat.ftype]
         }
-        yield(head) if block_given?
+        if (block_given?) then
+          yield(head)
+        end
         write_header(head)
         if (stat.ftype == 'file') then
           File.open(path, 'rb') {|input|
