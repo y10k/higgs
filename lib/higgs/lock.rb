@@ -20,16 +20,16 @@ module Tank
     class ReadWriteLock
       def initialize
         @lock = Mutex.new
-        @read_cond = ConditionVariable.new
+        @r_cond = ConditionVariable.new
+        @w_cond = ConditionVariable.new
         @read_count = 0
-        @write_cond = ConditionVariable.new
         @write_flag = false
       end
 
       def __read_lock__
         @lock.synchronize{
           while (@write_flag)
-            @read_cond.wait(@lock)
+            @r_cond.wait(@lock)
           end
           @read_count += 1
         }
@@ -51,7 +51,7 @@ module Tank
         @lock.synchronize{
           @read_count -= 1
           if (@read_count == 0) then
-            @write_cond.signal
+            @w_cond.signal
           end
         }
         nil
@@ -60,7 +60,7 @@ module Tank
       def __write_lock__
         @lock.synchronize{
           while (@write_flag || @read_count > 0)
-            @write_cond.wait(@lock)
+            @w_cond.wait(@lock)
           end
           @write_flag = true
         }
@@ -81,8 +81,8 @@ module Tank
       def __write_unlock__
         @lock.synchronize{
           @write_flag = false
-          @write_cond.signal
-          @read_cond.broadcast
+          @w_cond.signal
+          @r_cond.broadcast
         }
         nil
       end
