@@ -1,9 +1,10 @@
 # $Id$
 
+require 'forwardable'
 require 'singleton'
-require 'sync'
 require 'tank'
 require 'tank/cache'
+require 'thread'
 
 module Tank
   module Lock
@@ -14,6 +15,117 @@ module Tank
     end
 
     class TimeoutError < Error
+    end
+
+    class ReadWriteLock
+      def initialize
+        @lock = Mutex.new
+        @read_cond = ConditionVariable.new
+        @read_count = 0
+        @write_cond = ConditionVariable.new
+        @write_flag = false
+      end
+
+      def __read_lock__
+        @lock.synchronize{
+          while (@write_flag)
+            @read_cond.wait(@lock)
+          end
+          @read_count += 1
+        }
+        nil
+      end
+
+      def __read_try_lock__
+        @lock.synchronize{
+          if (@write_flag) then
+            return false
+          else
+            @read_count += 1
+            return true
+          end
+        }
+      end
+
+      def __read_unlock__
+        @lock.synchronize{
+          @read_count -= 1
+          if (@read_count == 0) then
+            @write_cond.signal
+          end
+        }
+        nil
+      end
+
+      def __write_lock__
+        @lock.synchronize{
+          while (@write_flag || @read_count > 0)
+            @write_cond.wait(@lock)
+          end
+          @write_flag = true
+        }
+        nil
+      end
+
+      def __write_try_lock__
+        @lock.synchronize{
+          if (@write_flag || @read_count > 0) then
+            return false
+          else
+            @write_flag = true
+            return true
+          end
+        }
+      end
+
+      def __write_unlock__
+        @lock.synchronize{
+          @write_flag = false
+          @write_cond.signal
+          @read_cond.broadcast
+        }
+        nil
+      end
+
+      class ChildLock
+        def initialize(rw_lock)
+          @rw_lock = rw_lock
+        end
+
+        def synchronize
+          lock
+          begin
+            r = yield
+          ensure
+            unlock
+          end
+          r
+        end
+      end
+
+      class ReadLock < ChildLock
+        extend Forwardable
+
+        def_delegator :@rw_lock, :__read_lock__,     :lock
+        def_delegator :@rw_lock, :__read_try_lock__, :try_lock
+        def_delegator :@rw_lock, :__read_unlock__,   :unlock
+      end
+
+      class WriteLock < ChildLock
+        extend Forwardable
+
+        def_delegator :@rw_lock, :__write_lock__,     :lock
+        def_delegator :@rw_lock, :__write_try_lock__, :try_lock
+        def_delegator :@rw_lock, :__write_unlock__,   :unlock
+      end
+
+      def read_lock
+        ReadLock.new(self)
+      end
+
+      def write_lock
+        WriteLock.new(self)
+      end
     end
 
     class LockManager
@@ -27,17 +139,17 @@ module Tank
       attr_reader :try_lock_limit
       attr_reader :try_lock_interval
 
-      def self.try_lock(sync, mode, attrs)
+      def self.try_lock(lock, attrs)
         t0 = Time.now
         c = attrs.spin_lock_count
         while (c > 0)
-          if (sync.try_lock(mode)) then
+          if (lock.try_lock) then
             return
           end
           c -= 1
         end
         while (Time.now - t0 < attrs.try_lock_limit)
-          if (sync.try_lock(mode)) then
+          if (lock.try_lock) then
             return
           end
           sleep(attrs.try_lock_interval)
@@ -49,7 +161,7 @@ module Tank
     class GiantLockManager < LockManager
       def initialize(*args)
         super
-        @sync = Sync.new
+        @rw_lock = ReadWriteLock.new
       end
 
       class NoWorkLockHandler
@@ -60,17 +172,17 @@ module Tank
         end
       end
 
-      def transaction(read_only)
+      def transaction(read_only=false)
         if (read_only) then
-          mode = Sync::SH
+          lock = @rw_lock.read_lock
         else
-          mode = Sync::EX
+          lock = @rw_lock.write_lock
         end
-        LockManager.try_lock(@sync, mode, self)
+        LockManager.try_lock(lock, self)
         begin
           yield(NoWorkLockHandler.instance)
         ensure
-          @sync.unlock
+          lock.unlock
         end
       end
     end
@@ -78,51 +190,51 @@ module Tank
     class FineGrainLockManager < LockManager
       def initialize(*args)
         super
-        @cache = Cache::SharedWorkCache.new{|key| Sync.new }
+        @cache = Cache::SharedWorkCache.new{|key| ReadWriteLock.new }
       end
 
       class LockHandler
         def initialize(attrs, cache)
           @attrs = attrs
           @cache = cache
-          @locked_keys = []
+          @lock_list = []
         end
 
-        attr_reader :locked_keys
+        attr_reader :lock_list
       end
 
       class ReadOnlyLockHandler < LockHandler
         def lock(key)
-          sync = @cache[key]
-          LockManager.try_lock(sync, Sync::SH, @attrs)
-          @locked_keys << key
+          r_lock = @cache[key].read_lock
+          LockManager.try_lock(r_lock, @attrs)
+          @lock_list << r_lock
           self
         end
       end
 
       class ReadWriteLockHandler < LockHandler
         def lock(key)
-          sync = @cache[key]
-          LockManager.try_lock(sync, Sync::EX, @attrs)
-          @locked_keys << key
+          w_lock = @cache[key].write_lock
+          LockManager.try_lock(w_lock, @attrs)
+          @lock_list << w_lock
           self
         end
       end
 
       def transaction(read_only=false)
         if (read_only) then
-          handler = ReadOnlyLockHandler.new(self, @cache)
+          lock_handler = ReadOnlyLockHandler.new(self, @cache)
         else
-          handler = ReadWriteLockHandler.new(self, @cache)
+          lock_handler = ReadWriteLockHandler.new(self, @cache)
         end
         begin
-          yield(handler)
+          r = yield(lock_handler)
         ensure
-          for key in handler.locked_keys
-            sync = @cache[key]
-            sync.unlock
+          for lock in lock_handler.lock_list
+            lock.unlock
           end
         end
+        r
       end
     end
   end
