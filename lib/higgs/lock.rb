@@ -87,7 +87,7 @@ module Tank
 
     def initialize(*args)
       super
-      @cache = SharedWorkCache.new{|key| Sync.new }
+      @cache = Cache::SharedWorkCache.new{|key| Sync.new }
     end
 
     class LockHandler

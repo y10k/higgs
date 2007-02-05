@@ -5,13 +5,11 @@ require 'tank/cache'
 require 'tank/thread'
 require 'timeout'
 
-Thread.abort_on_exception = true
-
 module Tank::Test
   class SharedWorkCacheTest < RUNIT::TestCase
     def setup
       @calc_calls = 0
-      @cache = Tank::SharedWorkCache.new{|key| calc(key) }
+      @cache = Tank::Cache::SharedWorkCache.new{|key| calc(key) }
     end
 
     def calc(n)
@@ -111,7 +109,7 @@ module Tank::Test
   class SharedWorkCacheNoWorkBlockTest < RUNIT::TestCase
     def test_no_work_block
       assert_exception(RuntimeError) {
-        Tank::SharedWorkCache.new
+        Tank::Cache::SharedWorkCache.new
       }
     end
   end
