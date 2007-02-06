@@ -3,6 +3,7 @@
 require 'rubyunit'
 require 'tank/lock'
 require 'tank/thread'
+require 'thwait'
 
 module Tank::Test
   class ReadWriteLockTest < RUNIT::TestCase
@@ -337,6 +338,63 @@ module Tank::Test
       for t in th_grp.list
         t.join
       end
+    end
+  end
+
+  class FineGrainLockManagerDeadLockTest < RUNIT::TestCase
+    def setup
+      @lock_manager = Tank::Lock::FineGrainLockManager.new(:spin_lock_count   => 10,
+                                                           :try_lock_limit    => 0.1,
+                                                           :try_lock_interval => 0.001)
+    end
+
+    def test_transactin_dead_lock
+      barrier = Tank::Thread::Barrier.new(3)
+
+      m1 = Mutex.new
+      end_of_t1 = false
+
+      m2 = Mutex.new
+      end_of_t2 = false
+
+      t1 = Thread.new{
+        barrier.wait
+        begin
+          until (m2.synchronize{ end_of_t2 })
+            @lock_manager.transaction{|lock_handler|
+              lock_handler.lock(:foo)
+              sleep(0.03)
+              lock_handler.lock(:bar)
+            }
+          end
+        ensure
+          m1.synchronize{ end_of_t1 = true }
+        end
+      }
+
+      t2 = Thread.new{
+        barrier.wait
+        begin
+          until (m1.synchronize{ end_of_t1 })
+            @lock_manager.transaction{|lock_handler|
+              lock_handler.lock(:bar)
+              sleep(0.07)
+              lock_handler.lock(:foo)
+            }
+          end
+        ensure
+          m2.synchronize{ end_of_t2 = true }
+        end
+      }
+
+      barrier.wait
+      assert_exception(Tank::Lock::TryLockTimeoutError) {
+        t1.join
+        t2.join
+      }
+
+      # join threads without exception
+      ThreadsWait.all_waits(t1, t2)
     end
   end
 end

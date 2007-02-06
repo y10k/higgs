@@ -14,7 +14,7 @@ module Tank
     class Error < StandardError
     end
 
-    class TimeoutError < Error
+    class TryLockTimeoutError < Error
     end
 
     class ReadWriteLock
@@ -154,7 +154,7 @@ module Tank
           end
           sleep(attrs.try_lock_interval)
         end
-        raise TimeoutError, 'expired'
+        raise TryLockTimeoutError, 'expired'
       end
     end
 
