@@ -20,28 +20,27 @@ module Tank
     class ReadWriteLock
       def initialize
         @lock = Mutex.new
-        @r_cond = ConditionVariable.new
-        @w_cond = ConditionVariable.new
-        @read_count = 0
-        @write_flag = false
+        @cond = ConditionVariable.new
+        @reading_count = 0
+        @writing_just_now = false
       end
 
       def __read_lock__
         @lock.synchronize{
-          while (@write_flag)
-            @r_cond.wait(@lock)
+          while (@writing_just_now)
+            @cond.wait(@lock)
           end
-          @read_count += 1
+          @reading_count += 1
         }
         nil
       end
 
       def __read_try_lock__
         @lock.synchronize{
-          if (@write_flag) then
+          if (@writing_just_now) then
             return false
           else
-            @read_count += 1
+            @reading_count += 1
             return true
           end
         }
@@ -49,9 +48,9 @@ module Tank
 
       def __read_unlock__
         @lock.synchronize{
-          @read_count -= 1
-          if (@read_count == 0) then
-            @w_cond.signal
+          @reading_count -= 1
+          if (@reading_count == 0) then
+            @cond.broadcast
           end
         }
         nil
@@ -59,20 +58,20 @@ module Tank
 
       def __write_lock__
         @lock.synchronize{
-          while (@write_flag || @read_count > 0)
-            @w_cond.wait(@lock)
+          while (@writing_just_now || @reading_count > 0)
+            @cond.wait(@lock)
           end
-          @write_flag = true
+          @writing_just_now = true
         }
         nil
       end
 
       def __write_try_lock__
         @lock.synchronize{
-          if (@write_flag || @read_count > 0) then
+          if (@writing_just_now || @reading_count > 0) then
             return false
           else
-            @write_flag = true
+            @writing_just_now = true
             return true
           end
         }
@@ -80,9 +79,8 @@ module Tank
 
       def __write_unlock__
         @lock.synchronize{
-          @write_flag = false
-          @w_cond.signal
-          @r_cond.broadcast
+          @writing_just_now = false
+          @cond.broadcast
         }
         nil
       end

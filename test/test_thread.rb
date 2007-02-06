@@ -109,24 +109,25 @@ module Tank::Test
     end
 
     def test_calc_race_condition
-      barrier = Tank::Thread::Barrier.new(3)
-
       a = nil
-      th1 = Thread.new{
-        barrier.wait
-        a = calc
-      }
-
       b = nil
-      th2 = Thread.new{
-        barrier.wait
-        b = calc
-      }
+      begin
+        barrier = Tank::Thread::Barrier.new(3)
 
-      barrier.wait
-      th1.join
-      th2.join
-      assert(a != b)
+        th1 = Thread.new{
+          barrier.wait
+          a = calc
+        }
+
+        th2 = Thread.new{
+          barrier.wait
+          b = calc
+        }
+
+        barrier.wait
+        th1.join
+        th2.join
+      end until (a != b)        # race condition
     end
 
     def test_result
