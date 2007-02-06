@@ -341,6 +341,42 @@ module Tank::Test
     end
   end
 
+  class GiantLockManagerNoDeadLockTest < RUNIT::TestCase
+    WORK_COUNT = 1000
+
+    def setup
+      @lock_manager = Tank::Lock::GiantLockManager.new
+    end
+
+    def test_transaction_no_dead_lock
+      barrier = Tank::Thread::Barrier.new(3)
+
+      t1 = Thread.new{
+        barrier.wait
+        WORK_COUNT.times do
+          @lock_manager.transaction{|lock_handler|
+            lock_handler.lock(:foo)
+            lock_handler.lock(:bar)
+          }
+        end
+      }
+
+      t2 = Thread.new{
+        barrier.wait
+        WORK_COUNT.times do
+          @lock_manager.transaction{|lock_handler|
+            lock_handler.lock(:bar)
+            lock_handler.lock(:foo)
+          }
+        end
+      }
+
+      barrier.wait
+      t1.join
+      t2.join
+    end
+  end
+
   class FineGrainLockManagerDeadLockTest < RUNIT::TestCase
     def setup
       @lock_manager = Tank::Lock::FineGrainLockManager.new(:spin_lock_count   => 10,
@@ -348,7 +384,7 @@ module Tank::Test
                                                            :try_lock_interval => 0.001)
     end
 
-    def test_transactin_dead_lock
+    def test_transaction_dead_lock
       barrier = Tank::Thread::Barrier.new(3)
 
       m1 = Mutex.new
