@@ -264,6 +264,39 @@ module Tank::Test
     def setup
       @lock_manager = Tank::Lock::GiantLockManager.new
     end
+
+    def test_write_read_transaction_multithread
+      count = 0
+      th_grp = ThreadGroup.new
+      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 2)
+
+      th_grp.add Thread.new{
+        @lock_manager.transaction{|lock_handler|
+          lock_handler.lock(:foo)
+          barrier.wait
+          THREAD_COUNT.times do
+            WORK_COUNT.times do
+              count += 1
+            end
+          end
+        }
+      }
+
+      THREAD_COUNT.times{|i|
+        th_grp.add Thread.new{
+          barrier.wait          # different point from FineGrainLockManager
+          @lock_manager.transaction(true) {|lock_handler|
+            lock_handler.lock(:foo)
+            assert_equal(THREAD_COUNT * WORK_COUNT, count, "read transaction: #{i}")
+          }
+        }
+      }
+
+      barrier.wait
+      for t in th_grp.list
+        t.join
+      end
+    end
   end
 
   class FineGrainLockManagerTest < RUNIT::TestCase
@@ -271,6 +304,39 @@ module Tank::Test
 
     def setup
       @lock_manager = Tank::Lock::FineGrainLockManager.new
+    end
+
+    def test_write_read_transaction_multithread
+      count = 0
+      th_grp = ThreadGroup.new
+      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 2)
+
+      th_grp.add Thread.new{
+        @lock_manager.transaction{|lock_handler|
+          lock_handler.lock(:foo)
+          barrier.wait
+          THREAD_COUNT.times do
+            WORK_COUNT.times do
+              count += 1
+            end
+          end
+        }
+      }
+
+      THREAD_COUNT.times{|i|
+        th_grp.add Thread.new{
+          @lock_manager.transaction(true) {|lock_handler|
+            barrier.wait   # different point from GiantLockManager
+            lock_handler.lock(:foo)
+            assert_equal(THREAD_COUNT * WORK_COUNT, count, "read transaction: #{i}")
+          }
+        }
+      }
+
+      barrier.wait
+      for t in th_grp.list
+        t.join
+      end
     end
   end
 end
