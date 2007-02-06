@@ -114,6 +114,39 @@ module Tank::Test
       end
       assert_equal(THREAD_COUNT * WORK_COUNT, count)
     end
+
+    def test_write_read_lock_multithread
+      count = 0
+      th_grp = ThreadGroup.new
+      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 2)
+
+      th_grp.add Thread.new{
+        w_lock = @rw_lock.write_lock
+        w_lock.synchronize{
+          barrier.wait
+          THREAD_COUNT.times do
+            WORK_COUNT.times do
+              count += 1
+            end
+          end
+        }
+      }
+
+      THREAD_COUNT.times{|i|
+        th_grp.add Thread.new{
+          r_lock = @rw_lock.read_lock
+          barrier.wait
+          r_lock.synchronize{
+            assert_equal(THREAD_COUNT * WORK_COUNT, count, "read_lock: #{i}")
+          }
+        }
+      }
+
+      barrier.wait
+      for t in th_grp.list
+        t.join
+      end
+    end
   end
 
   module LockManagerTest
