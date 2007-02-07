@@ -8,7 +8,7 @@ module Higgs::TarTest
   # for ident(1)
   CVS_ID = '$Id$'
 
-  class TarBlockTest < RUNIT::TestCase
+  class BlockTest < RUNIT::TestCase
     include Higgs::Tar
 
     def test_padding_size
@@ -122,7 +122,7 @@ module Higgs::TarTest
     end
   end
 
-  class ReaderTest < RUNIT::TestCase
+  class ArchiveReaderTest < RUNIT::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
 
@@ -139,7 +139,7 @@ module Higgs::TarTest
 
       # target
       @input = open_for_read('foo.tar')
-      @tar = Reader.new(@input)
+      @tar = ArchiveReader.new(@input)
     end
 
     def teardown
@@ -217,13 +217,13 @@ module Higgs::TarTest
     end
   end
 
-  class ReaderSyscallTest < ReaderTest
+  class ArchiveReaderSyscallTest < ArchiveReaderTest
     def open_for_read(filename)
       RawIO.new(File.open(filename, 'rb'))
     end
   end
 
-  class WriterTest < RUNIT::TestCase
+  class ArchiveWriterTest < RUNIT::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
 
@@ -238,7 +238,7 @@ module Higgs::TarTest
 
       # target
       @output = open_for_write('foo.tar')
-      @tar = Writer.new(@output)
+      @tar = ArchiveWriter.new(@output)
     end
 
     def teardown
@@ -256,7 +256,7 @@ module Higgs::TarTest
       @tar.close
       assert(@output.closed?)
       File.open('foo.tar') {|r|
-        tar = Reader.new(r)
+        tar = ArchiveReader.new(r)
 	count = 0
 	for head_and_body in tar
 	  case (count)
@@ -293,21 +293,21 @@ module Higgs::TarTest
     end
   end
 
-  class WriterSyscallTest < WriterTest
+  class ArchiveWriterSyscallTest < ArchiveWriterTest
     def open_for_write(filename)
       RawIO.new(File.open(filename, 'wb'))
     end
   end
 
-  class HeaderTest < RUNIT::TestCase
+  class ArchiveHeaderTest < RUNIT::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
 
     def setup
       @output = File.open('foo.tar', 'wb')
       @input = File.open('foo.tar', 'rb')
-      @writer = Writer.new(@output)
-      @reader = Reader.new(@input)
+      @writer = ArchiveWriter.new(@output)
+      @reader = ArchiveReader.new(@input)
     end
 
     def teardown

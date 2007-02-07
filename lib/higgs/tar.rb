@@ -143,7 +143,7 @@ module Higgs
       def_delegator :@io, :closed?
     end
 
-    class Reader < IOHandler
+    class ArchiveReader < IOHandler
       include Enumerable
 
       def read_header(skip_body=false)
@@ -242,7 +242,7 @@ module Higgs
       end
     end
 
-    class Writer < IOHandler
+    class ArchiveWriter < IOHandler
       include Block
 
       def write_header(head)
