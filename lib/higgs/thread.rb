@@ -95,5 +95,114 @@ module Higgs
         @result
       end
     end
+
+    class ReadWriteLock
+      def initialize
+        @lock = Mutex.new
+        @cond = ConditionVariable.new
+        @reading_count = 0
+        @writing_just_now = false
+      end
+
+      def __read_lock__
+        @lock.synchronize{
+          while (@writing_just_now)
+            @cond.wait(@lock)
+          end
+          @reading_count += 1
+        }
+        nil
+      end
+
+      def __read_try_lock__
+        @lock.synchronize{
+          if (@writing_just_now) then
+            return false
+          else
+            @reading_count += 1
+            return true
+          end
+        }
+      end
+
+      def __read_unlock__
+        @lock.synchronize{
+          @reading_count -= 1
+          if (@reading_count == 0) then
+            @cond.broadcast
+          end
+        }
+        nil
+      end
+
+      def __write_lock__
+        @lock.synchronize{
+          while (@writing_just_now || @reading_count > 0)
+            @cond.wait(@lock)
+          end
+          @writing_just_now = true
+        }
+        nil
+      end
+
+      def __write_try_lock__
+        @lock.synchronize{
+          if (@writing_just_now || @reading_count > 0) then
+            return false
+          else
+            @writing_just_now = true
+            return true
+          end
+        }
+      end
+
+      def __write_unlock__
+        @lock.synchronize{
+          @writing_just_now = false
+          @cond.broadcast
+        }
+        nil
+      end
+
+      class ChildLock
+        def initialize(rw_lock)
+          @rw_lock = rw_lock
+        end
+
+        def synchronize
+          lock
+          begin
+            r = yield
+          ensure
+            unlock
+          end
+          r
+        end
+      end
+
+      class ReadLock < ChildLock
+        extend Forwardable
+
+        def_delegator :@rw_lock, :__read_lock__,     :lock
+        def_delegator :@rw_lock, :__read_try_lock__, :try_lock
+        def_delegator :@rw_lock, :__read_unlock__,   :unlock
+      end
+
+      class WriteLock < ChildLock
+        extend Forwardable
+
+        def_delegator :@rw_lock, :__write_lock__,     :lock
+        def_delegator :@rw_lock, :__write_try_lock__, :try_lock
+        def_delegator :@rw_lock, :__write_unlock__,   :unlock
+      end
+
+      def read_lock
+        ReadLock.new(self)
+      end
+
+      def write_lock
+        WriteLock.new(self)
+      end
+    end
   end
 end
