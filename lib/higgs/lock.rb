@@ -126,15 +126,29 @@ module Higgs
     end
 
     class LockManager
+      RAND_GEN = proc{|seed|
+        n = seed
+        cycle = 0xFFFF
+        proc{
+          n = (n * 37549 + 12345) % cycle
+          n.to_f / cycle
+        }
+      }
+
       def initialize(options={})
         @spin_lock_count = options[:spin_lock_count] || 1000
         @try_lock_limit = options[:try_lock_limit] || 10
         @try_lock_interval = options[:try_lock_interval] || 0.1
+        @rand_gen = options[:random_number_generator] || RAND_GEN
       end
 
       attr_reader :spin_lock_count
       attr_reader :try_lock_limit
       attr_reader :try_lock_interval
+
+      def new_rand(seed)
+        @rand_gen.call(seed)
+      end
 
       def self.try_lock(lock, attrs)
         t0 = Time.now
@@ -145,11 +159,12 @@ module Higgs
           end
           c -= 1
         end
+        rand = attrs.new_rand(::Thread.current.object_id ^ t0.to_i)
         while (Time.now - t0 < attrs.try_lock_limit)
           if (lock.try_lock) then
             return
           end
-          sleep(attrs.try_lock_interval)
+          sleep(attrs.try_lock_interval * rand.call)
         end
         raise TryLockTimeoutError, 'expired'
       end
