@@ -17,6 +17,10 @@ module Higgs
     end
 
     class LockManager
+      SPIN_LOCK_COUNT = 100
+      TRY_LOCK_LIMIT = 10
+      TRY_LOCK_INTERVAL = 0.05
+
       RAND_GEN = proc{|seed|
         n = seed
         cycle = 0xFFFF
@@ -27,9 +31,9 @@ module Higgs
       }
 
       def initialize(options={})
-        @spin_lock_count = options[:spin_lock_count] || 1000
-        @try_lock_limit = options[:try_lock_limit] || 10
-        @try_lock_interval = options[:try_lock_interval] || 0.1
+        @spin_lock_count = options[:spin_lock_count] || SPIN_LOCK_COUNT
+        @try_lock_limit = options[:try_lock_limit] || TRY_LOCK_LIMIT
+        @try_lock_interval = options[:try_lock_interval] || TRY_LOCK_INTERVAL
         @rand_gen = options[:random_number_generator] || RAND_GEN
       end
 
