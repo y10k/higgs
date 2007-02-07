@@ -4,18 +4,19 @@ require 'higgs/thread'
 require 'rubyunit'
 require 'timeout'
 
-module Higgs::Test
-  class ThreadLatchTest < RUNIT::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
+module Higgs::ThreadTest
+  # for ident(1)
+  CVS_ID = '$Id$'
 
+  class LatchTest < RUNIT::TestCase
+    include Higgs::Thread
     include Timeout
 
     NUM_OF_THREADS = 10
     DELTA_T = 0.1
 
     def test_start_wait
-      latch = Higgs::Thread::Latch.new
+      latch = Latch.new
 
       lock = Mutex.new
       count = 0
@@ -40,17 +41,15 @@ module Higgs::Test
     end
   end
 
-  class ThreadBarrierTest < RUNIT::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
-
+  class BarrierTest < RUNIT::TestCase
+    include Higgs::Thread
     include Timeout
 
     NUM_OF_THREADS = 10
     DELTA_T = 0.1
 
     def test_wait
-      barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS)
+      barrier = Barrier.new(NUM_OF_THREADS)
 
       lock = Mutex.new
       count = 0
@@ -79,16 +78,14 @@ module Higgs::Test
     end
 
     def test_not_recycle
-      barrier = Higgs::Thread::Barrier.new(1)
+      barrier = Barrier.new(1)
       barrier.wait
       assert_exception(RuntimeError) { barrier.wait }
     end
   end
 
-  class ThreadSharedWorkTest < RUNIT::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
-
+  class SharedWorkTest < RUNIT::TestCase
+    include Higgs::Thread
     include Timeout
 
     NUM_OF_THREADS = 10
@@ -112,7 +109,7 @@ module Higgs::Test
       a = nil
       b = nil
       begin
-        barrier = Higgs::Thread::Barrier.new(3)
+        barrier = Barrier.new(3)
 
         th1 = Thread.new{
           barrier.wait
@@ -133,13 +130,13 @@ module Higgs::Test
     def test_result
       expected_result = calc
 
-      latch = Higgs::Thread::Latch.new
-      work = Higgs::Thread::SharedWork.new{
+      latch = Latch.new
+      work = SharedWork.new{
         latch.wait
         calc
       }
 
-      barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS + 1)
+      barrier = Barrier.new(NUM_OF_THREADS + 1)
       lock = Mutex.new
       count = 0
 
@@ -166,9 +163,7 @@ module Higgs::Test
     end
 
     def test_no_work_block
-      assert_exception(RuntimeError) {
-        Higgs::Thread::SharedWork.new
-      }
+      assert_exception(RuntimeError) { SharedWork.new }
     end
   end
 end

@@ -5,11 +5,16 @@ require 'higgs/thread'
 require 'rubyunit'
 require 'timeout'
 
-module Higgs::Test
+module Higgs::CacheTest
+  # for ident(1)
+  CVS_ID = '$Id$'
+
   class SharedWorkCacheTest < RUNIT::TestCase
+    include Higgs::Cache
+
     def setup
       @calc_calls = 0
-      @cache = Higgs::Cache::SharedWorkCache.new{|key| calc(key) }
+      @cache = SharedWorkCache.new{|key| calc(key) }
     end
 
     def calc(n)
@@ -107,9 +112,11 @@ module Higgs::Test
   end
 
   class SharedWorkCacheNoWorkBlockTest < RUNIT::TestCase
+    include Higgs::Cache
+
     def test_no_work_block
       assert_exception(RuntimeError) {
-        Higgs::Cache::SharedWorkCache.new
+        SharedWorkCache.new
       }
     end
   end
