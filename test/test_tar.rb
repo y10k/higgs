@@ -1,30 +1,30 @@
 #!/usr/local/bin/ruby
 
 require 'fileutils'
+require 'higgs/tar'
 require 'rubyunit'
-require 'tank/tar'
 
-module Tank::Test
+module Higgs::Test
   class TarBlockTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 
     def test_padding_size
-      assert_equal(0,   Tank::Tar::Block.padding_size(0))
+      assert_equal(0,   Higgs::Tar::Block.padding_size(0))
 
-      assert_equal(511, Tank::Tar::Block.padding_size(1))
-      assert_equal(510, Tank::Tar::Block.padding_size(2))
-      assert_equal(509, Tank::Tar::Block.padding_size(3))
+      assert_equal(511, Higgs::Tar::Block.padding_size(1))
+      assert_equal(510, Higgs::Tar::Block.padding_size(2))
+      assert_equal(509, Higgs::Tar::Block.padding_size(3))
 
-      assert_equal(3,   Tank::Tar::Block.padding_size(509))
-      assert_equal(2,   Tank::Tar::Block.padding_size(510))
-      assert_equal(1,   Tank::Tar::Block.padding_size(511))
+      assert_equal(3,   Higgs::Tar::Block.padding_size(509))
+      assert_equal(2,   Higgs::Tar::Block.padding_size(510))
+      assert_equal(1,   Higgs::Tar::Block.padding_size(511))
 
-      assert_equal(0,   Tank::Tar::Block.padding_size(512))
+      assert_equal(0,   Higgs::Tar::Block.padding_size(512))
 
-      assert_equal(511, Tank::Tar::Block.padding_size(513))
-      assert_equal(510, Tank::Tar::Block.padding_size(514))
-      assert_equal(509, Tank::Tar::Block.padding_size(515))
+      assert_equal(511, Higgs::Tar::Block.padding_size(513))
+      assert_equal(510, Higgs::Tar::Block.padding_size(514))
+      assert_equal(509, Higgs::Tar::Block.padding_size(515))
     end
 
     def test_tar?
@@ -35,10 +35,10 @@ module Tank::Test
         system('tar cf foo.tar foo baz') # required unix tar command
 
         assert((File.exist? 'foo.tar'))
-        assert_equal(true,  (Tank::Tar::Block.tar? 'foo.tar'))
-        assert_equal(false, (Tank::Tar::Block.tar? 'foo'))
-        assert_equal(false, (Tank::Tar::Block.tar? 'foo/bar'))
-        assert_equal(false, (Tank::Tar::Block.tar? 'baz'))
+        assert_equal(true,  (Higgs::Tar::Block.tar? 'foo.tar'))
+        assert_equal(false, (Higgs::Tar::Block.tar? 'foo'))
+        assert_equal(false, (Higgs::Tar::Block.tar? 'foo/bar'))
+        assert_equal(false, (Higgs::Tar::Block.tar? 'baz'))
       ensure
         FileUtils.rm_f %w[ foo.tar foo/bar baz ]
         FileUtils.rm_rf('foo')
@@ -114,7 +114,7 @@ module Tank::Test
 
   class IOSysreadTest < IOReadTest
     def open_for_read(filename)
-      Tank::Tar::RawIO.new(File.open(filename, 'rb'))
+      Higgs::Tar::RawIO.new(File.open(filename, 'rb'))
     end
   end
 
@@ -122,7 +122,7 @@ module Tank::Test
     # for ident(1)
     CVS_ID = '$Id$'
 
-    include Tank::Tar::Block
+    include Higgs::Tar::Block
 
     def open_for_read(filename)
       File.open(filename, 'rb')
@@ -137,7 +137,7 @@ module Tank::Test
 
       # target
       @input = open_for_read('foo.tar')
-      @tar = Tank::Tar::Reader.new(@input)
+      @tar = Higgs::Tar::Reader.new(@input)
     end
 
     def teardown
@@ -220,12 +220,12 @@ module Tank::Test
     CVS_ID = '$Id$'
 
     def open_for_read(filename)
-      Tank::Tar::RawIO.new(File.open(filename, 'rb'))
+      Higgs::Tar::RawIO.new(File.open(filename, 'rb'))
     end
   end
 
   class TarWriterTest < RUNIT::TestCase
-    include Tank::Tar::Block
+    include Higgs::Tar::Block
 
     def open_for_write(filename)
       File.open(filename, 'wb')
@@ -238,7 +238,7 @@ module Tank::Test
 
       # target
       @output = open_for_write('foo.tar')
-      @tar = Tank::Tar::Writer.new(@output)
+      @tar = Higgs::Tar::Writer.new(@output)
     end
 
     def teardown
@@ -256,7 +256,7 @@ module Tank::Test
       @tar.close
       assert(@output.closed?)
       File.open('foo.tar') {|r|
-        tar = Tank::Tar::Reader.new(r)
+        tar = Higgs::Tar::Reader.new(r)
 	count = 0
 	for head_and_body in tar
 	  case (count)
@@ -295,18 +295,18 @@ module Tank::Test
 
   class TarWriterSyscallTest < TarWriterTest
     def open_for_write(filename)
-      Tank::Tar::RawIO.new(File.open(filename, 'wb'))
+      Higgs::Tar::RawIO.new(File.open(filename, 'wb'))
     end
   end
 
   class TarHeaderTest < RUNIT::TestCase
-    include Tank::Tar::Block
+    include Higgs::Tar::Block
 
     def setup
       @output = File.open('foo.tar', 'wb')
       @input = File.open('foo.tar', 'rb')
-      @writer = Tank::Tar::Writer.new(@output)
-      @reader = Tank::Tar::Reader.new(@input)
+      @writer = Higgs::Tar::Writer.new(@output)
+      @reader = Higgs::Tar::Reader.new(@input)
     end
 
     def teardown
@@ -317,21 +317,21 @@ module Tank::Test
 
     def test_read_header_FormatError_unexpected_EOF
       assert_equal(0, @input.stat.size)
-      assert_exception(Tank::Tar::FormatError) { @reader.read_header }
+      assert_exception(Higgs::Tar::FormatError) { @reader.read_header }
     end
 
     def test_read_header_FormatError_too_short_header
       @output.write("foo\n")
       @output.flush
       assert_equal(4, @input.stat.size)
-      assert_exception(Tank::Tar::FormatError) { @reader.read_header }
+      assert_exception(Higgs::Tar::FormatError) { @reader.read_header }
     end
 
     def test_read_header_FormatError_not_of_EOA
       @output.write("\0" * BLKSIZ)
       @output.flush
       assert_equal(BLKSIZ, @input.stat.size)
-      assert_exception(Tank::Tar::FormatError) { @reader.read_header }
+      assert_exception(Higgs::Tar::FormatError) { @reader.read_header }
     end
 
     def test_read_header_typeflag_AREGTYPE
@@ -348,7 +348,7 @@ module Tank::Test
       @writer.add('foo', "Hello world.\n", :magic => 'unknown')
       @output.flush
       assert_equal(BLKSIZ * 2, @input.stat.size)
-      assert_exception(Tank::Tar::MagicError) { @reader.read_header }
+      assert_exception(Higgs::Tar::MagicError) { @reader.read_header }
       assert_equal(BLKSIZ, @input.pos)
     end
 
@@ -356,7 +356,7 @@ module Tank::Test
       @writer.add('foo', "Hello world.\n", :chksum => 0)
       @output.flush
       assert_equal(BLKSIZ * 2, @input.stat.size)
-      assert_exception(Tank::Tar::CheckSumError) { @reader.read_header }
+      assert_exception(Higgs::Tar::CheckSumError) { @reader.read_header }
       assert_equal(BLKSIZ, @input.pos)
     end
 

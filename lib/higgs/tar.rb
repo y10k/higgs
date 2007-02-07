@@ -2,7 +2,7 @@
 
 require 'forwardable'
 
-module Tank
+module Higgs
   module Tar
     # for ident(1)
     CVS_ID = '$Id$'

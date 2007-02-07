@@ -1,6 +1,6 @@
 # $Id$
 
-module Tank
-  # for idnet(1)
+module Higgs
+  # for ident(1)
   CVS_ID = '$Id$'
 end

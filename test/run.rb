@@ -2,12 +2,8 @@
 
 $: << File.join(File.dirname($0), '..', 'lib')
 
-require 'tank'
-
-module Tank::Test
-  # for ident(1)
-  CVS_ID = '$Id$'
-end
+# for ident(1)
+CVS_ID = '$Id$'
 
 mask = //                       # any match
 if ($0 == __FILE__) then

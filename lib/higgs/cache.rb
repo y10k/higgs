@@ -1,9 +1,9 @@
 # $Id$
 
-require 'tank/thread'
+require 'higgs/thread'
 require 'thread'
 
-module Tank
+module Higgs
   module Cache
     # for ident(1)
     CVS_ID = '$Id$'

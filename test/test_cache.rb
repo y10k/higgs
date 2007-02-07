@@ -1,15 +1,15 @@
-# $Id$
+#!/usr/local/bin/ruby
 
+require 'higgs/cache'
+require 'higgs/thread'
 require 'rubyunit'
-require 'tank/cache'
-require 'tank/thread'
 require 'timeout'
 
-module Tank::Test
+module Higgs::Test
   class SharedWorkCacheTest < RUNIT::TestCase
     def setup
       @calc_calls = 0
-      @cache = Tank::Cache::SharedWorkCache.new{|key| calc(key) }
+      @cache = Higgs::Cache::SharedWorkCache.new{|key| calc(key) }
     end
 
     def calc(n)
@@ -63,7 +63,7 @@ module Tank::Test
     WORK_COUNT = 10000
 
     def test_calc_race_condition
-      barrier = Tank::Thread::Barrier.new(3)
+      barrier = Higgs::Thread::Barrier.new(3)
 
       a = nil
       th1 = Thread.new{
@@ -87,7 +87,7 @@ module Tank::Test
       expected_result = calc(WORK_COUNT)
       assert_equal(1, @calc_calls)
 
-      barrier = Tank::Thread::Barrier.new(NUM_OF_THREADS + 1)
+      barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS + 1)
       th_grp = ThreadGroup.new
       NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
         th_grp.add Thread.new{
@@ -109,7 +109,7 @@ module Tank::Test
   class SharedWorkCacheNoWorkBlockTest < RUNIT::TestCase
     def test_no_work_block
       assert_exception(RuntimeError) {
-        Tank::Cache::SharedWorkCache.new
+        Higgs::Cache::SharedWorkCache.new
       }
     end
   end

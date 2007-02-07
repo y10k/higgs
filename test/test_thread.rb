@@ -1,10 +1,10 @@
 #!/usr/local/bin/ruby
 
+require 'higgs/thread'
 require 'rubyunit'
-require 'tank/thread'
 require 'timeout'
 
-module Tank::Test
+module Higgs::Test
   class ThreadLatchTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
@@ -15,7 +15,7 @@ module Tank::Test
     DELTA_T = 0.1
 
     def test_start_wait
-      latch = Tank::Thread::Latch.new
+      latch = Higgs::Thread::Latch.new
 
       lock = Mutex.new
       count = 0
@@ -50,7 +50,7 @@ module Tank::Test
     DELTA_T = 0.1
 
     def test_wait
-      barrier = Tank::Thread::Barrier.new(NUM_OF_THREADS)
+      barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS)
 
       lock = Mutex.new
       count = 0
@@ -79,7 +79,7 @@ module Tank::Test
     end
 
     def test_not_recycle
-      barrier = Tank::Thread::Barrier.new(1)
+      barrier = Higgs::Thread::Barrier.new(1)
       barrier.wait
       assert_exception(RuntimeError) { barrier.wait }
     end
@@ -112,7 +112,7 @@ module Tank::Test
       a = nil
       b = nil
       begin
-        barrier = Tank::Thread::Barrier.new(3)
+        barrier = Higgs::Thread::Barrier.new(3)
 
         th1 = Thread.new{
           barrier.wait
@@ -133,13 +133,13 @@ module Tank::Test
     def test_result
       expected_result = calc
 
-      latch = Tank::Thread::Latch.new
-      work = Tank::Thread::SharedWork.new{
+      latch = Higgs::Thread::Latch.new
+      work = Higgs::Thread::SharedWork.new{
         latch.wait
         calc
       }
 
-      barrier = Tank::Thread::Barrier.new(NUM_OF_THREADS + 1)
+      barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS + 1)
       lock = Mutex.new
       count = 0
 
@@ -167,7 +167,7 @@ module Tank::Test
 
     def test_no_work_block
       assert_exception(RuntimeError) {
-        Tank::Thread::SharedWork.new
+        Higgs::Thread::SharedWork.new
       }
     end
   end

@@ -2,7 +2,7 @@
 
 require 'thread'
 
-module Tank
+module Higgs
   module Thread
     # for ident(1)
     CVS_ID = '$Id$'

@@ -1,17 +1,17 @@
 #!/usr/local/bin/ruby
 
+require 'higgs/lock'
+require 'higgs/thread'
 require 'rubyunit'
-require 'tank/lock'
-require 'tank/thread'
 require 'thwait'
 
-module Tank::Test
+module Higgs::Test
   class ReadWriteLockTest < RUNIT::TestCase
     WORK_COUNT = 100
     THREAD_COUNT = 10
 
     def setup
-      @rw_lock = Tank::Lock::ReadWriteLock.new
+      @rw_lock = Higgs::Lock::ReadWriteLock.new
     end
 
     def test_read_lock_single_thread
@@ -36,7 +36,7 @@ module Tank::Test
     def test_read_lock_multithread
       v = "foo"
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 1)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT + 1)
 
       THREAD_COUNT.times{|i|
         th_grp.add Thread.new{
@@ -59,7 +59,7 @@ module Tank::Test
     def test_write_lock_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 1)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT + 1)
 
       THREAD_COUNT.times do
         th_grp.add Thread.new{
@@ -83,7 +83,7 @@ module Tank::Test
     def test_read_write_lock_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT * 2 + 1)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT * 2 + 1)
 
       THREAD_COUNT.times{|i|
         th_grp.add Thread.new{
@@ -119,7 +119,7 @@ module Tank::Test
     def test_write_read_lock_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 2)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT + 2)
 
       th_grp.add Thread.new{
         w_lock = @rw_lock.write_lock
@@ -178,7 +178,7 @@ module Tank::Test
     def test_read_transaction_multithread
       v = "foo"
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 1)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT + 1)
 
       THREAD_COUNT.times{|i|
         th_grp.add Thread.new{
@@ -201,7 +201,7 @@ module Tank::Test
     def test_write_transaction_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 1)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT + 1)
 
       THREAD_COUNT.times do
         th_grp.add Thread.new{
@@ -225,7 +225,7 @@ module Tank::Test
     def test_read_write_transaction_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT * 2 + 1)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT * 2 + 1)
 
       THREAD_COUNT.times{|i|
         th_grp.add Thread.new{
@@ -263,13 +263,13 @@ module Tank::Test
     include LockManagerTest
 
     def setup
-      @lock_manager = Tank::Lock::GiantLockManager.new
+      @lock_manager = Higgs::Lock::GiantLockManager.new
     end
 
     def test_write_read_transaction_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 2)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT + 2)
 
       th_grp.add Thread.new{
         @lock_manager.transaction{|lock_handler|
@@ -304,13 +304,13 @@ module Tank::Test
     include LockManagerTest
 
     def setup
-      @lock_manager = Tank::Lock::FineGrainLockManager.new
+      @lock_manager = Higgs::Lock::FineGrainLockManager.new
     end
 
     def test_write_read_transaction_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Tank::Thread::Barrier.new(THREAD_COUNT + 2)
+      barrier = Higgs::Thread::Barrier.new(THREAD_COUNT + 2)
 
       th_grp.add Thread.new{
         @lock_manager.transaction{|lock_handler|
@@ -345,11 +345,11 @@ module Tank::Test
     WORK_COUNT = 1000
 
     def setup
-      @lock_manager = Tank::Lock::GiantLockManager.new
+      @lock_manager = Higgs::Lock::GiantLockManager.new
     end
 
     def test_transaction_no_dead_lock
-      barrier = Tank::Thread::Barrier.new(3)
+      barrier = Higgs::Thread::Barrier.new(3)
 
       t1 = Thread.new{
         barrier.wait
@@ -379,13 +379,13 @@ module Tank::Test
 
   class FineGrainLockManagerDeadLockTest < RUNIT::TestCase
     def setup
-      @lock_manager = Tank::Lock::FineGrainLockManager.new(:spin_lock_count   => 10,
+      @lock_manager = Higgs::Lock::FineGrainLockManager.new(:spin_lock_count   => 10,
                                                            :try_lock_limit    => 0.1,
                                                            :try_lock_interval => 0.001)
     end
 
     def test_transaction_dead_lock
-      barrier = Tank::Thread::Barrier.new(3)
+      barrier = Higgs::Thread::Barrier.new(3)
 
       m1 = Mutex.new
       end_of_t1 = false
@@ -424,7 +424,7 @@ module Tank::Test
       }
 
       barrier.wait
-      assert_exception(Tank::Lock::TryLockTimeoutError) {
+      assert_exception(Higgs::Lock::TryLockTimeoutError) {
         t1.join
         t2.join
       }

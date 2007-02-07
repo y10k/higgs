@@ -6,7 +6,7 @@ CVS_ID = '$Id$'
 LIB_DIR = 'lib'
 TEST_DIR = 'test'
 RDOC_DIR = 'api'
-RDOC_MAIN = 'gluon.rb'
+RDOC_MAIN = 'higgs.rb'
 
 def cd_v(dir)
   cd(dir, :verbose => true) {

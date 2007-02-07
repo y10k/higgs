@@ -1,12 +1,11 @@
 # $Id$
 
 require 'forwardable'
+require 'higgs/cache'
 require 'singleton'
-require 'tank'
-require 'tank/cache'
 require 'thread'
 
-module Tank
+module Higgs
   module Lock
     # for ident(1)
     CVS_ID = '$Id$'
