@@ -19,7 +19,7 @@ module Higgs
     class LockManager
       SPIN_LOCK_COUNT = 100
       TRY_LOCK_LIMIT = 10
-      TRY_LOCK_INTERVAL = 0.05
+      TRY_LOCK_INTERVAL = 0.1
 
       RAND_GEN = proc{|seed|
         n = seed
