@@ -1,7 +1,7 @@
 # $Id$
 
 module Higgs
-  class Index
+  module Index
     # for ident(1)
     CVS_ID = '$Id$'
   end
