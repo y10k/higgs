@@ -32,6 +32,33 @@ module Higgs
       end
     end
 
+    class CountDownLatch
+      def initialize(count)
+        @count = count
+        @lock = Mutex.new
+        @cond = ConditionVariable.new
+      end
+
+      def count_down
+        @lock.synchronize{
+          if (@count > 0) then
+            @count -= 1
+            @cond.broadcast 
+          end
+        }
+        nil
+      end
+
+      def wait
+        @lock.synchronize{
+          while (@count > 0)
+            @cond.wait(@lock)
+          end
+        }
+        nil
+      end
+    end
+
     class Barrier
       def initialize(count)
         @count = count
@@ -202,6 +229,73 @@ module Higgs
 
       def write_lock
         WriteLock.new(self)
+      end
+    end
+
+    class Pool
+      class ShutdownException < Exception
+      end
+
+      def initialize(size)
+        @size = size
+        @running = true
+        @queue = []
+        @q_lock = Mutex.new
+        @q_cond = ConditionVariable.new
+        @size.times do
+          @queue << yield
+        end
+      end
+
+      attr_reader :size
+
+      def fetch
+        @q_lock.synchronize{
+          loop do
+            unless (@running) then
+              @q_cond.signal unless @queue.empty?
+              raise ShutdownException, 'pool shutdown'
+            end
+            if (@queue.empty?) then
+              @q_cond.wait(@q_lock)
+            else
+              break
+            end
+          end
+          @queue.shift
+        }
+      end
+
+      def restore(obj)
+        @q_lock.synchronize{
+          @queue.push(obj)
+          @q_cond.signal
+        }
+        nil
+      end
+
+      def transaction
+        obj = fetch
+        begin
+          r = yield(obj)
+        ensure
+          restore(obj)
+        end
+        r
+      end
+
+      def shutdown
+        @size.times do
+          obj = @q_lock.synchronize{
+            @running = false
+            while (@queue.empty?)
+              @q_cond.wait(@q_lock)
+            end
+            @queue.shift
+          }
+          yield(obj) if block_given?
+        end
+        nil
       end
     end
   end
