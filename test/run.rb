@@ -1,5 +1,6 @@
 #!/usr/local/bin/ruby
 
+$: << File.join(File.dirname($0))
 $: << File.join(File.dirname($0), '..', 'lib')
 
 # for ident(1)
