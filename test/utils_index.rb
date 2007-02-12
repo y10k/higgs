@@ -32,7 +32,11 @@ module Higgs::IndexTest
     WORK_COUNT = 100
     THREAD_COUNT = 10
 
-    def test_read_write_single_thread
+    # assumed DB methods:
+    #   * db[key]
+    #   * db[key] = value
+    #
+    def test_read_write
       db_write_open{|db|
         db['foo'] = '0'
         assert_equal('0', db['foo'])
@@ -53,6 +57,10 @@ module Higgs::IndexTest
       end
     end
 
+    # assumed DB methods:
+    #   * db[key]
+    #   * db[key] = value
+    #
     def test_read_write_multithread
       db_write_open{|db|
         barrier = Barrier.new(THREAD_COUNT + 1)
@@ -87,6 +95,49 @@ module Higgs::IndexTest
           key = "th#{i}"
           assert_equal(WORK_COUNT.to_s, db[key], key)
         end
+      }
+    end
+
+    # assumed DB methods:
+    #   * db.key?
+    #
+    def test_key
+      db_write_open{|db|
+        assert_equal(false, (db.key? 'foo'))
+        assert_equal(nil, db['foo'])
+      }
+      db_read_open{|db|
+        assert_equal(false, (db.key? 'foo'))
+        assert_equal(nil, db['foo'])
+      }
+      db_write_open{|db|
+        db['foo'] = 'HALO'
+        assert_equal(true, (db.key? 'foo'))
+        assert_equal('HALO', db['foo'])
+      }
+      db_read_open{|db|
+        assert_equal(true, (db.key? 'foo'))
+        assert_equal('HALO', db['foo'])
+      }
+    end
+
+    # assumed DB methods:
+    #   * db.delete(key)
+    #
+    def test_delete
+      db_write_open{|db|
+        db['foo'] = 'HALO'
+        assert_equal(true, (db.key? 'foo'))
+        assert_equal('HALO', db['foo'])
+      }
+      db_read_open{|db|
+        assert_equal(true, (db.key? 'foo'))
+        assert_equal('HALO', db['foo'])
+      }
+      db_write_open{|db|
+        db.delete('foo')
+        assert_equal(false, (db.key? 'foo'))
+        assert_equal(nil, db['foo'])
       }
     end
   end
