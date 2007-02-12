@@ -253,7 +253,7 @@ module Higgs
         @q_lock.synchronize{
           loop do
             unless (@running) then
-              @q_cond.signal unless @queue.empty?
+              @q_cond.signal unless @queue.empty? # for shutdown
               raise ShutdownException, 'pool shutdown'
             end
             if (@queue.empty?) then
