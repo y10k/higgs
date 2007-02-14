@@ -44,7 +44,7 @@ module Higgs::StorageTest
     end
 
     def teardown
-      #FileUtils.rm_rf(@tmp_dir)
+      FileUtils.rm_rf(@tmp_dir)
     end
 
     def test_storage
