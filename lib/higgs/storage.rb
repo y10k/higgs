@@ -85,21 +85,19 @@ module Higgs
 
       data = storage_information.to_yaml
       properties = {
-        'hash' => Digest::SHA2.hexdigest(data),
+        'hash' => Digest::SHA256.hexdigest(data),
         'created_time' => Time.now,
         'custom_properties' => {}
       }
 
-      @idx_db['d:.higgs'] = 0
-      @w_tar.add(data,
-                 :name => '.higgs',
-                 :mtime => properties['created_time'])
+      @idx_db['d:.higgs'] = 0.to_s
+      @w_tar.add('.higgs', data, :mtime => properties['created_time'])
 
-      @idx_db['p:.higgs'] = @w_tar.pos
-      @w_tar.add(properties.to_yaml,
-                 :name => '.higgs.properties',
-                 :mtime => properties['created_time'])
-      @idx_db['EOA'] = @w_tar.pos
+      @idx_db['p:.higgs'] = @w_tar.pos.to_s
+      @w_tar.add('.higgs.properties', properties.to_yaml, :mtime => properties['created_time'])
+      @idx_db['EOA'] = @w_tar.pos.to_s
+
+      @w_tar.write_EOA
 
       @w_tar.fsync
       @idx_db.sync

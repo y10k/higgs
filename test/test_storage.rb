@@ -1,5 +1,6 @@
 #!/usr/local/bin/ruby
 
+require 'fileutils'
 require 'higgs/storage'
 require 'rubyunit'
 
@@ -38,6 +39,22 @@ module Higgs::StorageTest
     def test_init_options_lock_manager
       init_options(:lock_manager => :dummy_lock_manager)
       assert_equal(:dummy_lock_manager, @lock_manager)
+    end
+  end
+
+  class StorageTest < RUNIT::TestCase
+    def setup
+      @tmp_dir = 'storage_tmp'
+      FileUtils.mkdir_p(@tmp_dir)
+      @name = File.join(@tmp_dir, 'storage_test')
+    end
+
+    def teardown
+      FileUtils.rm_rf(@tmp_dir)
+    end
+
+    def test_storage
+      s = Higgs::Storage.new(@name)
     end
   end
 end
