@@ -72,12 +72,12 @@ module Higgs
         },
         'cvs_id' => '$Id$',
         'build_time' => Time.now,
-        'hash_type' => 'SHA256'
+        'hash_type' => 'SHA512'
       }
 
       data = storage_information.to_yaml
       properties = {
-        'hash' => Digest::SHA256.hexdigest(data),
+        'hash' => Digest::SHA512.hexdigest(data),
         'created_time' => Time.now,
         'custom_properties' => {}
       }
