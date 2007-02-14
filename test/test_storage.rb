@@ -71,5 +71,16 @@ module Higgs::StorageTest
       assert_instance_of(Time, properties['created_time'])
       assert_equal({}, properties['custom_properties'])
     end
+
+    def write_and_fetch
+      assert_nil(@s.fetch('foo'))
+      assert_nil(@s.fetch_properties('foo'))
+
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+
+      assert_equal("Hello world.\n", @s.fetch('foo'))
+      properties = @s.fetch_properties('foo')
+      assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['hash'])
+    end
   end
 end
