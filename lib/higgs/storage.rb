@@ -37,6 +37,7 @@ module Higgs
       @name = name
       @tar_name = "#{@name}.tar"
       @idx_name = "#{@name}.idx"
+      @commit_log = {}
       init_options(options)
       if (init_io) then
         build_storage_at_first_time
@@ -120,7 +121,13 @@ module Higgs
       unless (key.kind_of? String) then
         raise TypeError, "can't convert #{key.class} to String"
       end
-      read_record_body('d:' + key)
+      value = read_record_body('d:' + key) or return
+      properties = fetch_properties(key) or raise "failed to read properties: #{key}"
+      content_hash = Digest::SHA512.hexdigest(value)
+      if (content_hash != properties['hash']) then
+        raise "mismatch content hash at #{key}: expected<#{content_hash}> but was <#{properties['hash']}>"
+      end
+      value
     end
 
     def fetch_properties(key)
@@ -129,6 +136,19 @@ module Higgs
       end
       properties_yml = read_record_body('p:' + key) or return
       YAML.load(properties_yml)
+    end
+
+    def write_and_commit(write_list)
+      eoa = @idx_db['EOA'].to_i
+      @w_tar.seek(eoa)
+      @commit_log.clear
+      for key, value in write_list
+        unless (key.kind_of? String) then
+          raise TypeError, "can't convert #{key.class} to String"
+        end
+        @commit_log['d:' + key] = @w_tar.pos
+        
+      end
     end
 
     def shutdown
