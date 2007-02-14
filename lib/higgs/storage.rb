@@ -94,6 +94,38 @@ module Higgs
     end
     private :build_storage_at_first_time
 
+    def fetch(key)
+      unless (key.kind_of? String) then
+        raise TypeError, "can't convert #{key.class} to String: #{key.inspect}"
+      end
+      unless (pos = @idx_db['d:' + key]) then
+        return nil
+      end
+      pos = pos.to_i
+      head_and_body = nil
+      @r_tar_pool.transaction{|r_tar|
+        r_tar.seek(pos)
+        head_and_body = r_tar.fetch
+      }
+      head_and_body[:body]
+    end
+
+    def fetch_properties(key)
+      unless (key.kind_of? String) then
+        raise TypeError, "can't convert #{key.class} to String: #{key.inspect}"
+      end
+      unless (pos = @idx_db['p:' + key]) then
+        return nil
+      end
+      pos = pos.to_i
+      head_and_body = nil
+      @r_tar_pool.transaction{|r_tar|
+        r_tar.seek(pos)
+        head_and_body = r_tar.fetch
+      }
+      YAML.load(head_and_body[:body])
+    end
+
     def shutdown
       @w_tar.seek(@idx_db['EOA'].to_i)
       @w_tar.write_EOA
