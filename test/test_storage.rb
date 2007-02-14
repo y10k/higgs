@@ -72,7 +72,7 @@ module Higgs::StorageTest
       assert_equal({}, properties['custom_properties'])
     end
 
-    def write_and_fetch
+    def test_write_and_fetch
       assert_nil(@s.fetch('foo'))
       assert_nil(@s.fetch_properties('foo'))
 
