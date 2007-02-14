@@ -51,7 +51,7 @@ module Higgs::StorageTest
       FileUtils.rm_rf(@tmp_dir)
     end
 
-    def test_fetch
+    def test_storage_information_fetch
       info_yml = @s.fetch('.higgs')
       assert_not_nil(info_yml)
       info = YAML.load(info_yml)
@@ -63,7 +63,7 @@ module Higgs::StorageTest
       assert_equal('SHA512', info['hash_type'])
     end
 
-    def test_fetch_properties
+    def test_storage_information_fetch_properties
       info_yml = @s.fetch('.higgs')
       assert_not_nil(info_yml)
       properties = @s.fetch_properties('.higgs')

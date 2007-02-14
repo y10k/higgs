@@ -65,7 +65,9 @@ module Higgs
     private :init_io
 
     def build_storage_at_first_time
-      storage_information = {
+      @idx_db['EOA'] = '0'
+      write_list = []
+      storage_info = {
         'version' => {
           'major' => 0,
           'minor' => 0
@@ -74,23 +76,8 @@ module Higgs
         'build_time' => Time.now,
         'hash_type' => 'SHA512'
       }
-
-      data = storage_information.to_yaml
-      properties = {
-        'hash' => Digest::SHA512.hexdigest(data),
-        'created_time' => Time.now,
-        'custom_properties' => {}
-      }
-
-      @idx_db['d:.higgs'] = 0.to_s
-      @w_tar.add('.higgs', data, :mtime => properties['created_time'])
-
-      @idx_db['p:.higgs'] = @w_tar.pos.to_s
-      @w_tar.add('.higgs.properties', properties.to_yaml, :mtime => properties['created_time'])
-      @idx_db['EOA'] = @w_tar.pos.to_s
-
-      @w_tar.fsync
-      @idx_db.sync
+      write_list << [ '.higgs', :write, storage_info.to_yaml ]
+      write_and_commit(write_list)
     end
     private :build_storage_at_first_time
 
@@ -190,7 +177,7 @@ module Higgs
         @idx_db.sync
 
         commit_log.each_pair do |key, pos|
-          @idx_db[key] = pos.to_i
+          @idx_db[key] = pos.to_s
         end
         @idx_db.sync
 
