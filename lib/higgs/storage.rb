@@ -94,36 +94,41 @@ module Higgs
     end
     private :build_storage_at_first_time
 
-    def fetch(key)
-      unless (key.kind_of? String) then
-        raise TypeError, "can't convert #{key.class} to String: #{key.inspect}"
-      end
-      unless (pos = @idx_db['d:' + key]) then
-        return nil
-      end
-      pos = pos.to_i
+    def read_index(key)
+      pos = @idx_db[key] or return
+      pos.to_i
+    end
+    private :read_index
+
+    def read_record(key)
+      pos = read_index(key) or return
       head_and_body = nil
       @r_tar_pool.transaction{|r_tar|
         r_tar.seek(pos)
-        head_and_body = r_tar.fetch
+        r_tar.fetch or raise "failed to read record: #{key}"
       }
+    end
+    private :read_record
+
+    def read_record_body(key)
+      head_and_body = read_record(key) or return
       head_and_body[:body]
+    end
+    private :read_record_body
+
+    def fetch(key)
+      unless (key.kind_of? String) then
+        raise TypeError, "can't convert #{key.class} to String"
+      end
+      read_record_body('d:' + key)
     end
 
     def fetch_properties(key)
       unless (key.kind_of? String) then
-        raise TypeError, "can't convert #{key.class} to String: #{key.inspect}"
+        raise TypeError, "can't convert #{key.class} to String"
       end
-      unless (pos = @idx_db['p:' + key]) then
-        return nil
-      end
-      pos = pos.to_i
-      head_and_body = nil
-      @r_tar_pool.transaction{|r_tar|
-        r_tar.seek(pos)
-        head_and_body = r_tar.fetch
-      }
-      YAML.load(head_and_body[:body])
+      properties_yml = read_record_body('p:' + key) or return
+      YAML.load(properties_yml)
     end
 
     def shutdown
