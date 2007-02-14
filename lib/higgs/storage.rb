@@ -36,7 +36,6 @@ module Higgs
           require 'higgs/lock'
           @lock_manager = Lock::FineGrainLockManager.new
         end
-        end
       end
       private :init_options
     end
