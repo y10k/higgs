@@ -1,7 +1,6 @@
 # $Id$
 
 require 'digest/sha2'
-require 'higgs/cache'
 require 'higgs/tar'
 require 'higgs/thread'
 require 'yaml'
@@ -28,13 +27,6 @@ module Higgs
           require 'higgs/index/gdbm'
           @dbm_read_open = Index::GDBM_OPEN[:read]
           @dbm_write_open = Index::GDBM_OPEN[:write]
-        end
-
-        if (options.include? :lock_manager) then
-          @lock_manager = options[:lock_manager]
-        else
-          require 'higgs/lock'
-          @lock_manager = Lock::FineGrainLockManager.new
         end
       end
       private :init_options

@@ -15,9 +15,8 @@ module Higgs::StorageTest
       init_options({})
       assert_equal(false, @read_only)
       assert_equal(2, @number_of_read_io)
-      assert_equal(Higgs::Index::GDBM_OPEN[:read], @dbm_read_open)         # higgs/index/gdbm auto-required
-      assert_equal(Higgs::Index::GDBM_OPEN[:write], @dbm_write_open)       # higgs/index/gdbm auto-required
-      assert_instance_of(Higgs::Lock::FineGrainLockManager, @lock_manager) # higgs/lock auto-required
+      assert_equal(Higgs::Index::GDBM_OPEN[:read], @dbm_read_open)   # higgs/index/gdbm auto-required
+      assert_equal(Higgs::Index::GDBM_OPEN[:write], @dbm_write_open) # higgs/index/gdbm auto-required
     end
 
     def test_init_options_read_only_true
@@ -35,11 +34,6 @@ module Higgs::StorageTest
       assert_equal(:dummy_read_open, @dbm_read_open)
       assert_equal(:dummy_write_open, @dbm_write_open)
     end
-
-    def test_init_options_lock_manager
-      init_options(:lock_manager => :dummy_lock_manager)
-      assert_equal(:dummy_lock_manager, @lock_manager)
-    end
   end
 
   class StorageTest < RUNIT::TestCase
@@ -50,7 +44,7 @@ module Higgs::StorageTest
     end
 
     def teardown
-      FileUtils.rm_rf(@tmp_dir)
+      #FileUtils.rm_rf(@tmp_dir)
     end
 
     def test_storage
