@@ -360,9 +360,9 @@ module Higgs
         nil
       end
 
-      def close
-        write_EOA
-        super
+      def close(no_write_EOA=false)
+        write_EOA unless no_write_EOA
+        super()
       end
     end
   end

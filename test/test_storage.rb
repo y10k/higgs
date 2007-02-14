@@ -55,6 +55,7 @@ module Higgs::StorageTest
 
     def test_storage
       s = Higgs::Storage.new(@name)
+      s.shutdown
     end
   end
 end

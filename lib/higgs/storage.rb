@@ -97,11 +97,21 @@ module Higgs
       @w_tar.add('.higgs.properties', properties.to_yaml, :mtime => properties['created_time'])
       @idx_db['EOA'] = @w_tar.pos.to_s
 
-      @w_tar.write_EOA
-
       @w_tar.fsync
       @idx_db.sync
     end
     private :build_storage_at_first_time
+
+    def shutdown
+      @w_tar.seek(@idx_db['EOA'].to_i)
+      @w_tar.write_EOA
+
+      @idx_db.sync
+      @idx_db.close
+      @w_tar.fsync
+      @w_tar.close(true)
+      @r_tar_pool.shutdown{|r_tar| r_tar.close }
+      nil
+    end
   end
 end
