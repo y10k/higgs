@@ -12,7 +12,9 @@ module Higgs
     GDBM_R_FLAGS = GDBM::READER | GDBM::NOLOCK
     GDBM_W_FLAGS = GDBM::WRCREAT
 
-    GDBM_READ_OPEN = proc{|name| GDBM.open(name, GDBM_F_MODE, GDBM_R_FLAGS) }
-    GDBM_WRITE_OPEN = proc{|name| GDBM.open(name, GDBM_F_MODE, GDBM_W_FLAGS) }
+    GDBM_OPEN = {
+      :read => proc{|name| GDBM.open(name, GDBM_F_MODE, GDBM_R_FLAGS) },
+      :write => proc{|name| GDBM.open(name, GDBM_F_MODE, GDBM_W_FLAGS) }
+    }
   end
 end

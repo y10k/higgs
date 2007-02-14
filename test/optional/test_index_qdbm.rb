@@ -13,7 +13,7 @@ module Higgs::IndexTest
     include IndexTest
 
     def db_read_open
-      db = QDBM_READ_OPEN.call(@name)
+      db = QDBM_OPEN[:read].call(@name)
       begin
         r = yield(db)
       ensure
@@ -23,7 +23,7 @@ module Higgs::IndexTest
     end
 
     def db_write_open
-      db = QDBM_WRITE_OPEN.call(@name)
+      db = QDBM_OPEN[:write].call(@name)
       begin
         r = yield(db)
       ensure
