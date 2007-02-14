@@ -81,6 +81,12 @@ module Higgs::StorageTest
       assert_equal("Hello world.\n", @s.fetch('foo'))
       properties = @s.fetch_properties('foo')
       assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['hash'])
+
+      @s.write_and_commit([ [ 'foo', :write, "Good bye.\n" ] ])
+
+      assert_equal("Good bye.\n", @s.fetch('foo'))
+      properties = @s.fetch_properties('foo')
+      assert_equal(Digest::SHA512.hexdigest("Good bye.\n"), properties['hash'])
     end
   end
 end
