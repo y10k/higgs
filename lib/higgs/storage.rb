@@ -167,7 +167,7 @@ module Higgs
 
         rollback_log = {}
         commit_log.each_key do |key|
-          if (pos = @idx_db[key]) then
+          if (pos = read_index(key)) then
             rollback_log[key] = pos.to_i
           else
             rollback_log[key] = :new
@@ -193,7 +193,34 @@ module Higgs
     end
 
     def rollback
-      raise NotImplementedError, 'not implemented rollback'
+      if (rollback_dump = @idx_db['rollback']) then
+        rollback_log = Marshal.dump(rollback_dump)
+        eoa = @idx_db['EOA'].to_i
+
+        rollback_log.each_pair do |key, pos|
+          case (pos)
+          when :new
+            @idx_db.delete(key)
+          else
+            if (pos > eoa) then
+              raise 'broken rollback log'
+            end
+            roll_forward_pos = read_index(key) or raise 'broken rollback log'
+            if (roll_forward_pos > eoa) then
+              @idx_db[key] = pos.to_s
+            end
+          end
+        end
+        @idx_db.sync
+
+        @idx_db.delete('rollback')
+        @idx_db.sync
+
+        @w_tar.seek(eoa)
+        @w_tar.write_EOA
+        @w_tar.fsync
+      end
+      nil
     end
 
     def shutdown
