@@ -164,7 +164,7 @@ module Higgs
             raise FormatError, "not of EOA: #{head_data.inspect}, #{next_head_data.inspect}"
           end
         end
-        chksum = (head_data[0...148] + ' ' * 8 + head_data[156...BLKSIZ]).unpack('C*').inject(0) {|s, c| s += c }
+        chksum = (head_data[0...148] + ' ' * 8 + head_data[156...BLKSIZ]).sum(20)
         head_list = head_data.unpack(HEAD_FMT)
         head = {}
         [ :name, :mode, :uid, :gid, :size, :mtime,
@@ -267,7 +267,7 @@ module Higgs
         if (head.include? :chksum) then
           chksum = head[:chksum]
         else
-          chksum = header.unpack('C*').inject{|s, c| s += c }
+          chksum = header.sum(20)
         end
         header[148, 8] = format('%-8o', chksum)
         @io.write(header)
