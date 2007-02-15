@@ -124,6 +124,13 @@ module Higgs
       YAML.load(properties_yml)
     end
 
+    def key?(key)
+      unless (key.kind_of? String) then
+        raise TypeError, "can't convert #{key.class} to String"
+      end
+      @idx_db.key? 'd:' + key
+    end
+
     def each_key
       @idx_db.each_key do |key|
         key = key.dup
@@ -259,9 +266,6 @@ module Higgs
     end
 
     def shutdown
-      @w_tar.seek(@idx_db['EOA'].to_i)
-      @w_tar.write_EOA
-
       @idx_db.sync
       @idx_db.close
       @w_tar.fsync
