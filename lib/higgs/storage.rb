@@ -451,14 +451,14 @@ module Higgs
       @r_tar_pool.transaction{|r_tar|
         curr_pos = 0
         r_tar.seek(0)
-        while (head_and_body = r_tar.fetch)
-          name = head_and_body[:name]
+        r_tar.each(true) do |head|
+          name = head[:name]
           if (read_index('d:' + name) == curr_pos) then
-            out.puts [ :data, curr_pos, name ].inspect
+            out.puts [ :data, curr_pos, head ].inspect
           elsif (name =~ /\.properties$/ && read_index('p:' + name.sub(/\.properties$/, '')) == curr_pos) then
-            out.puts [ :properties, curr_pos, name ].inspect
+            out.puts [ :properties, curr_pos, head ].inspect
           else
-            out.puts [ :gap, curr_pos, name ].inspect
+            out.puts [ :gap, curr_pos, head ].inspect
           end
           curr_pos = r_tar.pos
         end
