@@ -88,5 +88,23 @@ module Higgs::StorageTest
       properties = @s.fetch_properties('foo')
       assert_equal(Digest::SHA512.hexdigest("Good bye.\n"), properties['hash'])
     end
+
+    def test_each_key
+      @s.each_key do |key|
+        assert_fail('not exist any key')
+      end
+
+      @s.write_and_commit([ [ 'foo', :write, 'one' ],
+                            [ 'bar', :write, 'two' ],
+                            [ 'baz', :write, 'three' ]
+                          ])
+
+      expected_keys = %w[ foo bar baz ]
+      @s.each_key do |key|
+        assert((expected_keys.include? key), "each_key do |#{key}|")
+        expected_keys.delete(key)
+      end
+      assert(expected_keys.empty?)
+    end
   end
 end

@@ -124,6 +124,18 @@ module Higgs
       YAML.load(properties_yml)
     end
 
+    def each_key
+      @idx_db.each_key do |key|
+        key = key.dup
+        if (key.sub!(/^d:/, '')) then
+          if (key != '.higgs') then
+            yield(key)
+          end
+        end
+      end
+      self
+    end
+
     def write_and_commit(write_list)
       commit_time = Time.now
       commit_log = {}
