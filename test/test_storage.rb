@@ -107,6 +107,14 @@ module Higgs::StorageTest
       assert_nil(@s.fetch_properties('foo'))
     end
 
+    def test_key
+      assert_equal(false, (@s.key? 'foo'))
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      assert_equal(true, (@s.key? 'foo'))
+      @s.write_and_commit([ [ 'foo', :delete ] ])
+      assert_equal(false, (@s.key? 'foo'))
+    end
+
     def test_each_key
       @s.each_key do |key|
         assert_fail('not exist any key')
