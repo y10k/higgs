@@ -147,6 +147,86 @@ module Higgs::StorageTest
       }
     end
 
+    def test_rollback_before_rollback_log_write
+      @s.write_and_commit([ [ 'foo', :write, 'first' ],
+                            [ 'bar', :write, 'second' ]
+                          ])
+
+      assert_exception(Higgs::Storage::DebugRollbackBeforeRollbackLogWriteException) {
+        @s.write_and_commit([ [ 'foo', :write, 'third' ],
+                              [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
+                              [ 'bar', :delete ],
+                              [ 'baz', :write, 'fourth' ],
+                              [ 'nop', :__debug_rollback_before_rollback_log_write__ ]
+                            ])
+      }
+
+      assert_equal('first', @s.fetch('foo'))
+      assert_equal({}, @s.fetch_properties('foo')['custom_properties'])
+      assert_equal('second', @s.fetch('bar'))
+      assert_nil(@s.fetch('baz'))
+    end
+
+    def test_rollback_after_rollback_log_write
+      @s.write_and_commit([ [ 'foo', :write, 'first' ],
+                            [ 'bar', :write, 'second' ]
+                          ])
+
+      assert_exception(Higgs::Storage::DebugRollbackAfterRollbackLogWriteException) {
+        @s.write_and_commit([ [ 'foo', :write, 'third' ],
+                              [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
+                              [ 'bar', :delete ],
+                              [ 'baz', :write, 'fourth' ],
+                              [ 'nop', :__debug_rollback_after_rollback_log_write__ ]
+                            ])
+      }
+
+      assert_equal('first', @s.fetch('foo'))
+      assert_equal({}, @s.fetch_properties('foo')['custom_properties'])
+      assert_equal('second', @s.fetch('bar'))
+      assert_nil(@s.fetch('baz'))
+    end
+
+    def test_rollback_after_commit_log_write
+      @s.write_and_commit([ [ 'foo', :write, 'first' ],
+                            [ 'bar', :write, 'second' ]
+                          ])
+
+      assert_exception(Higgs::Storage::DebugRollbackAfterCommitLogWriteException) {
+        @s.write_and_commit([ [ 'foo', :write, 'third' ],
+                              [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
+                              [ 'bar', :delete ],
+                              [ 'baz', :write, 'fourth' ],
+                              [ 'nop', :__debug_rollback_after_commit_log_write__ ]
+                            ])
+      }
+
+      assert_equal('first', @s.fetch('foo'))
+      assert_equal({}, @s.fetch_properties('foo')['custom_properties'])
+      assert_equal('second', @s.fetch('bar'))
+      assert_nil(@s.fetch('baz'))
+    end
+
+    def test_rollback_commit_completed
+      @s.write_and_commit([ [ 'foo', :write, 'first' ],
+                            [ 'bar', :write, 'second' ]
+                          ])
+
+      assert_exception(Higgs::Storage::DebugRollbackCommitCompletedException) {
+        @s.write_and_commit([ [ 'foo', :write, 'third' ],
+                              [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
+                              [ 'bar', :delete ],
+                              [ 'baz', :write, 'fourth' ],
+                              [ 'nop', :__debug_rollback_commit_completed__ ]
+                            ])
+      }
+
+      assert_equal('third', @s.fetch('foo'))
+      assert_equal({ :comment => 'Hello world.' }, @s.fetch_properties('foo')['custom_properties'])
+      assert_nil(@s.fetch('bar'))
+      assert_equal('fourth', @s.fetch('baz'))
+    end
+
     def test_key
       assert_equal(false, (@s.key? 'foo'))
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])

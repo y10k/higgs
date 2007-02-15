@@ -294,7 +294,7 @@ module Higgs
 
     def rollback
       if (rollback_dump = @idx_db['rollback']) then
-        rollback_log = Marshal.dump(rollback_dump)
+        rollback_log = Marshal.load(rollback_dump)
         eoa = @idx_db['EOA'].to_i
 
         rollback_log.each_pair do |key, pos|
@@ -302,11 +302,11 @@ module Higgs
           when :new
             @idx_db.delete(key)
           else
-            if (pos > eoa) then
+            if (pos >= eoa) then
               raise BrokenError, 'broken storage and invalid rollback log'
             end
             roll_forward_pos = read_index(key)
-            if (roll_forward_pos.nil? || roll_forward_pos > eoa) then
+            if (roll_forward_pos.nil? || roll_forward_pos >= eoa) then
               @idx_db[key] = pos.to_s
             end
           end
