@@ -168,7 +168,12 @@ module Higgs
             commit_log['p:' + key] = @w_tar.pos
             @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
           when :delete
-            raise NotImplementedError, 'not implemented delete operation'
+            if (@idx_db['d:' + key]) then
+              commit_log['d:' + key] = :delete
+            end
+            if (@idx_db['p:' + key]) then
+              commit_log['p:' + key] = :delete
+            end
           when :update_properties
             if (properties = new_properties[key]) then
               # nothing to do.
@@ -202,7 +207,12 @@ module Higgs
         @idx_db.sync
 
         commit_log.each_pair do |key, pos|
-          @idx_db[key] = pos.to_s
+          case (pos)
+          when :delete
+            @idx_db.delete(key)
+          else
+            @idx_db[key] = pos.to_s
+          end
         end
         @idx_db.sync
 
@@ -230,8 +240,8 @@ module Higgs
             if (pos > eoa) then
               raise 'broken rollback log'
             end
-            roll_forward_pos = read_index(key) or raise 'broken rollback log'
-            if (roll_forward_pos > eoa) then
+            roll_forward_pos = read_index(key)
+            if (roll_forward_pos.nil? || roll_forward_pos > eoa) then
               @idx_db[key] = pos.to_s
             end
           end

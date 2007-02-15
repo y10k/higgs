@@ -99,6 +99,12 @@ module Higgs::StorageTest
       properties = @s.fetch_properties('foo')
       assert_equal(Digest::SHA512.hexdigest("Good bye.\n"), properties['hash'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
+
+      # delete
+      @s.write_and_commit([ [ 'foo', :delete ] ])
+
+      assert_nil(@s.fetch('foo'))
+      assert_nil(@s.fetch_properties('foo'))
     end
 
     def test_each_key
