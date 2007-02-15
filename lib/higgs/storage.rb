@@ -16,6 +16,21 @@ module Higgs
     class BrokenError < Error
     end
 
+    class DebugRollbackException < Exception
+    end
+
+    class DebugRollbackBeforeRollbackLogWriteException < DebugRollbackException
+    end
+
+    class DebugRollbackAfterRollbackLogWriteException < DebugRollbackException
+    end
+
+    class DebugRollbackAfterCommitLogWriteException < DebugRollbackException
+    end
+
+    class DebugRollbackCommitCompletedException < DebugRollbackException
+    end
+
     module InitOptions
       def init_options(options)
         @number_of_read_io = options[:number_of_read_io] || 2
@@ -157,6 +172,11 @@ module Higgs
       committed = false
       new_properties = {}
 
+      __debug_rollback_before_rollback_log_write__ = false
+      __debug_rollback_after_rollback_log_write__ = false
+      __debug_rollback_after_commit_log_write__ = false
+      __debug_rollback_commit_completed__ = false
+
       begin
         eoa = @idx_db['EOA'].to_i
         @w_tar.seek(eoa)
@@ -204,6 +224,14 @@ module Higgs
             new_properties[key] = properties
             commit_log['p:' + key] = @w_tar.pos
             @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
+          when :__debug_rollback_before_rollback_log_write__
+            __debug_rollback_before_rollback_log_write__ = true
+          when :__debug_rollback_after_rollback_log_write__
+            __debug_rollback_after_rollback_log_write__ = true
+          when :__debug_rollback_after_commit_log_write__
+            __debug_rollback_after_commit_log_write__ = true
+          when :__debug_rollback_commit_completed__
+            __debug_rollback_commit_completed__ = true
           else
             raise ArgumentError, "unknown operation: #{ope}"
           end
@@ -212,6 +240,10 @@ module Higgs
         eoa = @w_tar.pos
         @w_tar.write_EOA
         @w_tar.fsync
+
+        if (__debug_rollback_before_rollback_log_write__) then
+          raise DebugRollbackBeforeRollbackLogWriteException, 'debug'
+        end
 
         rollback_log = {}
         commit_log.each_key do |key|
@@ -224,6 +256,10 @@ module Higgs
         @idx_db['rollback'] = Marshal.dump(rollback_log)
         @idx_db.sync
 
+        if (__debug_rollback_after_rollback_log_write__) then
+          raise DebugRollbackAfterRollbackLogWriteException, 'debug'
+        end
+
         commit_log.each_pair do |key, pos|
           case (pos)
           when :delete
@@ -234,10 +270,19 @@ module Higgs
         end
         @idx_db.sync
 
+        if (__debug_rollback_after_commit_log_write__) then
+          raise DebugRollbackAfterCommitLogWriteException, 'debug'
+        end
+
         @idx_db['EOA'] = eoa.to_s
         @idx_db.sync
         @idx_db.delete('rollback')
         @idx_db.sync
+
+        if (__debug_rollback_commit_completed__) then
+          raise DebugRollbackCommitCompletedException, 'debug'
+        end
+
         committed = true
       ensure
         rollback unless committed
