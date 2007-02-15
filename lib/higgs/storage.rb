@@ -339,14 +339,14 @@ module Higgs
         @w_tar.close(true)
       end
 
+      @r_tar_pool.shutdown{|r_tar|
+        r_tar.close
+      }
+
       unless (@read_only) then
         @idx_db.sync
       end
       @idx_db.close
-
-      @r_tar_pool.shutdown{|r_tar|
-        r_tar.close
-      }
 
       nil
     end
