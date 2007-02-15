@@ -76,17 +76,29 @@ module Higgs::StorageTest
       assert_nil(@s.fetch('foo'))
       assert_nil(@s.fetch_properties('foo'))
 
+      # add
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
 
       assert_equal("Hello world.\n", @s.fetch('foo'))
       properties = @s.fetch_properties('foo')
       assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['hash'])
+      assert_equal({}, properties['custom_properties'])
 
+      # update properties
+      @s.write_and_commit([ [ 'foo', :update_properties, { :comment => 'test' } ] ])
+
+      assert_equal("Hello world.\n", @s.fetch('foo'))
+      properties = @s.fetch_properties('foo')
+      assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['hash'])
+      assert_equal({ :comment => 'test' }, properties['custom_properties'])
+
+      # update
       @s.write_and_commit([ [ 'foo', :write, "Good bye.\n" ] ])
 
       assert_equal("Good bye.\n", @s.fetch('foo'))
       properties = @s.fetch_properties('foo')
       assert_equal(Digest::SHA512.hexdigest("Good bye.\n"), properties['hash'])
+      assert_equal({ :comment => 'test' }, properties['custom_properties'])
     end
 
     def test_each_key

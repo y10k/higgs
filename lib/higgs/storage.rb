@@ -140,6 +140,7 @@ module Higgs
       commit_time = Time.now
       commit_log = {}
       committed = false
+      new_properties = {}
 
       begin
         eoa = @idx_db['EOA'].to_i
@@ -155,19 +156,31 @@ module Higgs
             @w_tar.add(key, value, :mtime => commit_time)
             if (properties = fetch_properties(key)) then
               properties['hash'] = Digest::SHA512.hexdigest(value)
+              new_properties[key] = properties
             else
               properties = {
                 'hash' => Digest::SHA512.hexdigest(value),
                 'created_time' => commit_time,
                 'custom_properties' => {}
               }
+              new_properties[key] = properties
             end
             commit_log['p:' + key] = @w_tar.pos
             @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
           when :delete
             raise NotImplementedError, 'not implemented delete operation'
           when :update_properties
-            raise NotImplementedError, 'not implemented update_properties operation'
+            if (properties = new_properties[key]) then
+              # nothing to do.
+            elsif (properties = fetch_properties(key)) then
+              # nothing to do.
+            else
+              raise "not exist properties: #{key}"
+            end
+            properties['custom_properties'] = value
+            new_properties[key] = properties
+            commit_log['p:' + key] = @w_tar.pos
+            @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
           else
             raise "unknown operation: #{ope}"
           end
