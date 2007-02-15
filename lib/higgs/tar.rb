@@ -124,6 +124,7 @@ module Higgs
       end
 
       def_delegator :@io, :fsync
+      def_delegator :@io, :truncate
       def_delegator :@io, :close
       def_delegator :@io, :closed?
     end
@@ -136,11 +137,16 @@ module Higgs
         @io = io
       end
 
+      def to_io
+        @io
+      end
+
       def_delegator :@io, :seek
       def_delegator :@io, :tell
       def_delegator :@io, :pos
       def_delegator :@io, :pos=
       def_delegator :@io, :fsync
+      def_delegator :@io, :truncate
       def_delegator :@io, :close
       def_delegator :@io, :closed?
     end

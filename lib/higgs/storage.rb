@@ -385,7 +385,7 @@ module Higgs
                 ]
 
                 if (read_index('d:' + name) == curr_pos) then
-                  blocked_size = head_and_body[:size] + Tar:.sub(/\.properties$/, ''):Block.padding_size(head_and_body[:size])
+                  blocked_size = head_and_body[:size] + Tar::Block.padding_size(head_and_body[:size])
                   if (blocked_size > curr_pos - divide_pos) then
                     eoa = @idx_db['EOA'].to_i
                     copy(curr_pos, eoa, blocked_size)
