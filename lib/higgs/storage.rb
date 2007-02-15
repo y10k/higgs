@@ -168,10 +168,10 @@ module Higgs
             commit_log['p:' + key] = @w_tar.pos
             @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
           when :delete
-            if (@idx_db['d:' + key]) then
+            if (@idx_db.key? 'd:' + key) then
               commit_log['d:' + key] = :delete
             end
-            if (@idx_db['p:' + key]) then
+            if (@idx_db.key? 'p:' + key) then
               commit_log['p:' + key] = :delete
             end
           when :update_properties

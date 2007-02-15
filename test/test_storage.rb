@@ -123,6 +123,15 @@ module Higgs::StorageTest
         expected_keys.delete(key)
       end
       assert(expected_keys.empty?)
+
+      @s.write_and_commit([ [ 'bar', :delete ] ])
+
+      expected_keys = %w[ foo baz ]
+      @s.each_key do |key|
+        assert((expected_keys.include? key), "each_key do |#{key}|")
+        expected_keys.delete(key)
+      end
+      assert(expected_keys.empty?)
     end
   end
 end
