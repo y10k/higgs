@@ -10,6 +10,12 @@ module Higgs
     # for ident(1)
     CVS_ID = '$Id$'
 
+    class Error < StandardError
+    end
+
+    class BrokenError < Error
+    end
+
     module InitOptions
       def init_options(options)
         @number_of_read_io = options[:number_of_read_io] || 2
@@ -94,7 +100,7 @@ module Higgs
       head_and_body = nil
       @r_tar_pool.transaction{|r_tar|
         r_tar.seek(pos)
-        r_tar.fetch or raise "failed to read record: #{key}"
+        r_tar.fetch or raise BrokenError, "broken storage and failed to read record: #{key}" 
       }
     end
     private :read_record
@@ -110,10 +116,10 @@ module Higgs
         raise TypeError, "can't convert #{key.class} to String"
       end
       value = read_record_body('d:' + key) or return
-      properties = fetch_properties(key) or raise "failed to read properties: #{key}"
+      properties = fetch_properties(key) or raise BrokenError, "broken storage and failed to read properties: #{key}"
       content_hash = Digest::SHA512.hexdigest(value)
       if (content_hash != properties['hash']) then
-        raise "mismatch content hash at #{key}: expected<#{content_hash}> but was <#{properties['hash']}>"
+        raise BrokenError, "broken storage and mismatch content hash at #{key}: expected<#{content_hash}> but was <#{properties['hash']}>"
       end
       value
     end
@@ -192,14 +198,14 @@ module Higgs
             elsif (properties = fetch_properties(key)) then
               # nothing to do.
             else
-              raise "not exist properties: #{key}"
+              raise BrokenError, "broken storage and not exist properties: #{key}"
             end
             properties['custom_properties'] = value
             new_properties[key] = properties
             commit_log['p:' + key] = @w_tar.pos
             @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
           else
-            raise "unknown operation: #{ope}"
+            raise ArgumentError, "unknown operation: #{ope}"
           end
         end
 
@@ -250,7 +256,7 @@ module Higgs
             @idx_db.delete(key)
           else
             if (pos > eoa) then
-              raise 'broken rollback log'
+              raise BrokenError, 'broken storage and invalid rollback log'
             end
             roll_forward_pos = read_index(key)
             if (roll_forward_pos.nil? || roll_forward_pos > eoa) then
