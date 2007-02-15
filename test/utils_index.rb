@@ -142,12 +142,10 @@ module Higgs::IndexTest
     end
 
     # assumed DB methods:
-    #   * db.keys
     #   * db.each_key{|key| ... }
     #
-    def test_keys
+    def test_each_keys
       db_write_open{|db|
-        assert_equal([], db.keys)
         db.each_key do |k|
           assert_fail("not exist any key")
         end
@@ -156,7 +154,6 @@ module Higgs::IndexTest
         db['bar'] = 'b'
         db['baz'] = 'c'
 
-        assert_equal(%w[ foo bar baz ].sort, db.keys.sort)
         expected_keys = %w[ foo bar baz ]
         db.each_key do |k|
           assert((expected_keys.include? k), "each_key do |#{k}|")
@@ -166,7 +163,6 @@ module Higgs::IndexTest
       }
 
       db_read_open{|db|
-        assert_equal(%w[ foo bar baz ].sort, db.keys.sort)
         expected_keys = %w[ foo bar baz ]
         db.each_key do |k|
           assert((expected_keys.include? k), "each_key do |#{k}|")
