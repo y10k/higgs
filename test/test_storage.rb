@@ -16,7 +16,9 @@ module Higgs::StorageTest
     def test_init_options_default
       init_options({})
       assert_equal(false, @read_only)
+      assert_equal(false, self.read_only)
       assert_equal(2, @number_of_read_io)
+      assert_equal(2, self.number_of_read_io)
       assert_equal(Higgs::Index::GDBM_OPEN[:read], @dbm_read_open)   # higgs/index/gdbm auto-required
       assert_equal(Higgs::Index::GDBM_OPEN[:write], @dbm_write_open) # higgs/index/gdbm auto-required
     end
@@ -24,11 +26,19 @@ module Higgs::StorageTest
     def test_init_options_read_only_true
       init_options(:read_only => true)
       assert_equal(true, @read_only)
+      assert_equal(true, self.read_only)
     end
 
     def test_init_options_read_only_false
       init_options(:read_only => false)
       assert_equal(false, @read_only)
+      assert_equal(false, self.read_only)
+    end
+
+    def test_init_options_number_of_read_io
+      init_options(:number_of_read_io => 16)
+      assert_equal(16, @number_of_read_io)
+      assert_equal(16, self.number_of_read_io)
     end
 
     def test_init_options_dbm_open
@@ -120,6 +130,14 @@ module Higgs::StorageTest
 
       assert_nil(@s.fetch('foo'))
       assert_nil(@s.fetch_properties('foo'))
+    end
+
+    def test_write_and_commit_read_only_NotWritableError
+      @s.shutdown
+      @s = Higgs::Storage.new(@name, :read_only => true)
+      assert_exception(Higgs::Storage::NotWritableError) {
+        @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      }
     end
 
     def test_write_and_commit_KeyError_not_exist_properties
@@ -235,6 +253,15 @@ module Higgs::StorageTest
       assert_equal(false, (@s.key? 'foo'))
     end
 
+    def test_key_read_only
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      @s.shutdown
+      @s = Higgs::Storage.new(@name, :read_only => true)
+
+      assert_equal(true, (@s.key? 'foo'))
+      assert_equal(false, (@s.key? 'bar'))
+    end
+
     def test_key_TypeError
       assert_exception(TypeError) { @s.key? :foo }
     end
@@ -259,6 +286,22 @@ module Higgs::StorageTest
       @s.write_and_commit([ [ 'bar', :delete ] ])
 
       expected_keys = %w[ foo baz ]
+      @s.each_key do |key|
+        assert((expected_keys.include? key), "each_key do |#{key}|")
+        expected_keys.delete(key)
+      end
+      assert(expected_keys.empty?)
+    end
+
+    def test_each_key_read_only
+      @s.write_and_commit([ [ 'foo', :write, 'one' ],
+                            [ 'bar', :write, 'two' ],
+                            [ 'baz', :write, 'three' ]
+                          ])
+      @s.shutdown
+      @s = Higgs::Storage.new(@name, :read_only => true)
+
+      expected_keys = %w[ foo bar baz ]
       @s.each_key do |key|
         assert((expected_keys.include? key), "each_key do |#{key}|")
         expected_keys.delete(key)

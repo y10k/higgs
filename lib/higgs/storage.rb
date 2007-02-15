@@ -13,7 +13,10 @@ module Higgs
     class Error < StandardError
     end
 
-    class BrokenError < Error
+    class NotWritableError < Error
+    end
+
+    class ReadOnlyError < Error
     end
 
     class DebugRollbackException < Exception
@@ -51,6 +54,9 @@ module Higgs
         end
       end
       private :init_options
+
+      attr_reader :read_only
+      attr_reader :number_of_read_io
     end
     include InitOptions
 
@@ -167,6 +173,10 @@ module Higgs
     end
 
     def write_and_commit(write_list)
+      if (@read_only) then
+        raise NotWritableError, 'failed to write to read only storage'
+      end
+
       commit_time = Time.now
       commit_log = {}
       committed = false
@@ -293,7 +303,7 @@ module Higgs
     end
 
     def rollback
-      if (rollback_dump = @idx_db['rollback']) then
+      if (! @read_only && rollback_dump = @idx_db['rollback']) then
         rollback_log = Marshal.load(rollback_dump)
         eoa = @idx_db['EOA'].to_i
 
@@ -324,11 +334,20 @@ module Higgs
     end
 
     def shutdown
-      @idx_db.sync
+      unless (@read_only) then
+        @w_tar.fsync
+        @w_tar.close(true)
+      end
+
+      unless (@read_only) then
+        @idx_db.sync
+      end
       @idx_db.close
-      @w_tar.fsync
-      @w_tar.close(true)
-      @r_tar_pool.shutdown{|r_tar| r_tar.close }
+
+      @r_tar_pool.shutdown{|r_tar|
+        r_tar.close
+      }
+
       nil
     end
   end
