@@ -21,6 +21,7 @@ module Higgs::StorageTest
       assert_equal(2, self.number_of_read_io)
       assert_equal(Higgs::Index::GDBM_OPEN[:read], @dbm_read_open)   # higgs/index/gdbm auto-required
       assert_equal(Higgs::Index::GDBM_OPEN[:write], @dbm_write_open) # higgs/index/gdbm auto-required
+      assert_equal(Higgs::Cache::SharedWorkCache, @cache_type)       # higgs/cache auto-required
     end
 
     def test_init_options_read_only_true
@@ -45,6 +46,11 @@ module Higgs::StorageTest
       init_options(:dbm_open => { :read => :dummy_read_open, :write => :dummy_write_open })
       assert_equal(:dummy_read_open, @dbm_read_open)
       assert_equal(:dummy_write_open, @dbm_write_open)
+    end
+
+    def test_init_options_cache_type
+      init_options(:cache_type => :dummy_cache_type)
+      assert_equal(:dummy_cache_type, @cache_type)
     end
   end
 

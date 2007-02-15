@@ -52,6 +52,13 @@ module Higgs
           @dbm_read_open = Index::GDBM_OPEN[:read]
           @dbm_write_open = Index::GDBM_OPEN[:write]
         end
+
+        if (options.include? :cache_type) then
+          @cache_type = options[:cache_type]
+        else
+          require 'higgs/cache'
+          @cache_type = Higgs::Cache::SharedWorkCache
+        end
       end
       private :init_options
 
@@ -65,6 +72,9 @@ module Higgs
       @tar_name = "#{@name}.tar"
       @idx_name = "#{@name}.idx"
       init_options(options)
+      @properties_read_cache = @cache_type.new{|key|
+        internal_fetch_properties(key)
+      }
       if (init_io) then
         build_storage_at_first_time
       else
@@ -145,12 +155,17 @@ module Higgs
       value
     end
 
+    def internal_fetch_properties(key)
+      properties_yml = read_record_body('p:' + key) or return
+      YAML.load(properties_yml)
+    end
+    private :internal_fetch_properties
+
     def fetch_properties(key)
       unless (key.kind_of? String) then
         raise TypeError, "can't convert #{key.class} to String"
       end
-      properties_yml = read_record_body('p:' + key) or return
-      YAML.load(properties_yml)
+      @properties_read_cache[key]
     end
 
     def key?(key)
@@ -213,9 +228,11 @@ module Higgs
               }
               new_properties[key] = properties
             end
+            @properties_read_cache.expire(key)
             commit_log['p:' + key] = @w_tar.pos
             @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
           when :delete
+            @properties_read_cache.expire(key)
             if (@idx_db.key? 'd:' + key) then
               commit_log['d:' + key] = :delete
             end
@@ -232,6 +249,7 @@ module Higgs
               key_error = (defined? KeyError) ? KeyError : IndexError
               raise key_error, "not exist properties at key: #{key}"
             end
+            @properties_read_cache.expire(key)
             properties['custom_properties'] = value
             new_properties[key] = properties
             commit_log['p:' + key] = @w_tar.pos
