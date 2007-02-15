@@ -447,6 +447,25 @@ module Higgs
     end
     private :copy
 
+    def dump(out=STDOUT)
+      @r_tar_pool.transaction{|r_tar|
+        curr_pos = 0
+        r_tar.seek(0)
+        while (head_and_body = r_tar.fetch)
+          name = head_and_body[:name]
+          if (read_index('d:' + name) == curr_pos) then
+            out.puts [ :data, curr_pos, name ].inspect
+          elsif (name =~ /\.properties$/ && read_index('p:' + name.sub(/\.properties$/, '')) == curr_pos) then
+            out.puts [ :properties, curr_pos, name ].inspect
+          else
+            out.puts [ :gap, curr_pos, name ].inspect
+          end
+          curr_pos = r_tar.pos
+        end
+      }
+      nil
+    end
+
     def shutdown
       unless (@read_only) then
         @w_tar.fsync
