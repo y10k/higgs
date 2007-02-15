@@ -79,11 +79,11 @@ module Higgs::StorageTest
       test_storage_information_fetch_properties
     end
 
-    def test_fetch_TypeError
+    def test_fetch_TypeError_key_not_string
       assert_exception(TypeError) { @s.fetch(:foo) }
     end
 
-    def test_fetch_properties_TypeError
+    def test_fetch_properties_TypeError_key_not_string
       assert_exception(TypeError) { @s.fetch_properties(:foo) }
     end
 
@@ -122,12 +122,21 @@ module Higgs::StorageTest
       assert_nil(@s.fetch_properties('foo'))
     end
 
-    def test_write_and_commit_TypeError
+    def test_write_and_commit_TypeError_key_not_string
       assert_exception(TypeError) {
         @s.write_and_commit([ [ :foo, :write, "Hello world.\n" ] ])
       }
+    end
+
+    def test_write_and_commit_TypeError_value_not_string
       assert_exception(TypeError) {
         @s.write_and_commit([ [ 'foo', :write, "Hello world.\n".to_sym ] ])
+      }
+    end
+
+    def test_write_and_commit_ArgumentError_operation_unknown
+      assert_exception(ArgumentError) {
+        @s.write_and_commit([ [ 'foo', :unknown, "Hello world.\n" ] ])
       }
     end
 
