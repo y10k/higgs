@@ -40,6 +40,8 @@ module Higgs
       init_options(options)
       if (init_io) then
         build_storage_at_first_time
+      else
+        rollback
       end
     end
 
@@ -155,10 +157,13 @@ module Higgs
 
         for key, ope, value in write_list
           unless (key.kind_of? String) then
-            raise TypeError, "can't convert #{key.class} to String"
+            raise TypeError, "can't convert #{key.class} (key) to String"
           end
           case (ope)
           when :write
+            unless (value.kind_of? String) then
+              raise TypeError, "can't convert #{value.class} (value) to String"
+            end
             commit_log['d:' + key] = @w_tar.pos
             @w_tar.add(key, value, :mtime => commit_time)
             if (properties = fetch_properties(key)) then

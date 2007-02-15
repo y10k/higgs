@@ -72,7 +72,22 @@ module Higgs::StorageTest
       assert_equal({}, properties['custom_properties'])
     end
 
-    def test_write_and_fetch
+    def test_reopen
+      @s.shutdown
+      @s = Higgs::Storage.new(@name)
+      test_storage_information_fetch
+      test_storage_information_fetch_properties
+    end
+
+    def test_fetch_TypeError
+      assert_exception(TypeError) { @s.fetch(:foo) }
+    end
+
+    def test_fetch_properties_TypeError
+      assert_exception(TypeError) { @s.fetch_properties(:foo) }
+    end
+
+    def test_write_and_commit_fetch
       assert_nil(@s.fetch('foo'))
       assert_nil(@s.fetch_properties('foo'))
 
@@ -107,12 +122,25 @@ module Higgs::StorageTest
       assert_nil(@s.fetch_properties('foo'))
     end
 
+    def test_write_and_commit_TypeError
+      assert_exception(TypeError) {
+        @s.write_and_commit([ [ :foo, :write, "Hello world.\n" ] ])
+      }
+      assert_exception(TypeError) {
+        @s.write_and_commit([ [ 'foo', :write, "Hello world.\n".to_sym ] ])
+      }
+    end
+
     def test_key
       assert_equal(false, (@s.key? 'foo'))
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
       assert_equal(true, (@s.key? 'foo'))
       @s.write_and_commit([ [ 'foo', :delete ] ])
       assert_equal(false, (@s.key? 'foo'))
+    end
+
+    def test_key_TypeError
+      assert_exception(TypeError) { @s.key? :foo }
     end
 
     def test_each_key
