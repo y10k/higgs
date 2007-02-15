@@ -218,7 +218,9 @@ module Higgs
             elsif (properties = fetch_properties(key)) then
               # nothing to do.
             else
-              raise BrokenError, "broken storage and not exist properties: #{key}"
+              # KeyError : ruby 1.9 feature
+              key_error = (defined? KeyError) ? KeyError : IndexError
+              raise key_error, "not exist properties at key: #{key}"
             end
             properties['custom_properties'] = value
             new_properties[key] = properties

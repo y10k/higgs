@@ -122,6 +122,13 @@ module Higgs::StorageTest
       assert_nil(@s.fetch_properties('foo'))
     end
 
+    def test_write_and_commit_KeyError_not_exist_properties
+      # KeyError : ruby 1.9 feature
+      assert_exception((defined? KeyError) ? KeyError : IndexError) {
+        @s.write_and_commit([ [ 'foo', :update_properties, {} ] ])
+      }
+    end
+
     def test_write_and_commit_TypeError_key_not_string
       assert_exception(TypeError) {
         @s.write_and_commit([ [ :foo, :write, "Hello world.\n" ] ])
