@@ -59,10 +59,25 @@ module Higgs::StorageTest
   class StorageTest < RUNIT::TestCase
     include Higgs::Tar::Block
 
+    def dbm_open
+      Higgs::Index::GDBM_OPEN
+    end
+
+    def open_idx
+      db = dbm_open[:write].call(@name + '.idx')
+      begin
+        yield(db)
+      ensure
+        db.close
+      end
+    end
+    private :open_idx
+
     def new_storage(options={})
-      options[:dbm_open] = Higgs::Index::GDBM_OPEN unless (options.include? :dbm_open)
+      options[:dbm_open] = dbm_open unless (options.include? :dbm_open)
       Higgs::Storage.new(@name, options)
     end
+    private :new_storage
 
     def setup
       @tmp_dir = 'storage_tmp'
@@ -72,7 +87,7 @@ module Higgs::StorageTest
     end
 
     def teardown
-      @s.shutdown
+      @s.shutdown if @s
       FileUtils.rm_rf(@tmp_dir)
     end
 
@@ -99,6 +114,7 @@ module Higgs::StorageTest
 
     def test_reopen
       @s.shutdown
+      @s = nil
       @s = new_storage
       test_storage_information_fetch
       test_storage_information_fetch_properties
@@ -161,6 +177,7 @@ module Higgs::StorageTest
 
     def test_write_and_commit_read_only_NotWritableError
       @s.shutdown
+      @s = nil
       @s = new_storage(:read_only => true)
       assert_exception(Higgs::Storage::NotWritableError) {
         @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
@@ -272,7 +289,7 @@ module Higgs::StorageTest
       assert_equal('fourth', @s.fetch('baz'))
     end
 
-    def test_rollback_log_erased
+    def test_rollback_log_deleted
       @s.write_and_commit([ [ 'foo', :write, 'first' ],
                             [ 'bar', :write, 'second' ]
                           ])
@@ -292,6 +309,45 @@ module Higgs::StorageTest
       assert_equal('fourth', @s.fetch('baz'))
     end
 
+    def test_rollback_read_only_NotWritableError
+      @s.shutdown
+      @s = nil
+      open_idx{|db|
+        db['rollback'] = 'dummy_rollback_log'
+      }
+      assert_exception(Higgs::Storage::NotWritableError) {
+        @s = new_storage(:read_only => true)
+      }
+    end
+
+    def test_rollback_BrokenError_invalid_rollback_log
+      @s.shutdown
+      @s = nil
+      open_idx{|db|
+        assert((db.key? 'EOA'))
+        eoa = db['EOA'].to_i
+        rollback_log = { :EOA => eoa, 'd:foo' => eoa }
+        db['rollback'] = Marshal.dump(rollback_log)
+      }
+      assert_exception(Higgs::Storage::BrokenError) {
+        @s = new_storage
+      }
+    end
+
+    def test_rollback_BrokenError_shrinked_storage
+      @s.shutdown
+      @s = nil
+      open_idx{|db|
+        assert((db.key? 'EOA'))
+        eoa = db['EOA'].to_i
+        rollback_log = { :EOA => eoa + 1 }
+        db['rollback'] = Marshal.dump(rollback_log)
+      }
+      assert_exception(Higgs::Storage::BrokenError) {
+        @s = new_storage
+      }
+    end
+
     def test_key
       assert_equal(false, (@s.key? 'foo'))
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
@@ -303,6 +359,7 @@ module Higgs::StorageTest
     def test_key_read_only
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
       @s.shutdown
+      @s = nil
       @s = new_storage(:read_only => true)
 
       assert_equal(true, (@s.key? 'foo'))
@@ -346,6 +403,7 @@ module Higgs::StorageTest
                             [ 'baz', :write, 'three' ]
                           ])
       @s.shutdown
+      @s = nil
       @s = new_storage(:read_only => true)
 
       expected_keys = %w[ foo bar baz ]
@@ -404,6 +462,7 @@ module Higgs::StorageTest
 
     def test_reorganize_read_only_NotWritableError
       @s.shutdown
+      @s = nil
       @s = new_storage(:read_only => true)
       assert_exception(Higgs::Storage::NotWritableError) {
         @s.reorganize

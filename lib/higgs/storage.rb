@@ -77,22 +77,33 @@ module Higgs
       @name = name
       @tar_name = "#{@name}.tar"
       @idx_name = "#{@name}.idx"
+
       init_options(options)
       @properties_read_cache = @cache_type.new{|key|
         internal_fetch_properties(key)
       }
-      if (init_io) then
-        build_storage_at_first_time
-      else
-        rollback
+
+      @idx_db_opened = false
+      @w_tar_opened = false
+      begin
+        if (init_io) then
+          build_storage_at_first_time
+        else
+          rollback
+        end
+      rescue
+        shutdown
+        raise
       end
     end
 
     def init_io
       if (@read_only) then
         @idx_db = @dbm_read_open.call(@idx_name)
+        @idx_db_opened = true
       else
         @idx_db = @dbm_write_open.call(@idx_name)
+        @idx_db_opened = true
         begin
           w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
           first_time = true
@@ -101,6 +112,7 @@ module Higgs
           first_time = false
         end
         @w_tar = Tar::ArchiveWriter.new(w_io)
+        @w_tar_opened = true
       end
       @r_tar_pool = Thread::Pool.new(@number_of_read_io) {
         Tar::ArchiveReader.new(Tar::RawIO.new(File.open(@tar_name, File::RDONLY)))
@@ -578,19 +590,21 @@ module Higgs
     end
 
     def shutdown
-      unless (@read_only) then
+      if (@w_tar_opened) then
         @w_tar.fsync
         @w_tar.close(true)
       end
 
-      @r_tar_pool.shutdown{|r_tar|
-        r_tar.close
-      }
-
-      unless (@read_only) then
-        @idx_db.sync
+      if (@r_tar_pool) then
+        @r_tar_pool.shutdown{|r_tar|
+          r_tar.close
+        }
       end
-      @idx_db.close
+
+      if (@idx_db_opened) then
+        @idx_db.sync unless @read_only
+        @idx_db.close
+      end
 
       nil
     end

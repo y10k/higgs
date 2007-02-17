@@ -14,7 +14,7 @@ end
 
 task :rcov do
   rm_rf RCOV_DIR
-  sh 'rcov', '-I', LIB_DIR, 'run.rb'
+  sh 'rcov', '-I', LIB_DIR, '-x', 'rcov\.rb,run\.rb', 'run.rb'
 end
 
 task :clean do
