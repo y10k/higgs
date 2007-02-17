@@ -2,6 +2,7 @@
 
 require 'digest/sha2'
 require 'fileutils'
+require 'higgs/index/gdbm'
 require 'higgs/storage'
 require 'higgs/tar'
 require 'rubyunit'
@@ -58,11 +59,16 @@ module Higgs::StorageTest
   class StorageTest < RUNIT::TestCase
     include Higgs::Tar::Block
 
+    def new_storage(options={})
+      options[:dbm_open] = Higgs::Index::GDBM_OPEN unless (options.include? :dbm_open)
+      Higgs::Storage.new(@name, options)
+    end
+
     def setup
       @tmp_dir = 'storage_tmp'
       FileUtils.mkdir_p(@tmp_dir)
       @name = File.join(@tmp_dir, 'storage_test')
-      @s = Higgs::Storage.new(@name)
+      @s = new_storage
     end
 
     def teardown
@@ -93,7 +99,7 @@ module Higgs::StorageTest
 
     def test_reopen
       @s.shutdown
-      @s = Higgs::Storage.new(@name)
+      @s = new_storage
       test_storage_information_fetch
       test_storage_information_fetch_properties
     end
@@ -155,7 +161,7 @@ module Higgs::StorageTest
 
     def test_write_and_commit_read_only_NotWritableError
       @s.shutdown
-      @s = Higgs::Storage.new(@name, :read_only => true)
+      @s = new_storage(:read_only => true)
       assert_exception(Higgs::Storage::NotWritableError) {
         @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
       }
@@ -297,7 +303,7 @@ module Higgs::StorageTest
     def test_key_read_only
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
       @s.shutdown
-      @s = Higgs::Storage.new(@name, :read_only => true)
+      @s = new_storage(:read_only => true)
 
       assert_equal(true, (@s.key? 'foo'))
       assert_equal(false, (@s.key? 'bar'))
@@ -340,7 +346,7 @@ module Higgs::StorageTest
                             [ 'baz', :write, 'three' ]
                           ])
       @s.shutdown
-      @s = Higgs::Storage.new(@name, :read_only => true)
+      @s = new_storage(:read_only => true)
 
       expected_keys = %w[ foo bar baz ]
       @s.each_key do |key|
@@ -398,7 +404,7 @@ module Higgs::StorageTest
 
     def test_reorganize_read_only_NotWritableError
       @s.shutdown
-      @s = Higgs::Storage.new(@name, :read_only => true)
+      @s = new_storage(:read_only => true)
       assert_exception(Higgs::Storage::NotWritableError) {
         @s.reorganize
       }
