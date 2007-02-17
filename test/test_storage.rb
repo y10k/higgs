@@ -427,7 +427,19 @@ module Higgs::StorageTest
       @s.verify
     end
 
-    def test_verify_BrokenError
+    def test_verify_BrokenError_not_found_a_EOA
+      @s.shutdown
+      @s = nil
+      open_idx{|db|
+        assert(db.delete('EOA'))
+      }
+      @s = new_storage
+      assert_exception(Higgs::Storage::BrokenError) {
+        @s.verify
+      }
+    end
+
+    def test_verify_BrokenError_mismatch_content_hash
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
       File.open(@name + '.tar', File::WRONLY) {|w|
         size = w.stat.size
@@ -435,6 +447,88 @@ module Higgs::StorageTest
         w.write(0xFF.chr * BLKSIZ)
         w.fsync
       }
+      assert_exception(Higgs::Storage::BrokenError) {
+        @s.verify
+      }
+    end
+
+    def test_verify_BrokenError_failed_to_read_data
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      @s.shutdown
+      @s = nil
+      open_idx{|db|
+        assert((db.key? 'EOA'))
+        assert((db.key? 'd:foo'))
+        eoa = db['EOA'].to_i
+        pos = db['d:foo'].to_i
+        assert(pos < eoa)
+        db['d:foo'] = eoa.to_s
+      }
+      @s = new_storage
+      assert_exception(Higgs::Storage::BrokenError) {
+        @s.verify
+      }
+    end
+
+    def test_verify_BrokenError_failed_to_read_properties
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      @s.shutdown
+      @s = nil
+      open_idx{|db|
+        assert((db.key? 'EOA'))
+        assert((db.key? 'p:foo'))
+        eoa = db['EOA'].to_i
+        pos = db['p:foo'].to_i
+        assert(pos < eoa)
+        db['p:foo'] = eoa.to_s
+      }
+      @s = new_storage
+      assert_exception(Higgs::Storage::BrokenError) {
+        @s.verify
+      }
+    end
+
+    def test_verify_BrokenError_too_large_data_index
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      @s.shutdown
+      @s = nil
+      open_idx{|db|
+        assert((db.key? 'EOA'))
+        assert((db.key? 'd:foo'))
+        eoa = db['EOA'].to_i
+        pos = db['d:foo'].to_i
+        assert(pos < eoa)
+        db['d:foo'] = (eoa + BLKSIZ * 2).to_s
+        File.open(@name + '.tar', 'a+') {|w|
+          w.seek(pos)
+          data = w.read(BLKSIZ * 2)
+          w.write(data)
+        }
+      }
+      @s = new_storage
+      assert_exception(Higgs::Storage::BrokenError) {
+        @s.verify
+      }
+    end
+
+    def test_verify_BrokenError_too_large_properties_index
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      @s.shutdown
+      @s = nil
+      open_idx{|db|
+        assert((db.key? 'EOA'))
+        assert((db.key? 'p:foo'))
+        eoa = db['EOA'].to_i
+        pos = db['p:foo'].to_i
+        assert(pos < eoa)
+        db['p:foo'] = (eoa + BLKSIZ * 2).to_s
+        File.open(@name + '.tar', 'a+') {|w|
+          w.seek(pos)
+          data = w.read(BLKSIZ * 2)
+          w.write(data)
+        }
+      }
+      @s = new_storage
       assert_exception(Higgs::Storage::BrokenError) {
         @s.verify
       }

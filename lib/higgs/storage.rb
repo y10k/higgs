@@ -584,7 +584,7 @@ module Higgs
         if (@idx_db['d:' + key].to_i >= eoa) then
           raise BrokenError, "too large data index: #{key}"
         end
-        if (@idx_db['i:' + key].to_i >= eoa) then
+        if (@idx_db['p:' + key].to_i >= eoa) then
           raise BrokenError, "too large properties index: #{key}"
         end
       end
