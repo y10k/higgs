@@ -153,7 +153,8 @@ module Higgs::TarTest
       FileUtils.mkdir_p('foo')
       File.open('foo/bar', 'wb') {|w| w << "HALO\n" }
       File.open('baz', 'wb') {|w| w << "Hello world.\n" }
-      system('tar cf foo.tar foo baz') # required unix tar command
+      FileUtils.touch 'zero'
+      system('tar cf foo.tar foo baz zero') # required unix tar command
 
       # target
       @input = open_for_read('foo.tar')
@@ -163,7 +164,7 @@ module Higgs::TarTest
     def teardown
       @input.close unless @input.closed?
       #system('cp foo.tar foo_debug.tar') # debug
-      FileUtils.rm_f %w[ foo.tar foo/bar baz ]
+      FileUtils.rm_f %w[ foo.tar foo/bar baz zero ]
       FileUtils.rm_rf('foo')
     end
 
@@ -191,6 +192,14 @@ module Higgs::TarTest
       assert_equal(REGTYPE,                head_and_body[:typeflag])
       assert_equal(MAGIC,                  head_and_body[:magic])
       assert_equal("Hello world.\n",       head_and_body[:body])
+
+      head_and_body = @tar.fetch
+      assert_equal('zero',                  head_and_body[:name])
+      assert_equal(0,                       head_and_body[:size])
+      assert_equal(File.stat('zero').mtime, head_and_body[:mtime])
+      assert_equal(REGTYPE,                 head_and_body[:typeflag])
+      assert_equal(MAGIC,                   head_and_body[:magic])
+      assert_equal('',                      head_and_body[:body])
 
       head_and_body = @tar.fetch
       assert_equal(nil, head_and_body)
@@ -221,12 +230,19 @@ module Higgs::TarTest
 	  assert_equal(REGTYPE,                head_and_body[:typeflag])
 	  assert_equal(MAGIC,                  head_and_body[:magic])
 	  assert_equal("Hello world.\n",       head_and_body[:body])
+        when 3
+          assert_equal('zero',                  head_and_body[:name])
+          assert_equal(0,                       head_and_body[:size])
+          assert_equal(File.stat('zero').mtime, head_and_body[:mtime])
+          assert_equal(REGTYPE,                 head_and_body[:typeflag])
+          assert_equal(MAGIC,                   head_and_body[:magic])
+          assert_equal('',                      head_and_body[:body])
 	else
 	  raise "unknown data: #{head_and_body.inspect}"
 	end
 	count += 1
       end
-      assert_equal(3, count)
+      assert_equal(4, count)
     end
 
     def test_close

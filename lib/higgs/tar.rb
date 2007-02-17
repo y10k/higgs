@@ -227,7 +227,12 @@ module Higgs
           end
           head_and_body[:body][head_and_body[:size]...blocked_size] = ''
         else
-          head_and_body[:body] = nil
+          case (head_and_body[:typeflag])
+          when REGTYPE, CONTTYPE
+            head_and_body[:body] = ''
+          else
+            head_and_body[:body] = nil
+          end
         end
         head_and_body
       end

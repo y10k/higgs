@@ -138,6 +138,18 @@ module Higgs::StorageTest
       assert_nil(@s.fetch_properties('foo'))
     end
 
+    def test_write_and_commit_fetch_zero_bytes
+      assert_nil(@s.fetch('foo'))
+      assert_nil(@s.fetch_properties('foo'))
+
+      @s.write_and_commit([ [ 'foo', :write, '' ] ])
+
+      assert_equal('', @s.fetch('foo'))
+      properties = @s.fetch_properties('foo')
+      assert_equal(Digest::SHA512.hexdigest(''), properties['hash'])
+      assert_equal({}, properties['custom_properties'])
+    end
+
     def test_write_and_commit_read_only_NotWritableError
       @s.shutdown
       @s = Higgs::Storage.new(@name, :read_only => true)
