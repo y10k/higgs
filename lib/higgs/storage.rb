@@ -394,7 +394,7 @@ module Higgs
 
     def reorganize
       if (@read_only) then
-        raise NotWritableError, 'failed to write to read only storage'
+        raise NotWritableError, 'failed to reorganize read only storage'
       end
 
       @r_tar_pool.transaction{|r_tar|

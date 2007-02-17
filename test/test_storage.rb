@@ -375,5 +375,17 @@ module Higgs::StorageTest
         @s.verify
       }
     end
+
+    def test_reorganize
+      @s.reorganize
+    end
+
+    def test_reorganize_read_only_NotWritableError
+      @s.shutdown
+      @s = Higgs::Storage.new(@name, :read_only => true)
+      assert_exception(Higgs::Storage::NotWritableError) {
+        @s.reorganize
+      }
+    end
   end
 end
