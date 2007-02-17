@@ -568,6 +568,10 @@ module Higgs
     end
 
     def verify
+      if (@idx_db.key? 'rollback') then
+        raise NotWritableError, 'need to rollback'
+      end
+
       unless (@idx_db.key? 'EOA') then
         raise BrokenError, 'not found a EOA index'
       end
