@@ -13,6 +13,9 @@ module Higgs
     class Error < StandardError
     end
 
+    class BrokenError < Error
+    end
+
     class NotWritableError < Error
     end
 
@@ -131,7 +134,7 @@ module Higgs
       head_and_body = nil
       @r_tar_pool.transaction{|r_tar|
         r_tar.seek(pos)
-        r_tar.fetch or raise BrokenError, "broken storage and failed to read record: #{key}" 
+        r_tar.fetch or raise BrokenError, "failed to read record: #{key}" 
       }
     end
     private :read_record
@@ -147,10 +150,10 @@ module Higgs
         raise TypeError, "can't convert #{key.class} to String"
       end
       value = read_record_body('d:' + key) or return
-      properties = fetch_properties(key) or raise BrokenError, "broken storage and failed to read properties: #{key}"
+      properties = fetch_properties(key) or raise BrokenError, "failed to read properties: #{key}"
       content_hash = Digest::SHA512.hexdigest(value)
       if (content_hash != properties['hash']) then
-        raise BrokenError, "broken storage and mismatch content hash at #{key}: expected<#{content_hash}> but was <#{properties['hash']}>"
+        raise BrokenError, "mismatch content hash at #{key}: expected<#{content_hash}> but was <#{properties['hash']}>"
       end
       value
     end
@@ -321,7 +324,13 @@ module Higgs
     end
 
     def rollback
-      if (! @read_only && rollback_dump = @idx_db['rollback']) then
+      if (@read_only) then
+        if (@idx_db.key? 'rollback') then
+          raise NotWritableError, 'failed to rollback to read only storage'
+        end
+      end
+
+      if (rollback_dump = @idx_db['rollback']) then
         rollback_log = Marshal.load(rollback_dump)
         eoa = @idx_db['EOA'].to_i
 
@@ -331,7 +340,7 @@ module Higgs
             @idx_db.delete(key)
           else
             if (pos >= eoa) then
-              raise BrokenError, 'broken storage and invalid rollback log'
+              raise BrokenError, 'invalid rollback log'
             end
             roll_forward_pos = read_index(key)
             if (roll_forward_pos.nil? || roll_forward_pos >= eoa) then
