@@ -350,7 +350,7 @@ module Higgs::StorageTest
     def test_dump
       out = ''
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
-      @s.write_and_commit([ [ 'foo', :write, "HALO" ] ])
+      @s.write_and_commit([ [ 'foo', :write, "HALO" ] ]) # make gap
       @s.dump(out)
       assert(out.length > 0)
     end
