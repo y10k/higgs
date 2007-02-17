@@ -251,6 +251,26 @@ module Higgs::StorageTest
       assert_equal('fourth', @s.fetch('baz'))
     end
 
+    def test_rollback_log_erased
+      @s.write_and_commit([ [ 'foo', :write, 'first' ],
+                            [ 'bar', :write, 'second' ]
+                          ])
+
+      assert_exception(Higgs::Storage::DebugRollbackLogDeletedException) {
+        @s.write_and_commit([ [ 'foo', :write, 'third' ],
+                              [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
+                              [ 'bar', :delete ],
+                              [ 'baz', :write, 'fourth' ],
+                              [ 'nop', :__debug_rollback_log_deleted__ ]
+                            ])
+      }
+
+      assert_equal('third', @s.fetch('foo'))
+      assert_equal({ :comment => 'Hello world.' }, @s.fetch_properties('foo')['custom_properties'])
+      assert_nil(@s.fetch('bar'))
+      assert_equal('fourth', @s.fetch('baz'))
+    end
+
     def test_key
       assert_equal(false, (@s.key? 'foo'))
       @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])

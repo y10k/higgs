@@ -37,6 +37,9 @@ module Higgs
     class DebugRollbackCommitCompletedException < DebugRollbackException
     end
 
+    class DebugRollbackLogDeletedException < DebugRollbackException
+    end
+
     module InitOptions
       def init_options(options)
         @number_of_read_io = options[:number_of_read_io] || 2
@@ -196,15 +199,16 @@ module Higgs
       end
 
       commit_time = Time.now
-      commit_log = {}
       committed = false
-      new_properties = {}
+      commit_log = {}
       rollback_log = {}
+      new_properties = {}
 
       __debug_rollback_before_rollback_log_write__ = false
       __debug_rollback_after_rollback_log_write__ = false
       __debug_rollback_after_commit_log_write__ = false
       __debug_rollback_commit_completed__ = false
+      __debug_rollback_log_deleted__ = false
 
       begin
         eoa = @idx_db['EOA'].to_i
@@ -267,6 +271,8 @@ module Higgs
             __debug_rollback_after_commit_log_write__ = true
           when :__debug_rollback_commit_completed__
             __debug_rollback_commit_completed__ = true
+          when :__debug_rollback_log_deleted__
+            __debug_rollback_log_deleted__ = true
           else
             raise ArgumentError, "unknown operation: #{ope}"
           end
@@ -318,6 +324,9 @@ module Higgs
         @idx_db.delete('rollback')
         @idx_db.sync
 
+        if (__debug_rollback_log_deleted__) then
+          raise DebugRollbackLogDeletedException, 'debug'
+        end
 
         committed = true
       ensure
@@ -368,6 +377,7 @@ module Higgs
 
       nil
     end
+    private :rollback
 
     def block_alive?(head, pos)
       if (read_index('d:' + head[:name]) == pos) then

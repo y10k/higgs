@@ -29,6 +29,24 @@ module Higgs::TarTest
       assert_equal(509, Block.padding_size(515))
     end
 
+    def test_blocked_size
+      assert_equal(0,    Block.blocked_size(0))
+
+      assert_equal(512,  Block.blocked_size(1))
+      assert_equal(512,  Block.blocked_size(2))
+      assert_equal(512,  Block.blocked_size(3))
+
+      assert_equal(512,  Block.blocked_size(509))
+      assert_equal(512,  Block.blocked_size(510))
+      assert_equal(512,  Block.blocked_size(511))
+
+      assert_equal(512,  Block.blocked_size(512))
+
+      assert_equal(1024, Block.blocked_size(513))
+      assert_equal(1024, Block.blocked_size(514))
+      assert_equal(1024, Block.blocked_size(515))
+    end
+
     def test_tar?
       begin
         FileUtils.mkdir_p('foo')
