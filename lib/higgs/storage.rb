@@ -517,7 +517,7 @@ module Higgs
         return offset
       end
 
-      raise NotImplementedError, 'broken'
+      raise 'Bug: not to reach'
     end
     private :reorganize_shift
 
