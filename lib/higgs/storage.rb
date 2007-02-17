@@ -376,6 +376,7 @@ module Higgs
         elsif (eoa > rollback_eoa) then
           # roll forward
         else
+          # if (eoa < rollback_eoa) then
           raise BrokenError, 'shrinked storage'
         end
 
