@@ -3,6 +3,7 @@
 require 'digest/sha2'
 require 'fileutils'
 require 'higgs/storage'
+require 'higgs/tar'
 require 'rubyunit'
 require 'yaml'
 
@@ -55,6 +56,8 @@ module Higgs::StorageTest
   end
 
   class StorageTest < RUNIT::TestCase
+    include Higgs::Tar::Block
+
     def setup
       @tmp_dir = 'storage_tmp'
       FileUtils.mkdir_p(@tmp_dir)
@@ -353,6 +356,24 @@ module Higgs::StorageTest
       @s.write_and_commit([ [ 'foo', :write, "HALO" ] ]) # make gap
       @s.dump(out)
       assert(out.length > 0)
+    end
+
+    def test_verify
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      @s.verify
+    end
+
+    def test_verify_BrokenError
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      File.open(@name + '.tar', File::WRONLY) {|w|
+        size = w.stat.size
+        w.seek(size - BLKSIZ * 5)
+        w.write(0xFF.chr * BLKSIZ)
+        w.fsync
+      }
+      assert_exception(Higgs::Storage::BrokenError) {
+        @s.verify
+      }
     end
   end
 end
