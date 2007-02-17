@@ -5,10 +5,10 @@ require 'rubyunit'
 require 'utils_index'
 
 module Higgs::IndexTest
-  # for ident(1)
-  QDBM_CVS_ID = '$Id$'
-
   class QDBMTest < RUNIT::TestCase
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     include Higgs::Index
     include IndexTest
 

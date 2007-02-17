@@ -5,10 +5,10 @@ require 'rubyunit'
 require 'utils_index'
 
 module Higgs::IndexTest
-  # for ident(1)
-  GDBM_CVS_ID = '$Id$'
-
   class GDBMTest < RUNIT::TestCase
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     include Higgs::Index
     include IndexTest
 
