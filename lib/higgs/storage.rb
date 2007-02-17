@@ -538,11 +538,15 @@ module Higgs
         curr_pos = 0
         r_tar.seek(0)
         r_tar.each(true) do |head|
-          name = head[:name]
-          if (read_index('d:' + name) == curr_pos) then
-            out << [ :data, curr_pos, head ].inspect << "\n"
-          elsif (name =~ /\.properties$/ && read_index('p:' + name.sub(/\.properties$/, '')) == curr_pos) then
-            out << [ :properties, curr_pos, head ].inspect << "\n"
+          if (type = block_alive?(head, curr_pos)) then
+            case (type)
+            when :data
+              out << [ :data, curr_pos, head ].inspect << "\n"
+            when :properties
+              out << [ :properties, curr_pos, head ].inspect << "\n"
+            else
+              raise "unknown type: #{type}"
+            end
           else
             out << [ :gap, curr_pos, head ].inspect << "\n"
           end
