@@ -333,7 +333,7 @@ module Higgs
         end
       end
 
-      if (rollback_dump = @idx_db['rollback']) then # rollback
+      if (rollback_dump = @idx_db['rollback']) then
         rollback_log = Marshal.load(rollback_dump)
         rollback_eoa = rollback_log.delete(:EOA) or raise BrokenError, 'invalid rollback log'
         eoa = @idx_db['EOA'].to_i
@@ -356,8 +356,8 @@ module Higgs
           @w_tar.seek(eoa)
           @w_tar.write_EOA
           @w_tar.fsync
-        elsif (eoa > rollback_eoa) then # roll forward
-          # 
+        elsif (eoa > rollback_eoa) then
+          # roll forward
         else
           raise BrokenError, 'shrinked storage'
         end
