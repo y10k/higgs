@@ -346,5 +346,13 @@ module Higgs::StorageTest
       end
       assert(expected_keys.empty?)
     end
+
+    def test_dump
+      out = ''
+      @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
+      @s.write_and_commit([ [ 'foo', :write, "HALO" ] ])
+      @s.dump(out)
+      assert(out.length > 0)
+    end
   end
 end
