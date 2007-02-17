@@ -156,7 +156,7 @@ module Higgs
       properties = fetch_properties(key) or raise BrokenError, "failed to read properties: #{key}"
       content_hash = Digest::SHA512.hexdigest(value)
       if (content_hash != properties['hash']) then
-        raise BrokenError, "mismatch content hash at #{key}: expected<#{content_hash}> but was <#{properties['hash']}>"
+        raise BrokenError, "mismatch content hash at #{key}: expected<#{properties['hash']}> but was <#{content_hash}>"
       end
       value
     end
@@ -550,6 +550,25 @@ module Higgs
         end
       }
       nil
+    end
+
+    def verify
+      unless (@idx_db.key? 'EOA') then
+        raise BrokenError, 'not found a EOA index'
+      end
+      eoa = @idx_db['EOA'].to_i
+
+      each_key do |key|
+        # hash check
+        fetch(key) or raise BrokenError, "not found: #{key}"
+
+        if (@idx_db['d:' + key].to_i >= eoa) then
+          raise BrokenError, "too large data index: #{key}"
+        end
+        if (@idx_db['i:' + key].to_i >= eoa) then
+          raise BrokenError, "too large properties index: #{key}"
+        end
+      end
     end
 
     def shutdown
