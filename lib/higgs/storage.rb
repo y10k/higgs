@@ -143,7 +143,6 @@ module Higgs
 
     def read_record(key)
       pos = read_index(key) or return
-      head_and_body = nil
       @r_tar_pool.transaction{|r_tar|
         r_tar.seek(pos)
         r_tar.fetch or raise BrokenError, "failed to read record: #{key}" 
