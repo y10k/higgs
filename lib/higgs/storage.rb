@@ -19,9 +19,6 @@ module Higgs
     class NotWritableError < Error
     end
 
-    class ReadOnlyError < Error
-    end
-
     class DebugRollbackException < Exception
     end
 
