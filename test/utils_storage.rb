@@ -130,6 +130,16 @@ module Higgs::StorageTest
       assert_equal({}, properties['custom_properties'])
     end
 
+    def test_write_and_commit_fetch_delete_no_data
+      assert_nil(@s.fetch('foo'))
+      assert_nil(@s.fetch_properties('foo'))
+
+      @s.write_and_commit([ [ 'foo', :delete ] ])
+
+      assert_nil(@s.fetch('foo'))
+      assert_nil(@s.fetch_properties('foo'))
+    end
+
     def test_write_and_commit_read_only_NotWritableError
       @s.shutdown
       @s = nil

@@ -20,8 +20,16 @@ module Higgs
     end
 
     QDBM_OPEN = {
-      :read => proc{|name| Depot.open(name, QDBM_R_FLAGS).extend(DepotHasKey) },
-      :write => proc{|name| Depot.open(name, QDBM_W_FLAGS).extend(DepotHasKey) }
+      :read => proc{|name|
+        db = Depot.open(name, QDBM_R_FLAGS)
+        db.silent = true
+        db.extend(DepotHasKey)
+      },
+      :write => proc{|name|
+        db = Depot.open(name, QDBM_W_FLAGS)
+        db.silent = true
+        db.extend(DepotHasKey)
+      }
     }
   end
 end
