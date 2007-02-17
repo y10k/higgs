@@ -410,6 +410,8 @@ module Higgs
               curr_pos = next_pos
             else
               # end of reorganize
+              @idx_db['EOA'] = curr_pos.to_s
+              @idx_db.sync
               @w_tar.seek(curr_pos)
               @w_tar.write_EOA
               @w_tar.fsync
