@@ -199,6 +199,7 @@ module Higgs
       commit_log = {}
       committed = false
       new_properties = {}
+      rollback_log = {}
 
       __debug_rollback_before_rollback_log_write__ = false
       __debug_rollback_after_rollback_log_write__ = false
@@ -207,6 +208,7 @@ module Higgs
 
       begin
         eoa = @idx_db['EOA'].to_i
+        rollback_log[:EOA] = eoa
         @w_tar.seek(eoa)
 
         for key, ope, value in write_list
@@ -278,7 +280,6 @@ module Higgs
           raise DebugRollbackBeforeRollbackLogWriteException, 'debug'
         end
 
-        rollback_log = {}
         commit_log.each_key do |key|
           if (pos = read_index(key)) then
             rollback_log[key] = pos.to_i
@@ -309,12 +310,14 @@ module Higgs
 
         @idx_db['EOA'] = eoa.to_s
         @idx_db.sync
-        @idx_db.delete('rollback')
-        @idx_db.sync
 
         if (__debug_rollback_commit_completed__) then
           raise DebugRollbackCommitCompletedException, 'debug'
         end
+
+        @idx_db.delete('rollback')
+        @idx_db.sync
+
 
         committed = true
       ensure
@@ -330,33 +333,39 @@ module Higgs
         end
       end
 
-      if (rollback_dump = @idx_db['rollback']) then
+      if (rollback_dump = @idx_db['rollback']) then # rollback
         rollback_log = Marshal.load(rollback_dump)
+        rollback_eoa = rollback_log.delete(:EOA) or raise BrokenError, 'invalid rollback log'
         eoa = @idx_db['EOA'].to_i
 
-        rollback_log.each_pair do |key, pos|
-          case (pos)
-          when :new
-            @idx_db.delete(key)
-          else
-            if (pos >= eoa) then
-              raise BrokenError, 'invalid rollback log'
-            end
-            roll_forward_pos = read_index(key)
-            if (roll_forward_pos.nil? || roll_forward_pos >= eoa) then
+        if (eoa == rollback_eoa) then
+          rollback_log.each_pair do |key, pos|
+            case (pos)
+            when :new
+              @idx_db.delete(key)
+            else
+              if (pos >= eoa) then
+                raise BrokenError, 'invalid rollback log'
+              end
+              roll_forward_pos = read_index(key)
               @idx_db[key] = pos.to_s
             end
           end
+          @idx_db.sync
+
+          @w_tar.seek(eoa)
+          @w_tar.write_EOA
+          @w_tar.fsync
+        elsif (eoa > rollback_eoa) then # roll forward
+          # 
+        else
+          raise BrokenError, 'shrinked storage'
         end
-        @idx_db.sync
 
         @idx_db.delete('rollback')
         @idx_db.sync
-
-        @w_tar.seek(eoa)
-        @w_tar.write_EOA
-        @w_tar.fsync
       end
+
       nil
     end
 
