@@ -369,87 +369,145 @@ module Higgs
       nil
     end
 
+    def block_alive?(head, pos)
+      if (read_index('d:' + head[:name]) == pos) then
+        return :data
+      end
+      if (head[:name] =~ /\.properties$/) then
+        if (read_index('p:' + head[:name].sub(/\.properties$/, '')) == pos) then
+          return :properties
+        end
+      end
+      nil
+    end
+    private :block_alive?
+
     def reorganize
       if (@read_only) then
         raise NotWritableError, 'failed to write to read only storage'
       end
 
-      raise NotImplementedError, 'broken'
-
       @r_tar_pool.transaction{|r_tar|
-        divide_pos = 0
         curr_pos = 0
         r_tar.seek(0)
-        catch(:EOA) {
-          loop do
-            head_and_body = r_tar.fetch or throw(:EOA)
-            name = head_and_body[:name]
-            if (read_index('d:' + name) == curr_pos ||
-                name =~ /\.properties$/ && read_index('p:' + name.sub(/\.properties$/, '')) == curr_pos)
-            then
-              divide_pos = r_tar.pos
-              curr_pos = divide_pos
+        while (head = r_tar.read_header(true))
+          p [ :debug, :reorganize, :curr_pos, curr_pos ] if $DEBUG
+          if (block_alive? head, curr_pos) then
+            curr_pos = r_tar.pos
+          else
+            if (next_pos = reorganize_shift(r_tar, curr_pos)) then
+              r_tar.seek(next_pos)
+              curr_pos = next_pos
             else
-              curr_pos = r_tar.pos
-              while (divide_pos < curr_pos)
-                head_and_body = r_tar.fetch or throw(:EOA)
-                name = head_and_body[:name]
-
-                p [ :debug,
-                  [ divide_pos, curr_pos ],
-                  [ read_index('d:' + name),
-                    read_index('p:' + name.sub(/\.properties$/, '')), name
-                  ]
-                ]
-
-                if (read_index('d:' + name) == curr_pos) then
-                  blocked_size = head_and_body[:size] + Tar::Block.padding_size(head_and_body[:size])
-                  if (blocked_size > curr_pos - divide_pos) then
-                    eoa = @idx_db['EOA'].to_i
-                    copy(curr_pos, eoa, blocked_size)
-                    @idx_db['EOA'] = (eoa + blocked_size).to_s
-                    @idx_db.sync
-                    @w_tar.seek(eoa + blocked_size)
-                    @w_tar.write_EOA
-                    @idx_db['d:' + name] = eoa.to_s
-                    @idx_db.sync
-                  else
-                    copy(curr_pos, divide_pos, blocked_size)
-                    @idx_db['d:' + name] = divide_pos.to_s
-                    @idx_db.sync
-                    divide_pos += blocked_size
-                  end
-                elsif (name =~ /\.properties$/ && read_index('p:' + name.sub(/\.properties$/, '')) == curr_pos) then
-                  blocked_size = head_and_body[:size] + Tar::Block.padding_size(head_and_body[:size])
-                  if (blocked_size > curr_pos - divide_pos) then
-                    eoa = @idx_db['EOA'].to_i
-                    copy(curr_pos, eoa, blocked_size)
-                    @idx_db['EOA'] = (eoa + blocked_size).to_s
-                    @idx_db.sync
-                    @w_tar.seek(eoa + blocked_size)
-                    @w_tar.write_EOA
-                    @idx_db['p:' + name] = eoa.to_s
-                    @idx_db.sync
-                  else
-                    copy(curr_pos, divide_pos, blocked_size)
-                    @idx_db['p:' + name] = divide_pos.to_s
-                    @idx_db.sync
-                    divide_pos += blocked_size
-                  end
-                end
-                curr_pos = r_tar.pos
-              end
+              # end of reorganize
+              @w_tar.seek(curr_pos)
+              @w_tar.write_EOA
+              @w_tar.fsync
+              @w_tar.truncate(curr_pos + Tar::Block::BLKSIZ * 2)
+              break
             end
           end
-        }
-        @w_tar.fsync
-
-        eoa = @idx_db['EOA'].to_i
-        @w_tar.truncate(eoa + Tar::Block::BLKSIZ * 2)
-        @w_tar.fsync
+        end
       }
       nil
     end
+
+    def reorganize_shift(r_tar, offset)
+      p [ :debug, :reorganize_shift, :offset, offset ] if $DEBUG
+
+      alive_head = nil
+      alive_pos = nil
+      alive_type = nil
+      curr_pos = r_tar.pos
+      r_tar.each(true) do |head|
+        if (type = block_alive?(head, curr_pos)) then
+          alive_type = type
+          alive_head = head
+          alive_pos = curr_pos
+          break
+        end
+        curr_pos = r_tar.pos
+      end
+
+      unless (alive_head) then
+        return
+      end
+
+      p [ :debug, :reorganize_shift, :gap, offset, alive_pos ] if $DEBUG
+
+      gap_size = alive_pos - offset
+      alive_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(alive_head[:size])
+
+      # ^ <-- offset
+      # |
+      # | gap_size
+      # |
+      # V
+      # ^ <-- alive_pos
+      # |
+      # | Tar::Block::BLKSIZ (header)
+      # |
+      # V
+      # ^
+      # |
+      # | Tar::Block.blocked_size(alive_head[:size])
+      # |
+      # V
+
+      if (gap_size == alive_size) then
+        puts 'debug: reorganize_shift: gap_size == alive_size' if $DEBUG
+        copy(alive_pos, offset, alive_size)
+        case (alive_type)
+        when :data
+          @idx_db['d:' + alive_head[:name]] = offset.to_s
+        when :properties
+          @idx_db['p:' + alive_head[:name].sub(/\.properties$/, '')] = offset.to_s
+        else
+          raise "unknown alive_type: #{alive_type}"
+        end
+        @idx_db.sync
+        return offset + alive_size
+      elsif (gap_size >= alive_size + Tar::Block::BLKSIZ * 2) then
+        puts 'debug: reorganize_shift: gap_size >= alive_size + Tar::Block::BLKSIZ * 2' if $DEBUG
+        @w_tar.seek(offset + alive_size)
+        @w_tar.write_header(:name => '.gap', :size => gap_size - alive_size - Tar::Block::BLKSIZ)
+        @w_tar.fsync
+        copy(alive_pos, offset, alive_size)
+        case (alive_type)
+        when :data
+          @idx_db['d:' + alive_head[:name]] = offset.to_s
+        when :properties
+          @idx_db['p:' + alive_head[:name].sub(/\.properties$/, '')] = offset.to_s
+        else
+          raise "unknown alive_type: #{alive_type}"
+        end
+        @idx_db.sync
+        return offset + alive_size
+      else
+        puts 'debug: reorganize_shift: EOA' if $DEBUG
+        eoa = @idx_db['EOA'].to_i
+        copy(alive_pos, eoa, alive_size)
+        next_eoa = eoa + alive_size
+        @w_tar.seek(next_eoa)
+        @w_tar.write_EOA
+        @w_tar.fsync
+        @idx_db['EOA'] = next_eoa.to_s
+        @idx_db.sync
+        case (alive_type)
+        when :data
+          @idx_db['d:' + alive_head[:name]] = offset.to_s
+        when :properties
+          @idx_db['p:' + alive_head[:name].sub(/\.properties$/, '')] = offset.to_s
+        else
+          raise "unknown alive_type: #{alive_type}"
+        end
+        @idx_db.sync
+        return offset
+      end
+
+      raise NotImplementedError, 'broken'
+    end
+    private :reorganize_shift
 
     def copy(from_pos, to_pos, size)
       @r_tar_pool.transaction{|r_tar|
@@ -472,11 +530,11 @@ module Higgs
         r_tar.each(true) do |head|
           name = head[:name]
           if (read_index('d:' + name) == curr_pos) then
-            out.puts [ :data, curr_pos, head ].inspect
+            out << [ :data, curr_pos, head ].inspect << "\n"
           elsif (name =~ /\.properties$/ && read_index('p:' + name.sub(/\.properties$/, '')) == curr_pos) then
-            out.puts [ :properties, curr_pos, head ].inspect
+            out << [ :properties, curr_pos, head ].inspect << "\n"
           else
-            out.puts [ :gap, curr_pos, head ].inspect
+            out << [ :gap, curr_pos, head ].inspect << "\n"
           end
           curr_pos = r_tar.pos
         end

@@ -76,6 +76,11 @@ module Higgs
       end
       module_function :padding_size
 
+      def blocked_size(bytes)
+        bytes + padding_size(bytes)
+      end
+      module_function :blocked_size
+
       def tar?(path)
         if (File.file? path) then
           head = File.open(path, 'rb') {|input| input.read(BLKSIZ) }
@@ -212,7 +217,7 @@ module Higgs
       def fetch
         head_and_body = read_header or return
         if (head_and_body[:size] > 0) then
-          blocked_size = head_and_body[:size] + padding_size(head_and_body[:size])
+          blocked_size = blocked_size(head_and_body[:size])
           head_and_body[:body] = @io.read(blocked_size)
           unless (head_and_body) then
             raise FormatError, 'unexpected EOF'
@@ -249,13 +254,13 @@ module Higgs
         if (name.length > 100) then
           raise TooLongPathError, "too long path: #{name}"
         end
-        mode     = format('%-8o', head[:mode])
-        uid      = format('%-8o', head[:uid])
-        gid      = format('%-8o', head[:gid])
+        mode     = format('%-8o', head[:mode] || 0100644) # 0100644 => -rw-r--r--
+        uid      = format('%-8o', head[:uid] || Process.euid)
+        gid      = format('%-8o', head[:gid] || Process.egid)
         size     = format('%-12o', head[:size])
-        mtime    = format('%-12o', head[:mtime].to_i)
+        mtime    = format('%-12o', (head[:mtime] || Time.now).to_i)
         dummy_chksum = ' ' * 8
-        typeflag = head[:typeflag]
+        typeflag = head[:typeflag] || REGTYPE
         linkname = head[:linkname] || ''
         magic    = head[:magic] || MAGIC
         version  = head[:version] || VERSION
@@ -297,18 +302,11 @@ module Higgs
 
       def add(name, body, options=nil)
         head = {
-          :name     => name,
-          :mode     => 0100644,	# -rw-r--r--
-          :uid      => Process.euid,
-          :gid      => Process.egid,
-          :size     => body.length,
-          :typeflag => REGTYPE
+          :name => name,
+          :size => body.length
         }
         if (options) then
           head.update(options) 
-        end
-        unless (head.include? :mtime) then
-          head[:mtime] = Time.now
         end
         if (block_given?) then
           yield(head)
