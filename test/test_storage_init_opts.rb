@@ -1,9 +1,7 @@
 #!/usr/local/bin/ruby
 
-require 'fileutils'
 require 'higgs/storage'
 require 'rubyunit'
-require 'yaml'
 
 module Higgs::StorageTest
   class InitOptionsTest < RUNIT::TestCase
