@@ -505,18 +505,21 @@ module Higgs::StorageTest
       @s.write_and_commit([ [ 'foo', :update_properties, { :comment => 'Hello world.' } ] ])
 
       @s.reorganize
+      @s.verify
 
       # gap size > updated data size
       @s.write_and_commit([ [ 'foo', :write, 0xFF.chr * BLKSIZ * 0 ] ])
       @s.write_and_commit([ [ 'foo', :write, 0xFF.chr * BLKSIZ * 1 ] ])
 
       @s.reorganize
+      @s.verify
 
       # gap size < updated data size
       @s.write_and_commit([ [ 'foo', :write, 0xFF.chr * 0 ] ])
       @s.write_and_commit([ [ 'foo', :write, 0xFF.chr * BLKSIZ * 100 ] ])
 
       @s.reorganize
+      @s.verify
     end
 
     def test_reorganize_read_only_NotWritableError

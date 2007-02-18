@@ -516,9 +516,9 @@ module Higgs
         @idx_db.sync
         case (alive_type)
         when :data
-          @idx_db['d:' + alive_head[:name]] = offset.to_s
+          @idx_db['d:' + alive_head[:name]] = eoa.to_s
         when :properties
-          @idx_db['p:' + alive_head[:name].sub(/\.properties$/, '')] = offset.to_s
+          @idx_db['p:' + alive_head[:name].sub(/\.properties$/, '')] = eoa.to_s
         else
           raise "unknown alive_type: #{alive_type}"
         end
