@@ -567,6 +567,15 @@ module Higgs
       nil
     end
 
+    def verify_each_key
+      yield('.higgs')
+      each_key do |key|
+        yield(key)
+      end
+      self
+    end
+    private :verify_each_key
+
     def verify
       if (@idx_db.key? 'rollback') then
         raise NotWritableError, 'need to rollback'
@@ -577,7 +586,7 @@ module Higgs
       end
       eoa = @idx_db['EOA'].to_i
 
-      each_key do |key|
+      verify_each_key do |key|
         # hash check
         fetch(key) or raise BrokenError, "not found: #{key}"
 
