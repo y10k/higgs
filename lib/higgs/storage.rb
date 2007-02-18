@@ -433,18 +433,33 @@ module Higgs
       nil
     end
 
+    FETCH_DATA_KEY = proc{|head|
+      'd:' + head[:name]
+    }
+
+    FETCH_PROPERTIES_KEY = proc{|head|
+      'p:' + head[:name].sub(/\.properties$/, '')
+    }
+
     def reorganize_shift(r_tar, offset)
       p [ :debug, :reorganize_shift, :offset, offset ] if $DEBUG
 
       alive_head = nil
       alive_pos = nil
-      alive_type = nil
+      fetch_key = nil
       curr_pos = r_tar.pos
       r_tar.each(true) do |head|
         if (type = block_alive?(head, curr_pos)) then
-          alive_type = type
           alive_head = head
           alive_pos = curr_pos
+          case (type)
+          when :data
+            fetch_key = FETCH_DATA_KEY
+          when :properties
+            fetch_key = FETCH_PROPERTIES_KEY
+          else
+            raise "unknown type: #{type}"
+          end
           break
         end
         curr_pos = r_tar.pos
@@ -480,48 +495,27 @@ module Higgs
         @w_tar.seek(offset + alive_size)
         @w_tar.write_header(:name => '.gap', :size => gap_size - alive_size - Tar::Block::BLKSIZ)
         @w_tar.fsync
-        copy(alive_pos, offset, alive_size)
-        case (alive_type)
-        when :data
-          @idx_db['d:' + alive_head[:name]] = offset.to_s
-        when :properties
-          @idx_db['p:' + alive_head[:name].sub(/\.properties$/, '')] = offset.to_s
-        else
-          raise "unknown alive_type: #{alive_type}"
-        end
+        copy(r_tar, alive_size, alive_pos, offset)
+        @idx_db[fetch_key.call(alive_head)] = offset.to_s
         @idx_db.sync
         return offset + alive_size
       elsif (gap_size == alive_size) then
         puts "debug: reorganize_shift: gap_size(#{gap_size}) == alive_size(#{alive_size})" if $DEBUG
-        copy(alive_pos, offset, alive_size)
-        case (alive_type)
-        when :data
-          @idx_db['d:' + alive_head[:name]] = offset.to_s
-        when :properties
-          @idx_db['p:' + alive_head[:name].sub(/\.properties$/, '')] = offset.to_s
-        else
-          raise "unknown alive_type: #{alive_type}"
-        end
+        copy(r_tar, alive_size, alive_pos, offset)
+        @idx_db[fetch_key.call(alive_head)] = offset.to_s
         @idx_db.sync
         return offset + alive_size
       else
         puts 'debug: reorganize_shift: EOA' if $DEBUG
         eoa = @idx_db['EOA'].to_i
-        copy(alive_pos, eoa, alive_size)
+        copy(r_tar, alive_size, alive_pos, eoa)
         next_eoa = eoa + alive_size
         @w_tar.seek(next_eoa)
         @w_tar.write_EOA
         @w_tar.fsync
         @idx_db['EOA'] = next_eoa.to_s
         @idx_db.sync
-        case (alive_type)
-        when :data
-          @idx_db['d:' + alive_head[:name]] = eoa.to_s
-        when :properties
-          @idx_db['p:' + alive_head[:name].sub(/\.properties$/, '')] = eoa.to_s
-        else
-          raise "unknown alive_type: #{alive_type}"
-        end
+        @idx_db[fetch_key.call(alive_head)] = eoa.to_s
         @idx_db.sync
         return offset
       end
@@ -530,16 +524,14 @@ module Higgs
     end
     private :reorganize_shift
 
-    def copy(from_pos, to_pos, size)
-      @r_tar_pool.transaction{|r_tar|
-        r_io = r_tar.to_io
-        r_io.seek(from_pos)
-        data = r_io.read(size)
-        w_io = @w_tar.to_io
-        w_io.seek(to_pos)
-        w_io.write(data)
-        w_io.fsync
-      }
+    def copy(r_tar, size, from_pos, to_pos)
+      r_io = r_tar.to_io
+      r_io.seek(from_pos)
+      data = r_io.read(size)
+      w_io = @w_tar.to_io
+      w_io.seek(to_pos)
+      w_io.write(data)
+      w_io.fsync
       nil
     end
     private :copy
