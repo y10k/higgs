@@ -77,6 +77,10 @@ module Higgs
         def lock(key)
           self
         end
+
+        def unlock(key)
+          self
+        end
       end
 
       def transaction(read_only=false)
@@ -104,17 +108,28 @@ module Higgs
         def initialize(attrs, cache)
           @attrs = attrs
           @cache = cache
-          @lock_list = []
+          @lock_map = {}
         end
 
-        attr_reader :lock_list
+        def lock_list
+          @lock_map.values
+        end
+
+        def unlock(key)
+          if (lock = @lock_map.delete(key)) then
+            lock.unlock
+          else
+            raise "not locked key: #{key}"
+          end
+          self
+        end
       end
 
       class ReadOnlyLockHandler < LockHandler
         def lock(key)
           r_lock = @cache[key].read_lock
           LockManager.try_lock(r_lock, @attrs)
-          @lock_list << r_lock
+          @lock_map[key] = r_lock
           self
         end
       end
@@ -123,7 +138,7 @@ module Higgs
         def lock(key)
           w_lock = @cache[key].write_lock
           LockManager.try_lock(w_lock, @attrs)
-          @lock_list << w_lock
+          @lock_map[key] = w_lock
           self
         end
       end
