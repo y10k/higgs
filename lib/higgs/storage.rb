@@ -475,8 +475,11 @@ module Higgs
       # |
       # V
 
-      if (gap_size == alive_size) then
-        puts "debug: reorganize_shift: gap_size(#{gap_size}) == alive_size(#{alive_size})" if $DEBUG
+      if (gap_size >= alive_size + Tar::Block::BLKSIZ) then
+        puts "debug: reorganize_shift: gap_size(#{gap_size}) >= alive_size(#{alive_size}) + Tar::Block::BLKSIZ" if $DEBUG
+        @w_tar.seek(offset + alive_size)
+        @w_tar.write_header(:name => '.gap', :size => gap_size - alive_size - Tar::Block::BLKSIZ)
+        @w_tar.fsync
         copy(alive_pos, offset, alive_size)
         case (alive_type)
         when :data
@@ -488,11 +491,8 @@ module Higgs
         end
         @idx_db.sync
         return offset + alive_size
-      elsif (gap_size >= alive_size + Tar::Block::BLKSIZ) then
-        puts "debug: reorganize_shift: gap_size(#{gap_size}) >= alive_size(#{alive_size}) + Tar::Block::BLKSIZ" if $DEBUG
-        @w_tar.seek(offset + alive_size)
-        @w_tar.write_header(:name => '.gap', :size => gap_size - alive_size - Tar::Block::BLKSIZ)
-        @w_tar.fsync
+      elsif (gap_size == alive_size) then
+        puts "debug: reorganize_shift: gap_size(#{gap_size}) == alive_size(#{alive_size})" if $DEBUG
         copy(alive_pos, offset, alive_size)
         case (alive_type)
         when :data
