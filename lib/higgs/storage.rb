@@ -488,8 +488,8 @@ module Higgs
         end
         @idx_db.sync
         return offset + alive_size
-      elsif (gap_size >= alive_size + Tar::Block::BLKSIZ * 2) then
-        puts "debug: reorganize_shift: gap_size(#{gap_size}) >= alive_size(#{alive_size}) + Tar::Block::BLKSIZ * 2" if $DEBUG
+      elsif (gap_size >= alive_size + Tar::Block::BLKSIZ) then
+        puts "debug: reorganize_shift: gap_size(#{gap_size}) >= alive_size(#{alive_size}) + Tar::Block::BLKSIZ" if $DEBUG
         @w_tar.seek(offset + alive_size)
         @w_tar.write_header(:name => '.gap', :size => gap_size - alive_size - Tar::Block::BLKSIZ)
         @w_tar.fsync
