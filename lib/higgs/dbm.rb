@@ -124,7 +124,7 @@ module Higgs
 
       def key?(key)
         lock(key)
-        ! @deleted_map[key] && @storage.key? key
+        (! @deleted_map[key]) && (@storage.key? key)
       end
 
       alias has_key? key?
