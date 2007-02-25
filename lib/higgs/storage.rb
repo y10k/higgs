@@ -610,5 +610,73 @@ module Higgs
 
       nil
     end
+
+    class TransactionHandler
+      def initialize(storage, read_cache, lock_handler)
+	@storage = storage
+	@local_cache = Hash.new{|hash, key| hash[key] = read_cache[key] }
+	@lock_handler = lock_handler
+	@locked_map = {}
+	@locked_map.default = false
+	@write_map = {}
+      end
+
+      def locked?(key)
+	@locked_map[key]
+      end
+
+      def lock(key)
+	unless (@locked_map[key]) then
+	  @lock_handler.lock(key)
+	  @locked_map[key] = true
+	  return true
+	end
+	false
+      end
+
+      def unlock(key)
+	if (@locked_map[key]) then
+	  @lock_handler.unlock(key)
+	  @locked_map[key] = false
+	  return true
+	end
+	false
+      end
+
+      def [](key)
+	lock(key)
+	(@write_map[key] != :delete) ? @local_cache[key] : nil
+      end
+
+      def []=(key, value)
+	lock(key)
+	@write_map[key] = :write
+	@local_cache[key] = value
+      end
+
+      def delete(key)
+	lock(key)
+	@write_map[key] = :delete
+	@local_cache[key]	# load from storage
+	@local_cache.delete(key)
+      end
+
+      def key?(key)
+	lock(key)
+	(@write_map[key] != :delete) && (@storage.key? key)
+      end
+
+      def each_key
+	@storage.each_key do |key|
+	  lock(key)
+	  yield(key) if (@write_map[key] != :delete)
+	end
+	self
+      end
+
+      def write_list
+	@write_map.to_a
+      end
+    end
   end
 end
