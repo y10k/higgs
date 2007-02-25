@@ -775,5 +775,137 @@ module Higgs::StorageTest
       }
       assert_equal(false, (@s.key? 'foo'))
     end
+
+    def test_each_key
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ],
+			    [ 'bar', :write, 'banana' ],
+			    [ 'baz', :write, 'orange' ]
+			  ])
+      transaction{|tx|
+	expected_keys = %w[ foo bar baz ]
+	tx.each_key do |key|
+	  assert((expected_keys.include? key), "key: #{key}")
+	  expected_keys.delete(key)
+	end
+	assert(expected_keys.empty?)
+      }
+    end
+
+    def test_each_key_not_defined_values
+      transaction{|tx|
+	tx.each_key do |key|
+	  assert_fail('not to reach')
+	end
+      }
+    end
+
+    def test_store_and_delete_and_each_key
+      @s.each_key do |key|
+	assert_fail('not to reach')
+      end
+
+      transaction{|tx|
+	tx.each_key do |key|
+	  assert_fail('not to reach')
+	end
+
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+
+	expected_keys = %w[ foo bar baz ]
+	tx.each_key do |key|
+	  assert((expected_keys.include? key), "key: #{key}")
+	  expected_keys.delete(key)
+	end
+	assert(expected_keys.empty?)
+
+	tx.delete('bar')
+
+	expected_keys = %w[ foo baz ]
+	tx.each_key do |key|
+	  assert((expected_keys.include? key), "key: #{key}")
+	  expected_keys.delete(key)
+	end
+	assert(expected_keys.empty?)
+      }
+
+      expected_keys = %w[ foo baz ]
+      @s.each_key do |key|
+	assert((expected_keys.include? key), "key: #{key}")
+	expected_keys.delete(key)
+      end
+      assert(expected_keys.empty?)
+
+      transaction{|tx|
+	expected_keys = %w[ foo baz ]
+	tx.each_key do |key|
+	  assert((expected_keys.include? key), "key: #{key}")
+	  expected_keys.delete(key)
+	end
+	assert(expected_keys.empty?)
+      }
+    end
+
+    def test_lock_and_unlock_and_locked
+      transaction{|tx|
+	assert_equal(false, (tx.locked? 'foo'))
+	tx.lock('foo')
+	assert_equal(true, (tx.locked? 'foo'))
+	tx.unlock('foo')
+	assert_equal(false, (tx.locked? 'foo'))
+      }
+    end
+
+    def test_lock_lock_lock_unlock
+      transaction{|tx|
+	tx.lock('foo')
+	tx.lock('foo')
+	tx.lock('foo')
+	assert_equal(true, (tx.locked? 'foo'))
+	tx.unlock('foo')
+	assert_equal(false, (tx.locked? 'foo'))
+      }
+    end
+
+    def test_auto_lock
+      transaction{|tx|
+	assert_equal(false, (tx.locked? 'foo'))
+	tx['foo']
+	assert_equal(true, (tx.locked? 'foo'))
+
+	assert_equal(false, (tx.locked? 'bar'))
+	tx['bar'] = 'HALO'
+	assert_equal(true, (tx.locked? 'bar'))
+
+	assert_equal(false, (tx.locked? 'baz'))
+	tx.delete('baz')
+	assert_equal(true, (tx.locked? 'baz'))
+
+	assert_equal(false, (tx.locked? 'qux'))
+	tx.key? 'qux'
+	assert_equal(true, (tx.locked? 'qux'))
+
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+      }
+
+      transaction{|tx|
+	assert_equal(false, (tx.locked? 'foo'))
+	assert_equal(false, (tx.locked? 'bar'))
+	assert_equal(false, (tx.locked? 'baz'))
+	assert_equal(false, (tx.locked? 'qux'))
+
+	tx.each_key do |key|
+	  # nothing to do.
+	end
+
+	assert_equal(true, (tx.locked? 'foo'))
+	assert_equal(true, (tx.locked? 'bar'))
+	assert_equal(true, (tx.locked? 'baz'))
+	assert_equal(false, (tx.locked? 'qux'))
+      }
+    end
   end
 end

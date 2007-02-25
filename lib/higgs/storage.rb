@@ -630,18 +630,16 @@ module Higgs
 	unless (@locked_map[key]) then
 	  @lock_handler.lock(key)
 	  @locked_map[key] = true
-	  return true
 	end
-	false
+	nil
       end
 
       def unlock(key)
 	if (@locked_map[key]) then
 	  @lock_handler.unlock(key)
 	  @locked_map[key] = false
-	  return true
 	end
-	false
+	nil
       end
 
       def [](key)
@@ -670,9 +668,17 @@ module Higgs
       end
 
       def each_key
+	@local_cache.each_key do |key|
+	  lock(key)
+	  if (@write_map[key] != :delete)then
+	    yield(key)
+	  end
+	end
 	@storage.each_key do |key|
 	  lock(key)
-	  yield(key) if (@write_map[key] != :delete)
+	  if ((@write_map[key] != :delete) && ! (@local_cache.key? key)) then
+	    yield(key)
+	  end
 	end
 	self
       end
