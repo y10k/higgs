@@ -743,5 +743,37 @@ module Higgs::StorageTest
 	assert_equal(true, (tx.key? 'foo'))
       }
     end
+
+    def test_delete
+      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      transaction{|tx|
+	assert_equal('HALO', tx.delete('foo'))
+      }
+      assert_equal(false, (@s.key? 'foo'))
+    end
+
+    def test_delete_not_defined_value
+      transaction{|tx|
+	assert_equal(nil, tx.delete('foo'))
+      }
+      assert_equal(false, (@s.key? 'foo'))
+    end
+
+    def test_store_and_delete
+      assert_equal(false, (@s.key? 'foo'))
+      transaction{|tx|
+	tx['foo'] = 'HALO'
+      }
+      assert_equal(true, (@s.key? 'foo'))
+      transaction{|tx|
+	assert_equal('HALO', tx.delete('foo'))
+      }
+      assert_equal(false, (@s.key? 'foo'))
+      transaction{|tx|
+	tx['foo'] = 'HALO'
+	assert_equal('HALO', tx.delete('foo'))
+      }
+      assert_equal(false, (@s.key? 'foo'))
+    end
   end
 end
