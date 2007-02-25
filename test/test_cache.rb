@@ -67,47 +67,56 @@ module Higgs::CacheTest
     NUM_OF_THREADS = 10
     WORK_COUNT = 10000
 
-    def test_calc_race_condition
-      barrier = Higgs::Thread::Barrier.new(3)
+    def calc_race_condition
+      barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS + 1)
+      th_grp = ThreadGroup.new
 
-      a = nil
-      th1 = Thread.new{
-        barrier.wait
-        a = calc(WORK_COUNT)
-      }
-
-      b = nil
-      th2 = Thread.new{
-        barrier.wait
-        b = calc(WORK_COUNT)
+      result_list = [ nil ] * NUM_OF_THREADS
+      NUM_OF_THREADS.times{|i|	# `i' should be local scope of thread block
+	th_grp.add Thread.new{
+	  barrier.wait
+	  result_list[i] = calc(WORK_COUNT)
+	}
       }
 
       barrier.wait
-      th1.join
-      th2.join
-      assert(a != b)
+      for t in th_grp.list
+	t.join
+      end
+
+      expected_value = calc(WORK_COUNT)
+      result_list.find{|v| v != expected_value }
     end
+    private :calc_race_condition
 
     def test_multi_thread_fetch
+      count = 0
+      timeout(10) {
+	begin
+	  count += 1
+	end until (calc_race_condition)
+      }
+
+      @calc_calls = 0
       expected_result = calc(WORK_COUNT)
       assert_equal(1, @calc_calls)
 
-      barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS + 1)
-      th_grp = ThreadGroup.new
-      NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
-        th_grp.add Thread.new{
-          barrier.wait
-          assert_equal(expected_result, @cache[WORK_COUNT], "th#{i}")
-        }
-      }
+      count.times do |n|
+	barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS + 1)
+	th_grp = ThreadGroup.new
+	NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
+	  th_grp.add Thread.new{
+	    barrier.wait
+	    assert_equal(expected_result, @cache[WORK_COUNT], "#{n}th: th#{i}")
+	  }
+	}
 
-      barrier.wait
-      timeout(10) {
-        for t in th_grp.list
-          t.join
-        end
-      }
-      assert_equal(2, @calc_calls)
+	barrier.wait
+	for t in th_grp.list
+	  t.join
+	end
+	assert_equal(2, @calc_calls, "#{n}th")
+      end
     end
   end
 

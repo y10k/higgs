@@ -1,5 +1,6 @@
 # $Id$
 
+require 'forwardable'
 require 'thread'
 
 module Higgs
