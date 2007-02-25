@@ -2,6 +2,8 @@
 
 require 'digest/sha2'
 require 'fileutils'
+require 'higgs/cache'
+require 'higgs/lock'
 require 'higgs/storage'
 require 'higgs/tar'
 require 'rubyunit'
@@ -642,6 +644,77 @@ module Higgs::StorageTest
       @s = new_storage(:read_only => true)
       assert_exception(Higgs::Storage::NotWritableError) {
         @s.reorganize
+      }
+    end
+  end
+
+  module StorageTransactionHandlerTest
+    def dbm_open
+      raise NotImplementedError, 'not implemented'
+    end
+
+    def new_storage(options={})
+      options[:dbm_open] = dbm_open unless (options.include? :dbm_open)
+      Higgs::Storage.new(@name, options)
+    end
+    private :new_storage
+
+    def setup
+      @tmp_dir = 'storage_tmp'
+      FileUtils.mkdir_p(@tmp_dir)
+      @name = File.join(@tmp_dir, 'storage_test')
+      @s = new_storage
+      @read_cache = Higgs::Cache::SharedWorkCache.new{|key| @s.fetch(key) }
+      @lock_manager = Higgs::Lock::FineGrainLockManager.new
+    end
+
+    def teardown
+      @s.shutdown if @s
+      FileUtils.rm_rf(@tmp_dir)
+    end
+
+    def transaction
+      r = nil
+      @lock_manager.transaction{|lock_handler|
+	tx = Higgs::Storage::TransactionHandler.new(@s, @read_cache, lock_handler)
+	r = yield(tx)
+	p tx.write_list if $DEBUG
+	@s.write_and_commit(tx.write_list)
+      }
+      r
+    end
+    private :transaction
+
+    def test_fetch
+      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      transaction{|tx|
+	assert_equal('HALO', tx['foo'])
+      }
+    end
+
+    def test_fetch_not_defined_value
+      transaction{|tx|
+	assert_equal(nil, tx['foo'])
+      }
+    end
+
+    def test_store
+      transaction{|tx|
+	tx['foo'] = 'HALO'
+      }
+      assert_equal('HALO', @s.fetch('foo'))
+    end
+
+    def test_fetch_and_store
+      assert_equal(nil, @s.fetch('foo'))
+      transaction{|tx|
+	assert_equal(nil, tx['foo'])
+	tx['foo'] = 'HALO'
+	assert_equal('HALO', tx['foo'])
+      }
+      assert_equal('HALO', @s.fetch('foo'))
+      transaction{|tx|
+	assert_equal('HALO', tx['foo'])
       }
     end
   end

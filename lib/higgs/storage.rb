@@ -614,7 +614,8 @@ module Higgs
     class TransactionHandler
       def initialize(storage, read_cache, lock_handler)
 	@storage = storage
-	@local_cache = Hash.new{|hash, key| hash[key] = read_cache[key] }
+	@read_cache = read_cache
+	@local_cache = Hash.new{|hash, key| hash[key] = @read_cache[key] }
 	@lock_handler = lock_handler
 	@locked_map = {}
 	@locked_map.default = false
@@ -651,6 +652,7 @@ module Higgs
       def []=(key, value)
 	lock(key)
 	@write_map[key] = :write
+	@read_cache.expire(key)
 	@local_cache[key] = value
       end
 
@@ -658,6 +660,7 @@ module Higgs
 	lock(key)
 	@write_map[key] = :delete
 	@local_cache[key]	# load from storage
+	@read_cache.expire(key)
 	@local_cache.delete(key)
       end
 
@@ -675,7 +678,7 @@ module Higgs
       end
 
       def write_list
-	@write_map.to_a
+	@write_map.map{|key, ope| [ key, ope, @local_cache[key] ] }
       end
     end
   end
