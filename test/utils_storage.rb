@@ -717,5 +717,31 @@ module Higgs::StorageTest
 	assert_equal('HALO', tx['foo'])
       }
     end
+
+    def test_key
+      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      transaction{|tx|
+	assert_equal(true, (tx.key? 'foo'))
+      }
+    end
+
+    def test_key_not_defined_value
+      transaction{|tx|
+	assert_equal(false, (tx.key? 'foo'))
+      }
+    end
+
+    def test_key_and_store
+      assert_equal(false, (@s.key? 'foo'))
+      transaction{|tx|
+	assert_equal(false, (tx.key? 'foo'))
+	tx['foo'] = 'HALO'
+	assert_equal(true, (tx.key? 'foo'))
+      }
+      assert_equal(true, (@s.key? 'foo'))
+      transaction{|tx|
+	assert_equal(true, (tx.key? 'foo'))
+      }
+    end
   end
 end

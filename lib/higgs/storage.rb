@@ -666,7 +666,7 @@ module Higgs
 
       def key?(key)
 	lock(key)
-	(@write_map[key] != :delete) && (@storage.key? key)
+	(@write_map[key] != :delete) && ((@local_cache.key? key) || (@storage.key? key))
       end
 
       def each_key
