@@ -648,7 +648,7 @@ module Higgs::StorageTest
     end
   end
 
-  module StorageTransactionHandlerTest
+  module StorageTransactionContextTest
     def dbm_open
       raise NotImplementedError, 'not implemented'
     end
@@ -676,7 +676,7 @@ module Higgs::StorageTest
     def transaction
       r = nil
       @lock_manager.transaction{|lock_handler|
-	tx = Higgs::Storage::TransactionHandler.new(@s, @read_cache, lock_handler)
+	tx = Higgs::Storage::TransactionContext.new(@s, @read_cache, lock_handler)
 	r = yield(tx)
 	p tx.write_list if $DEBUG
 	@s.write_and_commit(tx.write_list)

@@ -5,11 +5,11 @@ require 'rubyunit'
 require 'utils_storage'
 
 module Higgs::StorageTest
-  class StorageTransactionHandlerQDBMTest < RUNIT::TestCase
+  class StorageTransactionContextQDBMTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 
-    include StorageTransactionHandlerTest
+    include StorageTransactionContextTest
 
     def dbm_open
       Higgs::Index::QDBM_OPEN

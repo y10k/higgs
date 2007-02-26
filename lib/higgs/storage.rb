@@ -611,7 +611,7 @@ module Higgs
       nil
     end
 
-    class TransactionHandler
+    class TransactionContext
       def initialize(storage, read_cache, lock_handler)
 	@storage = storage
 	@read_cache = read_cache

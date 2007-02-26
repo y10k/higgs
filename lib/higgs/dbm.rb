@@ -1,6 +1,7 @@
 # $Id$
 
 require 'thread'
+require 'forwardable'
 
 module Higgs
   class DBM
@@ -51,160 +52,129 @@ module Higgs
       @commit_lock = Mutex.new
     end
 
-    class TransactionHandler
-      include Enumerable
-
-      def initialize(storage, read_cache, lock_handler)
-        @storage = storage
-        @local_cache = Hash.new{|hash, key| hash[key] = read_cache[key] }
-        @lock_handler = lock_handler
-        @locked_map = {}
-        @locked_map.default = false
-        @deleted_map = {}
-        @deleted_map.default = false
-        @immediate_release = false
-        @write_list = []
+    def transaction(read_only=false)
+      r = nil
+      if (read_only) then
+	@lock_manager.transaction(true) {|lock_handler|
+	  tx = ReadTransactionContext.new(@storage, @read_cache, lock_handler, @commit_lock)
+	  r = yield(tx)
+	}
+      else
+	@lock_manager.transaction(false) {|lock_handler|
+	  tx = ReadWriteTransactionContext.new(@storage, @read_cache, lock_handler, @commit_lock)
+	  r = yield(tx)
+	  tx.commit
+	}
       end
-
-      attr_accessor :immediate_release
-      attr_reader :write_list
-
-      def locked?(key)
-        @locked_map[key]
-      end
-
-      def lock(key)
-        unless (@locked_map[key]) then
-          @lock_handler.lock(key)
-          @locked_map[key] = true
-          return true
-        end
-        false
-      end
-
-      def unlock(key)
-        if (@locked_map[key]) then
-          @lock_handler.unlock(key)
-          @locked_map[key] = false
-          return true
-        end
-        false
-      end
+      r
     end
 
-    module ReadTransaction
-      def [](key)
-        lock(key)
-        ! @deleted_map[key] ? @local_cache[key] : nil
+    class ReadTransactionContext
+      extend Forwardable
+
+      def initialize(storage, read_cache, lock_handler, commit_lock)
+	@tx = storage.class::TransactionContext.new(storage, read_cache, lock_handler)
+	@storage = storage
+	@commit_lock = commit_lock
       end
 
+      def_delegator :@tx, :locked?
+      def_delegator :@tx, :lock
+      def_delegator :@tx, :unlock
+      def_delegator :@tx, :[]
+
+      def_delegator :@tx, :key?
+      alias has_key? key?
+      alias include? key?
+
       def each_key
-        @storage.each_key do |key|
-          locked = locked_map[key]
-          lock(key) unless locked
-          yield(key) unless @deleted_map[key]
-          unlock(key) if (locked && immediate_release)
-        end
-        self
+	@tx.each_key do |key|
+	  yield(key)
+	end
+	self
       end
 
       def each_value
-        each_key do |key|
-          yield(@local_cache[key])
-        end
+	each_key do |key|
+	  yield(self[key])
+	end
+	self
       end
 
       def each_pair
-        each_key do |key|
-          yield(key, @local_cache[key])
-        end
+	each_key do |key|
+	  yield(self, self[key])
+	end
+	self
       end
 
       alias each each_pair
 
-      def key?(key)
-        lock(key)
-        (! @deleted_map[key]) && (@storage.key? key)
-      end
-
-      alias has_key? key?
-      alias include? key?
-      alias member? key?
-
       def keys
-        key_list = []
-        each_key do |key|
-          key_list << key
-        end
-        key_list
+	key_list = []
+	each_key do |key|
+	  key_list << key
+	end
+	key_list
       end
 
       def values
-        value_list = []
-        each_key do |key|
-          value_list << @local_cache[key]
-        end
-        value_list
+	value_list = []
+	each_value do |value|
+	  value_list << value
+	end
+	value_list
       end
 
       def length
-        len = 0
-        each_key do |key|
-          len += 1
-        end
-        len
+	len = 0
+	each_key do |key|
+	  len += 0
+	end
+	len
       end
 
       alias size length
 
       def empty?
-        length == 0
+	length > 0
       end
     end
 
-    module WriteTransaction
-      def []=(key, value)
-        lock(key)
-        @deleted_map[key] = false
-        @write_list << [ key, :write, value ]
-        @local_cache[key] = value
-      end
-
-      def delete(key)
-        lock(key)
-        @write_list << [ key, :delete ]
-        unless (@deleted_map[key]) then
-          @deleted_map[key] = true
-          @local_cache[key]     # load from storage
-          @local_cache.delete(key)
-        end
-      end
+    class ReadWriteTransactionContext < ReadTransactionContext
+      def_delegator :@tx, :[]=
+      def_delegator :@tx, :delete
 
       def delete_if
-        del_key_list = []
-        each_pair do |key, value|
-          if (yield(key, value)) then
-            del_key_list << key
-          end
-        end
-        for key in del_key_list
-          @deleted_map[key] = true
-          @write_list << [ key, :delete ]
-          @local_cache.delete(key)
-        end
-        self
+	del_list = []
+	each_key do |key|
+	  if (yield(key, self[key])) then
+	    del_list << key
+	  end
+	end
+	for key in del_list
+	  @tx.delete(key)
+	end
+	self
       end
 
-      alias reject! delete_if
-    end
+      def clear
+	for key in self.keys
+	  @tx.delete(key)
+	end
+	self
+      end
 
-    class ReadOnlyTransactionHandler < TransactionHandler
-      include ReadTransaction
-    end
+      def_delegator :@tx, :rollback
 
-    class ReadWriteTransactionHandler < TransactionHandler
-      include ReadTransaction
-      include WriteTransaction
+      def commit
+	write_list = @tx.write_list
+	unless (write_list.empty?) then
+	  @storage.write_and_commit(write_list)
+	  @tx.write_clear
+	end
+	nil
+      end
     end
   end
 end
