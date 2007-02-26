@@ -767,6 +767,7 @@ module Higgs::StorageTest
       assert_equal(true, (@s.key? 'foo'))
       transaction{|tx|
 	assert_equal('HALO', tx.delete('foo'))
+	assert_equal(nil, tx.delete('foo'))
       }
       assert_equal(false, (@s.key? 'foo'))
       transaction{|tx|

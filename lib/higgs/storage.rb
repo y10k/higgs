@@ -656,10 +656,12 @@ module Higgs
 
       def delete(key)
 	lock(key)
-	@write_map[key] = :delete
-	@local_cache[key]	# load from storage
-	@read_cache.expire(key)
-	@local_cache.delete(key)
+	if (@write_map[key] != :delete) then
+	  @write_map[key] = :delete
+	  @local_cache[key]	# load from storage
+	  @read_cache.expire(key)
+	  @local_cache.delete(key)
+	end
       end
 
       def key?(key)
