@@ -688,6 +688,17 @@ module Higgs
       def write_list
 	@write_map.map{|key, ope| [ key, ope, @local_cache[key] ] }
       end
+
+      def write_clear
+	@write_map.clear
+	nil
+      end
+
+      def rollback
+	@local_cache.clear
+	@write_map.clear
+	nil
+      end
     end
   end
 end

@@ -908,5 +908,65 @@ module Higgs::StorageTest
 	assert_equal(false, (tx.locked? 'qux'))
       }
     end
+
+    def test_write_clear
+      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      transaction{|tx|
+	assert_equal('HALO', tx['foo'])
+	assert_equal(nil, tx['bar'])
+
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+
+	assert_equal('apple', tx['foo'])
+	assert_equal('banana', tx['bar'])
+
+	tx.write_clear
+
+	assert_equal('apple', tx['foo'])
+	assert_equal('banana', tx['bar'])
+      }
+
+      assert_equal('HALO', @s.fetch('foo'))
+      assert_equal(nil, @s.fetch('bar'))
+
+      transaction{|tx|
+	assert_equal('HALO', tx['foo'])
+	assert_equal(nil, tx['bar'])
+      }
+    end
+
+    def test_rollback
+      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      transaction{|tx|
+	assert_equal('HALO', tx['foo'])
+	assert_equal(nil, tx['bar'])
+	assert_equal(nil, tx['baz'])
+
+	tx.delete('foo')
+	tx['bar'] = 'apple'
+	tx['baz'] = 'banana'
+
+	assert_equal(nil, tx['foo'])
+	assert_equal('apple', tx['bar'])
+	assert_equal('banana', tx['baz'])
+
+	tx.rollback
+
+	assert_equal('HALO', tx['foo'])
+	assert_equal(nil, tx['bar'])
+	assert_equal(nil, tx['baz'])
+      }
+
+      assert_equal('HALO', @s.fetch('foo'))
+      assert_equal(nil, @s.fetch('bar'))
+      assert_equal(nil, @s.fetch('baz'))
+
+      transaction{|tx|
+	assert_equal('HALO', tx['foo'])
+	assert_equal(nil, tx['bar'])
+	assert_equal(nil, tx['baz'])
+      }
+    end
   end
 end
