@@ -143,11 +143,21 @@ module Higgs
       def_delegator :@tx, :[]=
       def_delegator :@tx, :delete
 
-      def delete_if
+      def delete_if(*keys)
 	del_list = []
-	each_key do |key|
-	  if (yield(key, self[key])) then
-	    del_list << key
+	if (keys.empty?) then
+	  each_key do |key|
+	    if (yield(key, self[key])) then
+	      del_list << key
+	    end
+	  end
+	else
+	  for key in keys
+	    if (@tx.key? key) then
+	      if (yield(key, self[key])) then
+		del_list << key
+	      end
+	    end
 	  end
 	end
 	for key in del_list
@@ -163,8 +173,6 @@ module Higgs
 	self
       end
 
-      def_delegator :@tx, :rollback
-
       def commit
 	write_list = @tx.write_list
 	unless (write_list.empty?) then
@@ -173,6 +181,8 @@ module Higgs
 	end
 	nil
       end
+
+      def_delegator :@tx, :rollback
     end
   end
 end
