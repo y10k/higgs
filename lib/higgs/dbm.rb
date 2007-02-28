@@ -20,21 +20,21 @@ module Higgs
           @storage_type = options[:storage_type]
         else
           require 'higgs/storage'
-          @storage_type = Higgs::Storage
+          @storage_type = Storage
         end
 
         if (options.include? :cache_type) then
           @cache_type = options[:cache_type]
         else
           require 'higgs/cache'
-          @cache_type = Higgs::Cache::SharedWorkCache
+          @cache_type = Cache::SharedWorkCache
         end
 
         if (options.include? :lock_manager) then
           @lock_manager = options[:lock_manager]
         else
           require 'higgs/lock'
-          @lock_manager = Higgs::Lock::FineGrainLockManager.new
+          @lock_manager = Lock::FineGrainLockManager.new
         end
       end
       private :init_options
