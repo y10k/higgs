@@ -52,7 +52,7 @@ module Higgs
       @commit_lock = Mutex.new
     end
 
-    def transaction(read_only=false)
+    def transaction(read_only=@read_only)
       r = nil
       if (read_only) then
 	@lock_manager.transaction(true) {|lock_handler|
@@ -60,6 +60,9 @@ module Higgs
 	  r = yield(tx)
 	}
       else
+	if (@read_only) then
+	  raise 'not writable'
+	end
 	@lock_manager.transaction(false) {|lock_handler|
 	  tx = ReadWriteTransactionContext.new(@storage, @read_cache, lock_handler, @commit_lock)
 	  r = yield(tx)
