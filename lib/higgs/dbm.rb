@@ -98,14 +98,12 @@ module Higgs
 	each_key do |key|
 	  yield(self[key])
 	end
-	self
       end
 
       def each_pair
 	each_key do |key|
 	  yield(self, self[key])
 	end
-	self
       end
 
       alias each each_pair
