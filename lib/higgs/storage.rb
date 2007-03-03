@@ -245,11 +245,11 @@ module Higgs
               }
               new_properties[key] = properties
             end
-            @properties_read_cache.expire(key)
+            @properties_read_cache.delete(key)
             commit_log['p:' + key] = @w_tar.pos
             @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
           when :delete
-            @properties_read_cache.expire(key)
+            @properties_read_cache.delete(key)
             if (@idx_db.key? 'd:' + key) then
               commit_log['d:' + key] = :delete
             end
@@ -266,7 +266,7 @@ module Higgs
               key_error = (defined? KeyError) ? KeyError : IndexError
               raise key_error, "not exist properties at key: #{key}"
             end
-            @properties_read_cache.expire(key)
+            @properties_read_cache.delete(key)
             properties['custom_properties'] = value
             new_properties[key] = properties
             commit_log['p:' + key] = @w_tar.pos
@@ -650,7 +650,7 @@ module Higgs
       def []=(key, value)
 	lock(key)
 	@write_map[key] = :write
-	@read_cache.expire(key)
+	@read_cache.delete(key)
 	@local_cache[key] = value
       end
 
@@ -659,7 +659,7 @@ module Higgs
 	if (@write_map[key] != :delete) then
 	  @write_map[key] = :delete
 	  @local_cache[key]	# load from storage
-	  @read_cache.expire(key)
+	  @read_cache.delete(key)
 	  @local_cache.delete(key)
 	end
       end

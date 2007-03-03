@@ -8,6 +8,8 @@ module Higgs
     # for ident(1)
     CVS_ID = '$Id$'
 
+    extend Forwardable
+
     module InitOptions
       def init_options(options)
         if (options.include? :read_only) then
@@ -41,6 +43,7 @@ module Higgs
 
       attr_reader :read_only
     end
+    include InitOptions
 
     def initialize(name, options={})
       @name = name

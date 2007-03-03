@@ -9,6 +9,59 @@ module Higgs::CacheTest
   # for ident(1)
   CVS_ID = '$Id$'
 
+  class LRUCacheTest < RUNIT::TestCase
+    include Higgs::Cache
+
+    CACHE_LIMIT_SIZE = 10
+
+    def setup
+      @cache = LRUCache.new(CACHE_LIMIT_SIZE)
+    end
+
+    def test_store_and_fetch
+      @cache[:foo] = 'apple'
+      @cache[:bar] = 'banana'
+      @cache[:baz] = 'orange'
+      assert_equal('apple',  @cache[:foo])
+      assert_equal('banana', @cache[:bar])
+      assert_equal('orange', @cache[:baz])
+    end
+
+    def test_fetch_not_defined_value
+      assert_nil(@cache[:foo])
+      assert_nil(@cache[:bar])
+      assert_nil(@cache[:baz])
+    end
+
+    def test_delete
+      @cache[:foo] = 'apple'
+      @cache[:bar] = 'banana'
+      @cache[:baz] = 'orange'
+      @cache.delete(:bar)
+      assert_equal('apple',  @cache[:foo])
+      assert_equal(nil,      @cache[:bar])
+      assert_equal('orange', @cache[:baz])
+    end
+
+    def test_LRU
+      CACHE_LIMIT_SIZE.times do |i|
+	@cache[i] = i.to_s
+      end
+      CACHE_LIMIT_SIZE.times do |i|
+	assert_equal(i.to_s, @cache[i], "#{i}")
+      end
+
+      old_key = 0
+      last_key = CACHE_LIMIT_SIZE - 1
+      new_key = CACHE_LIMIT_SIZE
+
+      @cache[new_key] = new_key.to_s
+      assert_equal(nil,           @cache[old_key])
+      assert_equal(last_key.to_s, @cache[last_key])
+      assert_equal(new_key.to_s,  @cache[new_key])
+    end
+  end
+
   class SharedWorkCacheTest < RUNIT::TestCase
     include Higgs::Cache
 
@@ -54,12 +107,12 @@ module Higgs::CacheTest
       end
     end
 
-    def test_expire
-      assert_equal(false, @cache.expire(5))
+    def test_delete
+      assert_equal(false, @cache.delete(5))
       assert_equal(15, @cache[5])
       assert_equal(1, @calc_calls)
 
-      assert_equal(true, @cache.expire(5))
+      assert_equal(true, @cache.delete(5))
       assert_equal(15, @cache[5])
       assert_equal(2, @calc_calls, 'reload')
     end
