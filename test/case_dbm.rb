@@ -33,27 +33,47 @@ module Higgs::DBMTest
       FileUtils.rm_rf(@tmp_dir)
     end
 
-    def test_store_and_fetch
+    def test_fetch_and_store
       @db.transaction{|tx|
+	assert_equal(nil, tx['foo'])
+	assert_equal(nil, tx['bar'])
+
 	tx['foo'] = 'apple'
-	tx['bar'] = 'banana'
-	tx['baz'] = 'orange'
+
 	assert_equal('apple', tx['foo'])
-	assert_equal('banana', tx['bar'])
-	assert_equal('orange', tx['baz'])
+	assert_equal(nil,     tx['bar'])
       }
+
       @db.transaction{|tx|
 	assert_equal('apple', tx['foo'])
-	assert_equal('banana', tx['bar'])
-	assert_equal('orange', tx['baz'])
+	assert_equal(nil,     tx['bar'])
       }
     end
 
     def test_fetch_not_defined_value
       @db.transaction{|tx|
 	assert_nil(tx['foo'])
-	assert_nil(tx['bar'])
-	assert_nil(tx['baz'])
+      }
+    end
+
+    def test_store_and_key
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	assert_equal(true,  (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
+      }
+      @db.transaction{|tx|
+	assert_equal(true,  (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
+      }
+    end
+
+    def test_fetch_and_key
+      @db.transaction{|tx|
+	tx['foo']		# load to cache
+	tx['bar']		# load to cache
+	assert_equal(false, (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
       }
     end
   end

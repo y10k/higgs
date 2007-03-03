@@ -706,9 +706,10 @@ module Higgs::StorageTest
     private :transaction
 
     def test_fetch
-      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
       transaction{|tx|
-	assert_equal('HALO', tx['foo'])
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
       }
     end
 
@@ -720,28 +721,47 @@ module Higgs::StorageTest
 
     def test_store
       transaction{|tx|
-	tx['foo'] = 'HALO'
+	tx['foo'] = 'apple'
       }
-      assert_equal('HALO', @s.fetch('foo'))
+      assert_equal('apple', @s.fetch('foo'))
+      assert_equal(nil,     @s.fetch('bar'))
     end
 
     def test_fetch_and_store
-      assert_equal(nil, @s.fetch('foo'))
       transaction{|tx|
 	assert_equal(nil, tx['foo'])
-	tx['foo'] = 'HALO'
-	assert_equal('HALO', tx['foo'])
+	assert_equal(nil, tx['bar'])
+
+	tx['foo'] = 'apple'
+
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
       }
-      assert_equal('HALO', @s.fetch('foo'))
+
+      assert_equal('apple', @s.fetch('foo'))
+      assert_equal(nil,     @s.fetch('bar'))
+
       transaction{|tx|
-	assert_equal('HALO', tx['foo'])
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
       }
     end
 
     def test_key
-      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
       transaction{|tx|
 	assert_equal(true, (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
+      }
+    end
+
+    def test_fetch_and_key
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
+      transaction{|tx|
+	tx['foo']		# load to cache
+	tx['bar']		# load to cache
+	assert_equal(true, (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
       }
     end
 
@@ -752,49 +772,65 @@ module Higgs::StorageTest
     end
 
     def test_key_and_store
-      assert_equal(false, (@s.key? 'foo'))
       transaction{|tx|
 	assert_equal(false, (tx.key? 'foo'))
-	tx['foo'] = 'HALO'
-	assert_equal(true, (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
+
+	tx['foo'] = 'apple'
+
+	assert_equal(true,  (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
       }
-      assert_equal(true, (@s.key? 'foo'))
+
+      assert_equal(true,  (@s.key? 'foo'))
+      assert_equal(false, (@s.key? 'bar'))
+
       transaction{|tx|
 	assert_equal(true, (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
       }
     end
 
     def test_delete
-      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'bar', :write, 'banana' ] ])
       transaction{|tx|
-	assert_equal('HALO', tx.delete('foo'))
+	assert_equal('apple', tx.delete('foo'))
       }
-      assert_equal(false, (@s.key? 'foo'))
+      assert_equal(nil,      @s.fetch('foo'))
+      assert_equal('banana', @s.fetch('bar'))
     end
 
     def test_delete_not_defined_value
       transaction{|tx|
 	assert_equal(nil, tx.delete('foo'))
       }
-      assert_equal(false, (@s.key? 'foo'))
+      assert_equal(nil, @s.fetch('foo'))
+      assert_equal(nil, @s.fetch('bar'))
     end
 
     def test_store_and_delete
-      assert_equal(false, (@s.key? 'foo'))
       transaction{|tx|
-	tx['foo'] = 'HALO'
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
       }
-      assert_equal(true, (@s.key? 'foo'))
+
+      assert_equal('apple', @s.fetch('foo'))
+      assert_equal('banana',     @s.fetch('bar'))
+
       transaction{|tx|
-	assert_equal('HALO', tx.delete('foo'))
-	assert_equal(nil, tx.delete('foo'))
+	assert_equal('apple', tx.delete('foo'))
       }
-      assert_equal(false, (@s.key? 'foo'))
+
+      assert_equal(nil,      @s.fetch('foo'))
+      assert_equal('banana', @s.fetch('bar'))
+
       transaction{|tx|
-	tx['foo'] = 'HALO'
-	assert_equal('HALO', tx.delete('foo'))
+	tx['foo'] = 'apple'
+	assert_equal('apple', tx.delete('foo'))
       }
-      assert_equal(false, (@s.key? 'foo'))
+
+      assert_equal(nil,      @s.fetch('foo'))
+      assert_equal('banana', @s.fetch('bar'))
     end
 
     def test_each_key
@@ -803,6 +839,23 @@ module Higgs::StorageTest
 			    [ 'baz', :write, 'orange' ]
 			  ])
       transaction{|tx|
+	expected_keys = %w[ foo bar baz ]
+	tx.each_key do |key|
+	  assert((expected_keys.include? key), "key: #{key}")
+	  expected_keys.delete(key)
+	end
+	assert(expected_keys.empty?)
+      }
+    end
+
+    def test_fetch_and_each_key
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ],
+			    [ 'bar', :write, 'banana' ],
+			    [ 'baz', :write, 'orange' ]
+			  ])
+      transaction{|tx|
+	tx['alice']		# load to cache
+	tx['bob']		# load to cache
 	expected_keys = %w[ foo bar baz ]
 	tx.each_key do |key|
 	  assert((expected_keys.include? key), "key: #{key}")
@@ -896,7 +949,7 @@ module Higgs::StorageTest
 	assert_equal(true, (tx.locked? 'foo'))
 
 	assert_equal(false, (tx.locked? 'bar'))
-	tx['bar'] = 'HALO'
+	tx['bar'] = 'banana'
 	assert_equal(true, (tx.locked? 'bar'))
 
 	assert_equal(false, (tx.locked? 'baz'))
@@ -930,62 +983,68 @@ module Higgs::StorageTest
     end
 
     def test_write_clear
-      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
       transaction{|tx|
-	assert_equal('HALO', tx['foo'])
-	assert_equal(nil, tx['bar'])
-
-	tx['foo'] = 'apple'
-	tx['bar'] = 'banana'
-
 	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
+
+	tx.delete('foo')
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+
+	assert_equal(nil,      tx['foo'])
 	assert_equal('banana', tx['bar'])
+	assert_equal('orange', tx['baz'])
 
 	tx.write_clear
 
-	assert_equal('apple', tx['foo'])
-	assert_equal('banana', tx['bar'])
+	assert_equal('apple',  tx['foo']) # cancel to delete
+	assert_equal('banana', tx['bar']) # local cache reserved
+	assert_equal('orange', tx['baz']) # local cache reserved
       }
 
-      assert_equal('HALO', @s.fetch('foo'))
-      assert_equal(nil, @s.fetch('bar'))
+      assert_equal('apple', @s.fetch('foo'))
+      assert_equal(nil,     @s.fetch('bar'))
+      assert_equal(nil,     @s.fetch('baz'))
 
       transaction{|tx|
-	assert_equal('HALO', tx['foo'])
-	assert_equal(nil, tx['bar'])
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
       }
     end
 
     def test_rollback
-      @s.write_and_commit([ [ 'foo', :write, 'HALO' ] ])
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
       transaction{|tx|
-	assert_equal('HALO', tx['foo'])
-	assert_equal(nil, tx['bar'])
-	assert_equal(nil, tx['baz'])
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
 
 	tx.delete('foo')
-	tx['bar'] = 'apple'
-	tx['baz'] = 'banana'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
 
-	assert_equal(nil, tx['foo'])
-	assert_equal('apple', tx['bar'])
-	assert_equal('banana', tx['baz'])
+	assert_equal(nil,      tx['foo'])
+	assert_equal('banana', tx['bar'])
+	assert_equal('orange', tx['baz'])
 
 	tx.rollback
 
-	assert_equal('HALO', tx['foo'])
-	assert_equal(nil, tx['bar'])
-	assert_equal(nil, tx['baz'])
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
       }
 
-      assert_equal('HALO', @s.fetch('foo'))
-      assert_equal(nil, @s.fetch('bar'))
-      assert_equal(nil, @s.fetch('baz'))
+      assert_equal('apple', @s.fetch('foo'))
+      assert_equal(nil,     @s.fetch('bar'))
+      assert_equal(nil,     @s.fetch('baz'))
 
       transaction{|tx|
-	assert_equal('HALO', tx['foo'])
-	assert_equal(nil, tx['bar'])
-	assert_equal(nil, tx['baz'])
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
       }
     end
   end

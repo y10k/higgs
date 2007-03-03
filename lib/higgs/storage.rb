@@ -718,13 +718,14 @@ module Higgs
 
       def key?(key)
 	lock(key)
-	(@write_map[key] != :delete) && ((@local_cache.key? key) || (@storage.key? key))
+	(@write_map[key] != :delete) &&
+	((@local_cache.key? key) && ! @local_cache[key].nil? || (@storage.key? key))
       end
 
       def each_key
 	@local_cache.each_key do |key|
 	  lock(key)
-	  if (@write_map[key] != :delete)then
+	  if (@write_map[key] != :delete && ! @local_cache[key].nil?) then
 	    yield(key)
 	  end
 	end
@@ -742,6 +743,11 @@ module Higgs
       end
 
       def write_clear
+	for key, ope in @write_map
+	  if (ope == :delete) then
+	    @local_cache.delete(key)
+	  end
+	end
 	@write_map.clear
 	nil
       end
