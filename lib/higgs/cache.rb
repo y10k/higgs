@@ -1,5 +1,6 @@
 # $Id$
 
+require 'forwardable'
 require 'higgs/thread'
 require 'thread'
 
@@ -9,11 +10,17 @@ module Higgs
     CVS_ID = '$Id$'
 
     class LRUCache
+      extend Forwardable
+
       def initialize(limit_size=1000)
 	@limit_size = limit_size
 	@count = 0
 	@cache = {}
       end
+
+      def_delegator :@cache, :key?
+      alias has_key? key?
+      alias include? key?
 
       def [](key)
 	if (cached_pair = @cache[key]) then
@@ -56,13 +63,13 @@ module Higgs
     end
 
     class SharedWorkCache
-      def initialize(&work)
+      def initialize(cache=LRUCache.new, &work)
         unless (work) then
           raise 'required work block'
         end
         @work = work
         @lock = Mutex.new
-        @cache = {}
+        @cache = cache
       end
 
       def [](key)
