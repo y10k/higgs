@@ -331,5 +331,27 @@ module Higgs::DBMTest
 	assert_equal(nil, tx['baz'])
       }
     end
+
+    def test_commit_and_rollback
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx.commit
+
+	tx.delete('foo')
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+	tx.rollback
+
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
+      }
+
+      @db.transaction{|tx|
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
+      }
+    end
   end
 end
