@@ -10,6 +10,7 @@ require 'higgs/dbm'
 
 loop_count = (ARGV.shift || '100').to_i
 data_count = (ARGV.shift || '10').to_i
+puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}"
 
 name = File.join(File.dirname($0), 'foo')
 db = Higgs::DBM.new(name)
@@ -29,3 +30,5 @@ Benchmark.bm do |x|
     end
   }
 end
+print "\n"
+

@@ -11,6 +11,7 @@ require 'higgs/dbm'
 loop_count = (ARGV.shift || '100').to_i
 data_count = (ARGV.shift || '10').to_i
 max_dat_len = (ARGV.shift || '32768').to_i
+puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}, MAX_DAT_LEN:#{max_dat_len}"
 
 name = File.join(File.dirname($0), 'foo')
 db = Higgs::DBM.new(name)
@@ -30,3 +31,4 @@ Benchmark.bm do |x|
     end
   }
 end
+print "\n"

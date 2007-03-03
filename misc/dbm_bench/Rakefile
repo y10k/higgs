@@ -1,0 +1,37 @@
+# -*- Ruby -*-
+
+# for idnet(1)
+CVS_ID = '$Id$'
+
+LIB_DIR = File.join(File.dirname(__FILE__), '..', '..', 'lib')
+
+LOOP_COUNT = ENV['LOOP_COUNT'] || '100'
+DATA_COUNT = ENV['DATA_COUNT'] || '10'
+MAX_DAT_LEN = ENV['MAX_DAT_LEN'] || '32768'
+
+def run(cmd)
+  ruby '-I', LIB_DIR, cmd, LOOP_COUNT, DATA_COUNT, MAX_DAT_LEN
+end
+
+task :default => [ :run ]
+
+task :run => [ :clean ] do
+  print "\n"
+  run 'dbm_seq_write.rb'
+  run 'st_verify.rb'
+  run 'dbm_seq_read.rb'
+  run 'st_verify.rb'
+  run 'dbm_rnd_read.rb'
+  run 'st_verify.rb'
+  run 'dbm_rnd_update.rb'
+  run 'st_verify.rb'
+  run 'dbm_rnd_delete.rb'
+  run 'st_reorganize.rb'
+  run 'st_verify.rb'
+end
+
+task :clean do
+  for db in Dir['foo.*']
+    rm_f db
+  end
+end

@@ -8,6 +8,8 @@ $: << File.join(File.dirname($0), '..', '..', 'lib')
 require 'benchmark'
 require 'higgs/storage'
 
+puts $0
+
 name = File.join(File.dirname($0), 'foo')
 st = Higgs::Storage.new(name)
 
@@ -16,3 +18,4 @@ Benchmark.bm do |x|
     st.reorganize
   }
 end
+print "\n"
