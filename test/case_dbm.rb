@@ -199,7 +199,7 @@ module Higgs::DBMTest
       }
     end
 
-    def test_length
+    def test_store_and_length
       @db.transaction{|tx|
 	assert_equal(0, tx.length)
 	tx['foo'] = 'apple'
@@ -212,7 +212,7 @@ module Higgs::DBMTest
       }
     end
 
-    def test_length
+    def test_store_and_empty
       @db.transaction{|tx|
 	assert_equal(true, tx.empty?)
 	tx['foo'] = 'apple'
@@ -265,6 +265,28 @@ module Higgs::DBMTest
       @db.transaction{|tx|
 	assert_equal(nil,      tx['foo'])
 	assert_equal('banana', tx['bar'])
+      }
+    end
+
+    def test_store_and_delete_if
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+
+	tx.delete_if{|key, value|
+	  key == 'bar' || value == 'orange'
+	}
+
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
+      }
+
+      @db.transaction{|tx|
+	assert_equal('apple', tx['foo'])
+	assert_equal(nil,     tx['bar'])
+	assert_equal(nil,     tx['baz'])
       }
     end
   end
