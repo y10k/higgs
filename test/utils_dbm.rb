@@ -9,13 +9,15 @@ module Higgs::DBMTest
   CVS_ID = '$Id$'
 
   module DBMTest
+    include Higgs
+
     def dbm_open
       raise NotImplementedError, 'not implemented'
     end
 
     def new_dbm(options={})
       options[:dbm_open] = dbm_open unless (options.include? :dbm_open)
-      Higgs::DBM.new(@name, options)
+      DBM.new(@name, options)
     end
     private :new_dbm
 

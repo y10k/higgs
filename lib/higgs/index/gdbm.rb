@@ -1,5 +1,19 @@
 # $Id$
 
+if (defined? Depot) then
+  # Uhhhmmmm... Why?
+  #
+  # GOOD CASE:
+  #   require 'gdbm'
+  #   require 'depot'
+  #
+  # WRONG CASE:
+  #   require 'depot'
+  #   require 'gdbm'
+  #
+  raise 'conflict gdbm vs qdbm'
+end
+
 require 'gdbm'
 require 'higgs/index'
 

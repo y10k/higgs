@@ -14,7 +14,7 @@ if ($0 == __FILE__) then
 end
 
 test_dir, this_name = File.split(__FILE__)
-Dir.foreach(test_dir) do |test_rb|
+for test_rb in Dir.entries(test_dir).sort
   case (test_rb)
   when this_name
     # skip

@@ -684,8 +684,8 @@ module Higgs::StorageTest
       FileUtils.mkdir_p(@tmp_dir)
       @name = File.join(@tmp_dir, 'storage_test')
       @s = new_storage
-      @read_cache = Higgs::Cache::SharedWorkCache.new{|key| @s.fetch(key) }
-      @lock_manager = Higgs::Lock::FineGrainLockManager.new
+      @read_cache = Cache::SharedWorkCache.new{|key| @s.fetch(key) }
+      @lock_manager = Lock::FineGrainLockManager.new
     end
 
     def teardown
