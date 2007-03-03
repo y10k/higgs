@@ -1,13 +1,16 @@
 # $Id$
 
 require 'forwardable'
+require 'higgs/exceptions'
 
 module Higgs
   module Tar
     # for ident(1)
     CVS_ID = '$Id$'
 
-    class Error < StandardError
+    include Exceptions
+
+    class Error < HiggsError
     end
 
     class FormatError < Error

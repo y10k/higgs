@@ -2,6 +2,7 @@
 
 require 'forwardable'
 require 'higgs/cache'
+require 'higgs/exceptions'
 require 'singleton'
 require 'thread'
 
@@ -10,7 +11,9 @@ module Higgs
     # for ident(1)
     CVS_ID = '$Id$'
 
-    class Error < StandardError
+    include Exceptions
+
+    class Error < HiggsError
     end
 
     class TryLockTimeoutError < Error
