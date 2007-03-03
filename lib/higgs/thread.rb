@@ -1,6 +1,7 @@
 # $Id$
 
 require 'forwardable'
+require 'higgs/exceptions'
 require 'thread'
 
 module Higgs
@@ -234,7 +235,7 @@ module Higgs
     end
 
     class Pool
-      class ShutdownException < Exception
+      class ShutdownException < Exceptions::ShutdownException
       end
 
       def initialize(size)

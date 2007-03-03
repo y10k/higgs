@@ -1,6 +1,7 @@
 # $Id$
 
 require 'digest/sha2'
+require 'higgs/exceptions'
 require 'higgs/tar'
 require 'higgs/thread'
 require 'yaml'
@@ -10,7 +11,9 @@ module Higgs
     # for ident(1)
     CVS_ID = '$Id$'
 
-    class Error < StandardError
+    include Exceptions
+
+    class Error < HiggsError
     end
 
     class BrokenError < Error
@@ -19,7 +22,7 @@ module Higgs
     class NotWritableError < Error
     end
 
-    class DebugRollbackException < Exception
+    class DebugRollbackException < HiggsException
     end
 
     class DebugRollbackBeforeRollbackLogWriteException < DebugRollbackException
