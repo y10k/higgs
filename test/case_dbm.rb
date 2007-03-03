@@ -311,5 +311,25 @@ module Higgs::DBMTest
 	assert_equal('orange', tx['baz'])
       }
     end
+
+    def test_store_and_clear
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+
+	tx.clear
+
+	assert_equal(nil, tx['foo'])
+	assert_equal(nil, tx['bar'])
+	assert_equal(nil, tx['baz'])
+      }
+
+      @db.transaction{|tx|
+	assert_equal(nil, tx['foo'])
+	assert_equal(nil, tx['bar'])
+	assert_equal(nil, tx['baz'])
+      }
+    end
   end
 end
