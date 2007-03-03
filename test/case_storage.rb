@@ -13,7 +13,7 @@ module Higgs::StorageTest
   # for ident(1)
   CVS_ID = '$Id$'
 
-  module StorageTest
+  module StorageTestCase
     include Higgs
     include Higgs::Tar::Block
 
@@ -666,7 +666,7 @@ module Higgs::StorageTest
     end
   end
 
-  module StorageTransactionContextTest
+  module StorageTransactionContextTestCase
     include Higgs
 
     def dbm_open

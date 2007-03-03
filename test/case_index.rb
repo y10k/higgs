@@ -8,7 +8,7 @@ module Higgs::IndexTest
   # for ident(1)
   CVS_ID = '$Id$'
 
-  module IndexTest
+  module IndexTestCase
     include Higgs::Thread
 
     def setup

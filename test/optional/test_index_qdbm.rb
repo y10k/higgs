@@ -1,8 +1,8 @@
 #!/usr/local/bin/ruby
 
+require 'case_index'
 require 'higgs/index/qdbm'
 require 'rubyunit'
-require 'utils_index'
 
 module Higgs::IndexTest
   class IndexTest_QDBM < RUNIT::TestCase
@@ -10,7 +10,7 @@ module Higgs::IndexTest
     CVS_ID = '$Id$'
 
     include Higgs::Index
-    include IndexTest
+    include IndexTestCase
 
     def db_read_open
       db = QDBM_OPEN[:read].call(@name)

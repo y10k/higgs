@@ -8,7 +8,7 @@ module Higgs::DBMTest
   # for ident(1)
   CVS_ID = '$Id$'
 
-  module DBMTest
+  module DBMTestCase
     include Higgs
 
     def dbm_open
