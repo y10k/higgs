@@ -651,6 +651,7 @@ module Higgs::StorageTest
     def test_shutdown
       @s.shutdown
       s, @s = @s, nil
+      assert_exception(Storage::ShutdownException) { s.shutdown }
       assert_exception(Storage::ShutdownException) { s.fetch('foo') }
       assert_exception(Storage::ShutdownException) { s.fetch_properties('foo') }
       assert_exception(Storage::ShutdownException) { s.key? 'foo' }
