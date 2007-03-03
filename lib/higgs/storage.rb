@@ -1,6 +1,7 @@
 # $Id$
 
 require 'digest/sha2'
+require 'higgs/cache'
 require 'higgs/exceptions'
 require 'higgs/tar'
 require 'higgs/thread'
@@ -11,6 +12,7 @@ module Higgs
     # for ident(1)
     CVS_ID = '$Id$'
 
+    include Cache
     include Exceptions
 
     class Error < HiggsError
@@ -44,6 +46,8 @@ module Higgs
     end
 
     module InitOptions
+      include Cache
+
       def init_options(options)
         @number_of_read_io = options[:number_of_read_io] || 2
 
@@ -62,11 +66,11 @@ module Higgs
           @dbm_write_open = Index::GDBM_OPEN[:write]
         end
 
-        if (options.include? :cache_type) then
-          @cache_type = options[:cache_type]
+        if (options.include? :properties_cache) then
+          @properties_cache = options[:properties_cache]
         else
-          require 'higgs/cache'
-          @cache_type = Cache::SharedWorkCache
+          # require 'higgs/cache'
+          @properties_cache = LRUCache.new
         end
 
 	if (options.include? :fsync) then
@@ -92,7 +96,7 @@ module Higgs
       @sd_r_lock, @sd_w_lock = Thread::ReadWriteLock.new.to_a
 
       init_options(options)
-      @properties_read_cache = @cache_type.new{|key|
+      @shared_properties_cache = SharedWorkCache.new(@properties_cache) {|key|
         internal_fetch_properties(key)
       }
 
@@ -213,7 +217,7 @@ module Higgs
       unless (key.kind_of? String) then
         raise TypeError, "can't convert #{key.class} to String"
       end
-      @properties_read_cache[key]
+      @shared_properties_cache[key]
     end
     transaction_guard :fetch_properties
 
@@ -282,11 +286,11 @@ module Higgs
               }
               new_properties[key] = properties
             end
-            @properties_read_cache.delete(key)
+            @shared_properties_cache.delete(key)
             commit_log['p:' + key] = @w_tar.pos
             @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
           when :delete
-            @properties_read_cache.delete(key)
+            @shared_properties_cache.delete(key)
             if (@idx_db.key? 'd:' + key) then
               commit_log['d:' + key] = :delete
             end
@@ -303,7 +307,7 @@ module Higgs
               key_error = (defined? KeyError) ? KeyError : IndexError
               raise key_error, "not exist properties at key: #{key}"
             end
-            @properties_read_cache.delete(key)
+            @shared_properties_cache.delete(key)
             properties['custom_properties'] = value
             new_properties[key] = properties
             commit_log['p:' + key] = @w_tar.pos

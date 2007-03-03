@@ -1,7 +1,8 @@
 # $Id$
 
-require 'thread'
 require 'forwardable'
+require 'higgs/cache'
+require 'thread'
 
 module Higgs
   class DBM
@@ -9,8 +10,11 @@ module Higgs
     CVS_ID = '$Id$'
 
     extend Forwardable
+    include Cache
 
     module InitOptions
+      include Cache
+
       def init_options(options)
         if (options.include? :read_only) then
           @read_only = options[:read_only]
@@ -25,11 +29,11 @@ module Higgs
           @storage_type = Storage
         end
 
-        if (options.include? :cache_type) then
-          @cache_type = options[:cache_type]
+        if (options.include? :read_cache) then
+          @read_cache = options[:read_cache]
         else
-          require 'higgs/cache'
-          @cache_type = Cache::SharedWorkCache
+          # require 'higgs/cache'
+          @read_cache = LRUCache.new
         end
 
         if (options.include? :lock_manager) then
@@ -49,7 +53,7 @@ module Higgs
       @name = name
       init_options(options)
       @storage = @storage_type.new(name, options)
-      @read_cache = @cache_type.new{|key|
+      @shared_read_cache = @read_cache.new{|key|
         @storage.fetch(key)
       }
       @commit_lock = Mutex.new
@@ -59,7 +63,7 @@ module Higgs
       r = nil
       if (read_only) then
 	@lock_manager.transaction(true) {|lock_handler|
-	  tx = ReadTransactionContext.new(@storage, @read_cache, lock_handler, @commit_lock)
+	  tx = ReadTransactionContext.new(@storage, @shared_read_cache, lock_handler, @commit_lock)
 	  r = yield(tx)
 	}
       else
@@ -67,7 +71,7 @@ module Higgs
 	  raise 'not writable'
 	end
 	@lock_manager.transaction(false) {|lock_handler|
-	  tx = ReadWriteTransactionContext.new(@storage, @read_cache, lock_handler, @commit_lock)
+	  tx = ReadWriteTransactionContext.new(@storage, @shared_read_cache, lock_handler, @commit_lock)
 	  r = yield(tx)
 	  tx.commit
 	}
