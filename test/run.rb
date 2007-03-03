@@ -8,8 +8,8 @@ CVS_ID = '$Id$'
 
 mask = //                       # any match
 if ($0 == __FILE__) then
-  if (mask_pattern = ARGV.shift) then
-    mask = Regexp.compile(mask_pattern)
+  if (ARGV.length > 0 && ARGV[0] !~ /^-/) then
+    mask = Regexp.compile(ARGV.shift)
   end
 end
 

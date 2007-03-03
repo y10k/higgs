@@ -232,6 +232,10 @@ module Higgs
       def write_lock
         WriteLock.new(self)
       end
+
+      def to_a
+	[ read_lock, write_lock ]
+      end
     end
 
     class Pool

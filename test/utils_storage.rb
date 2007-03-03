@@ -14,6 +14,7 @@ module Higgs::StorageTest
   CVS_ID = '$Id$'
 
   module StorageTest
+    include Higgs
     include Higgs::Tar::Block
 
     def dbm_open
@@ -32,7 +33,7 @@ module Higgs::StorageTest
 
     def new_storage(options={})
       options[:dbm_open] = dbm_open unless (options.include? :dbm_open)
-      Higgs::Storage.new(@name, options)
+      Storage.new(@name, options)
     end
     private :new_storage
 
@@ -146,7 +147,7 @@ module Higgs::StorageTest
       @s.shutdown
       @s = nil
       @s = new_storage(:read_only => true)
-      assert_exception(Higgs::Storage::NotWritableError) {
+      assert_exception(Storage::NotWritableError) {
         @s.write_and_commit([ [ 'foo', :write, "Hello world.\n" ] ])
       }
     end
@@ -181,7 +182,7 @@ module Higgs::StorageTest
                             [ 'bar', :write, 'second' ]
                           ])
 
-      assert_exception(Higgs::Storage::DebugRollbackBeforeRollbackLogWriteException) {
+      assert_exception(Storage::DebugRollbackBeforeRollbackLogWriteException) {
         @s.write_and_commit([ [ 'foo', :write, 'third' ],
                               [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
                               [ 'bar', :delete ],
@@ -201,7 +202,7 @@ module Higgs::StorageTest
                             [ 'bar', :write, 'second' ]
                           ])
 
-      assert_exception(Higgs::Storage::DebugRollbackAfterRollbackLogWriteException) {
+      assert_exception(Storage::DebugRollbackAfterRollbackLogWriteException) {
         @s.write_and_commit([ [ 'foo', :write, 'third' ],
                               [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
                               [ 'bar', :delete ],
@@ -221,7 +222,7 @@ module Higgs::StorageTest
                             [ 'bar', :write, 'second' ]
                           ])
 
-      assert_exception(Higgs::Storage::DebugRollbackAfterCommitLogWriteException) {
+      assert_exception(Storage::DebugRollbackAfterCommitLogWriteException) {
         @s.write_and_commit([ [ 'foo', :write, 'third' ],
                               [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
                               [ 'bar', :delete ],
@@ -241,7 +242,7 @@ module Higgs::StorageTest
                             [ 'bar', :write, 'second' ]
                           ])
 
-      assert_exception(Higgs::Storage::DebugRollbackCommitCompletedException) {
+      assert_exception(Storage::DebugRollbackCommitCompletedException) {
         @s.write_and_commit([ [ 'foo', :write, 'third' ],
                               [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
                               [ 'bar', :delete ],
@@ -261,7 +262,7 @@ module Higgs::StorageTest
                             [ 'bar', :write, 'second' ]
                           ])
 
-      assert_exception(Higgs::Storage::DebugRollbackLogDeletedException) {
+      assert_exception(Storage::DebugRollbackLogDeletedException) {
         @s.write_and_commit([ [ 'foo', :write, 'third' ],
                               [ 'foo', :update_properties, { :comment => 'Hello world.' } ],
                               [ 'bar', :delete ],
@@ -282,7 +283,7 @@ module Higgs::StorageTest
       open_idx{|db|
         db['rollback'] = 'dummy_rollback_log'
       }
-      assert_exception(Higgs::Storage::NotWritableError) {
+      assert_exception(Storage::NotWritableError) {
         @s = new_storage(:read_only => true)
       }
     end
@@ -296,7 +297,7 @@ module Higgs::StorageTest
         rollback_log = { :EOA => eoa, 'd:foo' => eoa }
         db['rollback'] = Marshal.dump(rollback_log)
       }
-      assert_exception(Higgs::Storage::BrokenError) {
+      assert_exception(Storage::BrokenError) {
         @s = new_storage
       }
     end
@@ -310,7 +311,7 @@ module Higgs::StorageTest
         rollback_log = { :EOA => eoa + 1 }
         db['rollback'] = Marshal.dump(rollback_log)
       }
-      assert_exception(Higgs::Storage::BrokenError) {
+      assert_exception(Storage::BrokenError) {
         @s = new_storage
       }
     end
@@ -401,7 +402,7 @@ module Higgs::StorageTest
         assert(db.delete('EOA'))
       }
       @s = new_storage
-      assert_exception(Higgs::Storage::BrokenError) {
+      assert_exception(Storage::BrokenError) {
         @s.verify
       }
     end
@@ -414,7 +415,7 @@ module Higgs::StorageTest
         w.write(0xFF.chr * BLKSIZ)
         w.fsync
       }
-      assert_exception(Higgs::Storage::BrokenError) {
+      assert_exception(Storage::BrokenError) {
         @s.verify
       }
     end
@@ -432,7 +433,7 @@ module Higgs::StorageTest
         db['d:foo'] = eoa.to_s
       }
       @s = new_storage
-      assert_exception(Higgs::Storage::BrokenError) {
+      assert_exception(Storage::BrokenError) {
         @s.verify
       }
     end
@@ -450,7 +451,7 @@ module Higgs::StorageTest
         db['p:foo'] = eoa.to_s
       }
       @s = new_storage
-      assert_exception(Higgs::Storage::BrokenError) {
+      assert_exception(Storage::BrokenError) {
         @s.verify
       }
     end
@@ -473,7 +474,7 @@ module Higgs::StorageTest
         }
       }
       @s = new_storage
-      assert_exception(Higgs::Storage::BrokenError) {
+      assert_exception(Storage::BrokenError) {
         @s.verify
       }
     end
@@ -496,7 +497,7 @@ module Higgs::StorageTest
         }
       }
       @s = new_storage
-      assert_exception(Higgs::Storage::BrokenError) {
+      assert_exception(Storage::BrokenError) {
         @s.verify
       }
     end
@@ -642,20 +643,39 @@ module Higgs::StorageTest
       @s.shutdown
       @s = nil
       @s = new_storage(:read_only => true)
-      assert_exception(Higgs::Storage::NotWritableError) {
+      assert_exception(Storage::NotWritableError) {
         @s.reorganize
       }
+    end
+
+    def test_shutdown
+      @s.shutdown
+      s, @s = @s, nil
+      assert_exception(Storage::ShutdownException) { s.fetch('foo') }
+      assert_exception(Storage::ShutdownException) { s.fetch_properties('foo') }
+      assert_exception(Storage::ShutdownException) { s.key? 'foo' }
+      assert_exception(Storage::ShutdownException) {
+	s.each_key do
+	  assert_fail('not to reach')
+	end
+      }
+      assert_exception(Storage::ShutdownException) { s.write_and_commit([]) }
+      assert_exception(Storage::ShutdownException) { s.reorganize }
+      assert_exception(Storage::ShutdownException) { s.dump('') }
+      assert_exception(Storage::ShutdownException) { s.verify }
     end
   end
 
   module StorageTransactionContextTest
+    include Higgs
+
     def dbm_open
       raise NotImplementedError, 'not implemented'
     end
 
     def new_storage(options={})
       options[:dbm_open] = dbm_open unless (options.include? :dbm_open)
-      Higgs::Storage.new(@name, options)
+      Storage.new(@name, options)
     end
     private :new_storage
 
@@ -676,7 +696,7 @@ module Higgs::StorageTest
     def transaction
       r = nil
       @lock_manager.transaction{|lock_handler|
-	tx = Higgs::Storage::TransactionContext.new(@s, @read_cache, lock_handler)
+	tx = Storage::TransactionContext.new(@s, @read_cache, lock_handler)
 	r = yield(tx)
 	p tx.write_list if $DEBUG
 	@s.write_and_commit(tx.write_list)

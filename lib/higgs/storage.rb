@@ -22,6 +22,9 @@ module Higgs
     class NotWritableError < Error
     end
 
+    class ShutdownException < Exceptions::ShutdownException
+    end
+
     class DebugRollbackException < HiggsException
     end
 
@@ -85,6 +88,9 @@ module Higgs
       @tar_name = "#{@name}.tar"
       @idx_name = "#{@name}.idx"
 
+      @shutdown = false
+      @sd_r_lock, @sd_w_lock = Thread::ReadWriteLock.new.to_a
+
       init_options(options)
       @properties_read_cache = @cache_type.new{|key|
         internal_fetch_properties(key)
@@ -103,6 +109,22 @@ module Higgs
         shutdown
         raise
       end
+    end
+
+    def self.transaction_guard(name)
+      class_eval(<<-EOF, "transaction_guard(#{name}) => #{__FILE__}", __LINE__ + 1)
+        alias unguarded_#{name} #{name}
+        private :unguarded_#{name}
+
+        def #{name}(*args, &block)
+	  @sd_r_lock.synchronize{
+	    if (@shutdown) then
+	      raise ShutdownException, 'storage shutdown'
+	    end
+	    unguarded_#{name}(*args, &block)
+	  }
+	end
+      EOF
     end
 
     def init_io
@@ -172,13 +194,14 @@ module Higgs
         raise TypeError, "can't convert #{key.class} to String"
       end
       value = read_record_body('d:' + key) or return
-      properties = fetch_properties(key) or raise BrokenError, "failed to read properties: #{key}"
+      properties = unguarded_fetch_properties(key) or raise BrokenError, "failed to read properties: #{key}"
       content_hash = Digest::SHA512.hexdigest(value)
       if (content_hash != properties['hash']) then
         raise BrokenError, "mismatch content hash at #{key}: expected<#{properties['hash']}> but was <#{content_hash}>"
       end
       value
     end
+    transaction_guard :fetch
 
     def internal_fetch_properties(key)
       properties_yml = read_record_body('p:' + key) or return
@@ -192,6 +215,7 @@ module Higgs
       end
       @properties_read_cache[key]
     end
+    transaction_guard :fetch_properties
 
     def key?(key)
       unless (key.kind_of? String) then
@@ -199,6 +223,7 @@ module Higgs
       end
       @idx_db.key? 'd:' + key
     end
+    transaction_guard :key?
 
     def each_key
       @idx_db.each_key do |key|
@@ -211,6 +236,7 @@ module Higgs
       end
       self
     end
+    transaction_guard :each_key
 
     def write_and_commit(write_list)
       if (@read_only) then
@@ -245,7 +271,7 @@ module Higgs
             end
             commit_log['d:' + key] = @w_tar.pos
             @w_tar.add(key, value, :mtime => commit_time)
-            if (properties = fetch_properties(key)) then
+            if (properties = unguarded_fetch_properties(key)) then
               properties['hash'] = Digest::SHA512.hexdigest(value)
               new_properties[key] = properties
             else
@@ -270,7 +296,7 @@ module Higgs
           when :update_properties
             if (properties = new_properties[key]) then
               # nothing to do.
-            elsif (properties = fetch_properties(key)) then
+            elsif (properties = unguarded_fetch_properties(key)) then
               # nothing to do.
             else
               # KeyError : ruby 1.9 feature
@@ -353,6 +379,7 @@ module Higgs
       end
       nil
     end
+    transaction_guard :write_and_commit
 
     def rollback
       if (@read_only) then
@@ -443,6 +470,7 @@ module Higgs
       }
       nil
     end
+    transaction_guard :reorganize
 
     FETCH_DATA_KEY = proc{|head|
       'd:' + head[:name]
@@ -570,10 +598,11 @@ module Higgs
       }
       nil
     end
+    transaction_guard :dump
 
     def verify_each_key
       yield('.higgs')
-      each_key do |key|
+      unguarded_each_key do |key|
         yield(key)
       end
       self
@@ -592,7 +621,7 @@ module Higgs
 
       verify_each_key do |key|
         # hash check
-        fetch(key) or raise BrokenError, "not found: #{key}"
+        unguarded_fetch(key) or raise BrokenError, "not found: #{key}"
 
         if (@idx_db['d:' + key].to_i >= eoa) then
           raise BrokenError, "too large data index: #{key}"
@@ -602,24 +631,31 @@ module Higgs
         end
       end
     end
+    transaction_guard :verify
 
     def shutdown
-      if (@w_tar_opened) then
-        @io_sync.call(@w_tar)
-        @w_tar.close(true)
-      end
+      @sd_w_lock.synchronize{
+	if (@shutdown) then
+	  raise ShutdownException, 'storage shutdown'
+	end
+	@shutdown = true
 
-      if (@r_tar_pool) then
-        @r_tar_pool.shutdown{|r_tar|
-          r_tar.close
-        }
-      end
+	if (@w_tar_opened) then
+	  @io_sync.call(@w_tar)
+	  @w_tar.close(true)
+	end
 
-      if (@idx_db_opened) then
-        @idx_db.sync unless @read_only
-        @idx_db.close
-      end
+	if (@r_tar_pool) then
+	  @r_tar_pool.shutdown{|r_tar|
+	    r_tar.close
+	  }
+	end
 
+	if (@idx_db_opened) then
+	  @idx_db.sync unless @read_only
+	  @idx_db.close
+	end
+      }
       nil
     end
 
