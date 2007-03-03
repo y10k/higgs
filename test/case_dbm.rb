@@ -289,5 +289,27 @@ module Higgs::DBMTest
 	assert_equal(nil,     tx['baz'])
       }
     end
+
+    def test_store_and_delete_if_with_keys
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+
+	tx.delete_if('foo', 'bar') {|key, value|
+	  key == 'bar' || value == 'orange'
+	}
+
+	assert_equal('apple',  tx['foo'])
+	assert_equal(nil,      tx['bar'])
+	assert_equal('orange', tx['baz'])
+      }
+
+      @db.transaction{|tx|
+	assert_equal('apple',  tx['foo'])
+	assert_equal(nil,      tx['bar'])
+	assert_equal('orange', tx['baz'])
+      }
+    end
   end
 end
