@@ -128,6 +128,7 @@ module Higgs
         @io.sysseek(pos, IO::SEEK_SET)
       end
 
+      def_delegator :@io, :flush
       def_delegator :@io, :fsync
       def_delegator :@io, :truncate
       def_delegator :@io, :close
@@ -150,6 +151,7 @@ module Higgs
       def_delegator :@io, :tell
       def_delegator :@io, :pos
       def_delegator :@io, :pos=
+      def_delegator :@io, :flush
       def_delegator :@io, :fsync
       def_delegator :@io, :truncate
       def_delegator :@io, :close

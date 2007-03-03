@@ -62,11 +62,18 @@ module Higgs
           require 'higgs/cache'
           @cache_type = Cache::SharedWorkCache
         end
+
+	if (options.include? :fsync) then
+	  @fsync = options[:fsync]
+	else
+	  @fsync = true
+	end
       end
       private :init_options
 
       attr_reader :read_only
       attr_reader :number_of_read_io
+      attr_reader :fsync
     end
     include InitOptions
 
@@ -82,6 +89,7 @@ module Higgs
 
       @idx_db_opened = false
       @w_tar_opened = false
+      @io_sync = (@fsync) ? proc{|io| io.fsync } : proc{|io| io.flush }
       begin
         if (init_io) then
           build_storage_at_first_time
@@ -288,7 +296,7 @@ module Higgs
 
         eoa = @w_tar.pos
         @w_tar.write_EOA
-        @w_tar.fsync
+        @io_sync.call(@w_tar)
 
         if (__debug_rollback_before_rollback_log_write__) then
           raise DebugRollbackBeforeRollbackLogWriteException, 'debug'
@@ -372,7 +380,7 @@ module Higgs
 
           @w_tar.seek(eoa)
           @w_tar.write_EOA
-          @w_tar.fsync
+          @io_sync.call(@w_tar)
         elsif (eoa > rollback_eoa) then
           # roll forward
         else
@@ -423,7 +431,7 @@ module Higgs
               @idx_db.sync
               @w_tar.seek(curr_pos)
               @w_tar.write_EOA
-              @w_tar.fsync
+              @io_sync.call(@w_tar)
               @w_tar.truncate(curr_pos + Tar::Block::BLKSIZ * 2)
               break
             end
@@ -494,7 +502,7 @@ module Higgs
         puts "debug: reorganize_shift: gap_size(#{gap_size}) >= alive_size(#{alive_size}) + Tar::Block::BLKSIZ" if $DEBUG
         @w_tar.seek(offset + alive_size)
         @w_tar.write_header(:name => '.gap', :size => gap_size - alive_size - Tar::Block::BLKSIZ)
-        @w_tar.fsync
+        @io_sync.call(@w_tar)
         copy(r_tar, alive_size, alive_pos, offset)
         @idx_db[fetch_key.call(alive_head)] = offset.to_s
         @idx_db.sync
@@ -512,7 +520,7 @@ module Higgs
         next_eoa = eoa + alive_size
         @w_tar.seek(next_eoa)
         @w_tar.write_EOA
-        @w_tar.fsync
+        @io_sync.call(@w_tar)
         @idx_db['EOA'] = next_eoa.to_s
         @idx_db.sync
         @idx_db[fetch_key.call(alive_head)] = eoa.to_s
@@ -531,6 +539,7 @@ module Higgs
       w_io = @w_tar.to_io
       w_io.seek(to_pos)
       w_io.write(data)
+      @io_sync.call(w_io)
       w_io.fsync
       nil
     end
@@ -593,7 +602,7 @@ module Higgs
 
     def shutdown
       if (@w_tar_opened) then
-        @w_tar.fsync
+        @io_sync.call(@w_tar)
         @w_tar.close(true)
       end
 
