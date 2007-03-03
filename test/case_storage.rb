@@ -713,12 +713,6 @@ module Higgs::StorageTest
       }
     end
 
-    def test_fetch_not_defined_value
-      transaction{|tx|
-	assert_equal(nil, tx['foo'])
-      }
-    end
-
     def test_store
       transaction{|tx|
 	tx['foo'] = 'apple'
@@ -750,7 +744,7 @@ module Higgs::StorageTest
     def test_key
       @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
       transaction{|tx|
-	assert_equal(true, (tx.key? 'foo'))
+	assert_equal(true,  (tx.key? 'foo'))
 	assert_equal(false, (tx.key? 'bar'))
       }
     end
@@ -762,12 +756,6 @@ module Higgs::StorageTest
 	tx['bar']		# load to cache
 	assert_equal(true, (tx.key? 'foo'))
 	assert_equal(false, (tx.key? 'bar'))
-      }
-    end
-
-    def test_key_not_defined_value
-      transaction{|tx|
-	assert_equal(false, (tx.key? 'foo'))
       }
     end
 
@@ -792,20 +780,16 @@ module Higgs::StorageTest
     end
 
     def test_delete
-      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'bar', :write, 'banana' ] ])
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ],
+			    [ 'bar', :write, 'banana' ]
+			  ])
       transaction{|tx|
 	assert_equal('apple', tx.delete('foo'))
+	assert_equal(nil,     tx.delete('baz'))
       }
       assert_equal(nil,      @s.fetch('foo'))
       assert_equal('banana', @s.fetch('bar'))
-    end
-
-    def test_delete_not_defined_value
-      transaction{|tx|
-	assert_equal(nil, tx.delete('foo'))
-      }
-      assert_equal(nil, @s.fetch('foo'))
-      assert_equal(nil, @s.fetch('bar'))
+      assert_equal(nil,      @s.fetch('baz'))
     end
 
     def test_store_and_delete
@@ -814,8 +798,8 @@ module Higgs::StorageTest
 	tx['bar'] = 'banana'
       }
 
-      assert_equal('apple', @s.fetch('foo'))
-      assert_equal('banana',     @s.fetch('bar'))
+      assert_equal('apple',  @s.fetch('foo'))
+      assert_equal('banana', @s.fetch('bar'))
 
       transaction{|tx|
 	assert_equal('apple', tx.delete('foo'))
@@ -856,6 +840,7 @@ module Higgs::StorageTest
       transaction{|tx|
 	tx['alice']		# load to cache
 	tx['bob']		# load to cache
+
 	expected_keys = %w[ foo bar baz ]
 	tx.each_key do |key|
 	  assert((expected_keys.include? key), "key: #{key}")
@@ -865,19 +850,7 @@ module Higgs::StorageTest
       }
     end
 
-    def test_each_key_not_defined_values
-      transaction{|tx|
-	tx.each_key do |key|
-	  assert_fail('not to reach')
-	end
-      }
-    end
-
     def test_store_and_delete_and_each_key
-      @s.each_key do |key|
-	assert_fail('not to reach')
-      end
-
       transaction{|tx|
 	tx.each_key do |key|
 	  assert_fail('not to reach')
@@ -889,8 +862,7 @@ module Higgs::StorageTest
 
 	expected_keys = %w[ foo bar baz ]
 	tx.each_key do |key|
-	  assert((expected_keys.include? key), "key: #{key}")
-	  expected_keys.delete(key)
+	  assert_equal(expected_keys.delete(key), key)
 	end
 	assert(expected_keys.empty?)
 
@@ -898,24 +870,21 @@ module Higgs::StorageTest
 
 	expected_keys = %w[ foo baz ]
 	tx.each_key do |key|
-	  assert((expected_keys.include? key), "key: #{key}")
-	  expected_keys.delete(key)
+	  assert_equal(expected_keys.delete(key), key)
 	end
 	assert(expected_keys.empty?)
       }
 
       expected_keys = %w[ foo baz ]
       @s.each_key do |key|
-	assert((expected_keys.include? key), "key: #{key}")
-	expected_keys.delete(key)
+	assert_equal(expected_keys.delete(key), key)
       end
       assert(expected_keys.empty?)
 
       transaction{|tx|
 	expected_keys = %w[ foo baz ]
 	tx.each_key do |key|
-	  assert((expected_keys.include? key), "key: #{key}")
-	  expected_keys.delete(key)
+	  assert_equal(expected_keys.delete(key), key)
 	end
 	assert(expected_keys.empty?)
       }
@@ -924,10 +893,17 @@ module Higgs::StorageTest
     def test_lock_and_unlock_and_locked
       transaction{|tx|
 	assert_equal(false, (tx.locked? 'foo'))
+	assert_equal(false, (tx.locked? 'bar'))
+
 	tx.lock('foo')
+
 	assert_equal(true, (tx.locked? 'foo'))
+	assert_equal(false, (tx.locked? 'bar'))
+
 	tx.unlock('foo')
+
 	assert_equal(false, (tx.locked? 'foo'))
+	assert_equal(false, (tx.locked? 'bar'))
       }
     end
 
