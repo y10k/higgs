@@ -83,6 +83,7 @@ module Higgs
 
     class ReadTransactionContext
       extend Forwardable
+      include Enumerable
 
       def initialize(storage, read_cache, lock_handler, commit_lock)
 	@tx = storage.class::TransactionContext.new(storage, read_cache, lock_handler)
@@ -114,7 +115,7 @@ module Higgs
 
       def each_pair
 	each_key do |key|
-	  yield(self, self[key])
+	  yield(key, self[key])
 	end
       end
 
@@ -139,7 +140,7 @@ module Higgs
       def length
 	len = 0
 	each_key do |key|
-	  len += 0
+	  len += 1
 	end
 	len
       end
@@ -147,7 +148,7 @@ module Higgs
       alias size length
 
       def empty?
-	length > 0
+	length == 0
       end
     end
 

@@ -50,18 +50,17 @@ module Higgs::DBMTest
       }
     end
 
-    def test_fetch_not_defined_value
-      @db.transaction{|tx|
-	assert_nil(tx['foo'])
-      }
-    end
-
     def test_store_and_key
       @db.transaction{|tx|
+	assert_equal(false, (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
+
 	tx['foo'] = 'apple'
+
 	assert_equal(true,  (tx.key? 'foo'))
 	assert_equal(false, (tx.key? 'bar'))
       }
+
       @db.transaction{|tx|
 	assert_equal(true,  (tx.key? 'foo'))
 	assert_equal(false, (tx.key? 'bar'))
@@ -77,9 +76,150 @@ module Higgs::DBMTest
       }
     end
 
-    def test_key_not_defined_value
+    def test_store_and_each_key
       @db.transaction{|tx|
-	assert_equal(false, (tx.key? 'foo'))
+	tx.each_key do |key|
+	  assert_fail('not to reach')
+	end
+
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+
+	expected_keys = %w[ foo bar baz ]
+	tx.each_key do |key|
+	  assert_equal(expected_keys.delete(key), key)
+	end
+	assert(expected_keys.empty?)
+      }
+
+      @db.transaction{|tx|
+	expected_keys = %w[ foo bar baz ]
+	tx.each_key do |key|
+	  assert_equal(expected_keys.delete(key), key)
+	end
+	assert(expected_keys.empty?)
+      }
+    end
+
+    def test_fetch_and_each_key
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+      }
+
+      @db.transaction{|tx|
+	tx['alice']		# load to cache
+	tx['bob']		# load to cache
+
+	expected_keys = %w[ foo bar baz ]
+	tx.each_key do |key|
+	  assert_equal(expected_keys.delete(key), key)
+	end
+	assert(expected_keys.empty?)
+      }
+    end
+
+    def test_store_and_each_value
+      @db.transaction{|tx|
+	tx.each_value do |value|
+	  assert_fail('not to reach')
+	end
+
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+
+	expected_values = %w[ apple banana orange ]
+	tx.each_value do |value|
+	  assert_equal(expected_values.delete(value), value)
+	end
+	assert(expected_values.empty?)
+      }
+
+      @db.transaction{|tx|
+	expected_values = %w[ apple banana orange ]
+	tx.each_value do |value|
+	  assert_equal(expected_values.delete(value), value)
+	end
+	assert(expected_values.empty?)
+      }
+    end
+
+    def test_store_and_each_pair
+      @db.transaction{|tx|
+	tx.each_pair do |key, value|
+	  assert_fail('not to reach')
+	end
+
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+
+	expected_pairs = [ %w[ foo apple ], %w[ bar banana ], %w[ baz orange ] ]
+	tx.each_pair do |key, value|
+	  assert_equal(expected_pairs.delete([ key, value ]), [ key, value ])
+	end
+	assert(expected_pairs.empty?)
+      }
+
+      @db.transaction{|tx|
+	expected_pairs = [ %w[ foo apple ], %w[ bar banana ], %w[ baz orange ] ]
+	tx.each_pair do |key, value|
+	  assert_equal(expected_pairs.delete([ key, value ]), [ key, value ])
+	end
+	assert(expected_pairs.empty?)
+      }
+    end
+
+    def test_store_and_keys
+      @db.transaction{|tx|
+	assert_equal([], tx.keys)
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+	assert_equal(%w[ foo bar baz ].sort, tx.keys.sort)
+      }
+      @db.transaction{|tx|
+	assert_equal(%w[ foo bar baz ].sort, tx.keys.sort)
+      }
+    end
+
+    def test_store_and_values
+      @db.transaction{|tx|
+	assert_equal([], tx.values)
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+	assert_equal(%w[ apple banana orange ].sort, tx.values.sort)
+      }
+      @db.transaction{|tx|
+	assert_equal(%w[ apple banana orange ].sort, tx.values.sort)
+      }
+    end
+
+    def test_length
+      @db.transaction{|tx|
+	assert_equal(0, tx.length)
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+	tx['baz'] = 'orange'
+	assert_equal(3, tx.length)
+      }
+      @db.transaction{|tx|
+	assert_equal(3, tx.length)
+      }
+    end
+
+    def test_length
+      @db.transaction{|tx|
+	assert_equal(true, tx.empty?)
+	tx['foo'] = 'apple'
+	assert_equal(false, tx.empty?)
+      }
+      @db.transaction{|tx|
+	assert_equal(false, tx.empty?)
       }
     end
   end
