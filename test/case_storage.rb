@@ -890,6 +890,52 @@ module Higgs::StorageTest
       }
     end
 
+    def test_store_and_fetch_and_key_zero_bytes
+      transaction{|tx|
+	tx['foo'] = ''
+
+	assert_equal('',  tx['foo'])
+	assert_equal(nil, tx['bar'])
+
+	assert_equal(true,  (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
+      }
+
+      transaction{|tx|
+	assert_equal('',  tx['foo'])
+	assert_equal(nil, tx['bar'])
+
+	assert_equal(true,  (tx.key? 'foo'))
+	assert_equal(false, (tx.key? 'bar'))
+      }
+    end
+
+    def test_store_and_each_key_zero_bytes
+      transaction{|tx|
+	tx.each_key do |key|
+	  assert_fail('not to reach')
+	end
+
+	tx['foo'] = ''
+	tx['bar'] = ''
+	tx['baz'] = ''
+
+	expected_keys = %w[ foo bar baz ]
+	tx.each_key do |key|
+	  assert_equal(expected_keys.delete(key), key)
+	end
+	assert(expected_keys.empty?)
+      }
+
+      transaction{|tx|
+	expected_keys = %w[ foo bar baz ]
+	tx.each_key do |key|
+	  assert_equal(expected_keys.delete(key), key)
+	end
+	assert(expected_keys.empty?)
+      }
+    end
+
     def test_lock_and_unlock_and_locked
       transaction{|tx|
 	assert_equal(false, (tx.locked? 'foo'))
