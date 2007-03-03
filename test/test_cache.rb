@@ -43,7 +43,7 @@ module Higgs::CacheTest
       assert_equal('orange', @cache[:baz])
     end
 
-    def test_LRU
+    def test_LRU_read
       CACHE_LIMIT_SIZE.times do |i|
 	@cache[i] = i.to_s
       end
@@ -53,6 +53,24 @@ module Higgs::CacheTest
 
       old_key = 0
       last_key = CACHE_LIMIT_SIZE - 1
+      new_key = CACHE_LIMIT_SIZE
+
+      @cache[new_key] = new_key.to_s
+      assert_equal(nil,           @cache[old_key])
+      assert_equal(last_key.to_s, @cache[last_key])
+      assert_equal(new_key.to_s,  @cache[new_key])
+    end
+
+    def test_LRU_write
+      CACHE_LIMIT_SIZE.times do |i|
+	@cache[i] = i.to_s
+      end
+      (0...CACHE_LIMIT_SIZE).to_a.reverse_each do |i|
+	@cache[i] = i.to_s
+      end
+
+      old_key = CACHE_LIMIT_SIZE - 1
+      last_key = 0
       new_key = CACHE_LIMIT_SIZE
 
       @cache[new_key] = new_key.to_s
