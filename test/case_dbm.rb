@@ -76,5 +76,11 @@ module Higgs::DBMTest
 	assert_equal(false, (tx.key? 'bar'))
       }
     end
+
+    def test_key_not_defined_value
+      @db.transaction{|tx|
+	assert_equal(false, (tx.key? 'foo'))
+      }
+    end
   end
 end
