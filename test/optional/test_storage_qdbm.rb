@@ -5,7 +5,7 @@ require 'rubyunit'
 require 'utils_storage'
 
 module Higgs::StorageTest
-  class StorageQDBMTest < RUNIT::TestCase
+  class StorageTest_QDBM < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 

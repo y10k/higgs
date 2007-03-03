@@ -2,14 +2,14 @@
 
 require 'higgs/index/gdbm'
 require 'rubyunit'
-require 'utils_storage'
+require 'utils_dbm'
 
-module Higgs::StorageTest
-  class StorageTest_GDBM < RUNIT::TestCase
+module Higgs::DBMTest
+  class DBMTest_GDBM < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 
-    include StorageTest
+    include DBMTest
 
     def dbm_open
       Higgs::Index::GDBM_OPEN

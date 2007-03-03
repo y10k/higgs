@@ -53,11 +53,13 @@ module Higgs
       @name = name
       init_options(options)
       @storage = @storage_type.new(name, options)
-      @shared_read_cache = @read_cache.new{|key|
+      @shared_read_cache = SharedWorkCache.new(@read_cache) {|key|
         @storage.fetch(key)
       }
       @commit_lock = Mutex.new
     end
+
+    def_delegator :@storage, :shutdown
 
     def transaction(read_only=@read_only)
       r = nil

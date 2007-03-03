@@ -2,14 +2,14 @@
 
 require 'higgs/index/qdbm'
 require 'rubyunit'
-require 'utils_storage'
+require 'utils_dbm'
 
-module Higgs::StorageTest
-  class StorageTransactionContextTest_QDBM < RUNIT::TestCase
+module Higgs::DBMTest
+  class DBMTest_QDBM < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 
-    include StorageTransactionContextTest
+    include DBMTest
 
     def dbm_open
       Higgs::Index::QDBM_OPEN
