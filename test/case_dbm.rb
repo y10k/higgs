@@ -222,5 +222,50 @@ module Higgs::DBMTest
 	assert_equal(false, tx.empty?)
       }
     end
+
+    def test_store_and_delete
+      @db.transaction{|tx|
+	assert_equal(nil, tx.delete('foo'))
+	assert_equal(nil, tx.delete('bar'))
+
+	tx['foo'] = 'apple'
+
+	assert_equal('apple', tx.delete('foo'))
+	assert_equal(nil,     tx.delete('bar'))
+
+	assert_equal(nil, tx['foo'])
+	assert_equal(nil, tx['bar'])
+      }
+
+      @db.transaction{|tx|
+	assert_equal(nil, tx.delete('foo'))
+	assert_equal(nil, tx.delete('bar'))
+
+	assert_equal(nil, tx['foo'])
+	assert_equal(nil, tx['bar'])
+      }
+    end
+
+    def test_delete_commited_data
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx['bar'] = 'banana'
+      }
+
+      @db.transaction{|tx|
+	assert_equal('apple',  tx['foo'])
+	assert_equal('banana', tx['bar'])
+
+	assert_equal('apple', tx.delete('foo'))
+
+	assert_equal(nil,      tx['foo'])
+	assert_equal('banana', tx['bar'])
+      }
+
+      @db.transaction{|tx|
+	assert_equal(nil,      tx['foo'])
+	assert_equal('banana', tx['bar'])
+      }
+    end
   end
 end

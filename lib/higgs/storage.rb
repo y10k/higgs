@@ -739,15 +739,17 @@ module Higgs
       end
 
       def write_list
-	@write_map.map{|key, ope| [ key, ope, @local_cache[key] ] }
+	@write_map.map{|key, ope|
+	  case (ope)
+	  when :delete
+	    [ key, ope ]
+	  else
+	    [ key, ope, @local_cache[key] ]
+	  end
+	}
       end
 
       def write_clear
-	for key, ope in @write_map
-	  if (ope == :delete) then
-	    @local_cache.delete(key)
-	  end
-	end
 	@write_map.clear
 	nil
       end

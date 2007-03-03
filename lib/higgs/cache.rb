@@ -63,7 +63,7 @@ module Higgs
     end
 
     class SharedWorkCache
-      def initialize(cache=LRUCache.new, &work)
+      def initialize(cache={}, &work)
         unless (work) then
           raise 'required work block'
         end
