@@ -14,7 +14,7 @@ name = File.join(File.dirname($0), 'foo')
 st = Higgs::Storage.new(name)
 
 Benchmark.bm do |x|
-  x.report('st reorganize') {
+  x.report('st reorganize:') {
     st.reorganize
   }
 end
