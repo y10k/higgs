@@ -589,6 +589,15 @@ module Higgs
 	w_io = @w_tar.to_io
 	w_io.seek(offset)
 	w_io.write(shift_bundle.to_s)
+	if (gap_bundle.size > shift_bundle.size) then
+	  gap_size = gap_bundle.size - shift_bundle.size
+	  gap_size -= Tar::Block::BLKSIZ # header size
+	  if (gap_size < 0) then
+	    raise "Bug: negative gap body size: #{gap_size}"
+	  end
+	  p [ :debug, :reorganize_shift, :gap, :pos, @w_tar.pos, :size_no_head, gap_size ] if $DEBUG
+	  @w_tar.write_header(:name => '.gap', :size => gap_size)
+	end
 	@io_sync.call(@w_tar)
 	curr_pos = offset
 	for key, blocked_size in shift_bundle
@@ -597,18 +606,6 @@ module Higgs
 	  curr_pos += blocked_size
 	end
 	@idx_db.sync
-
-	if (gap_bundle.size > shift_bundle.size) then
-	  @w_tar.seek(offset + shift_bundle.size)
-	  gap_size = gap_bundle.size - shift_bundle.size
-	  gap_size -= Tar::Block::BLKSIZ # header size
-	  if (gap_size < 0) then
-	    raise "Bug: negative gap body size: #{gap_size}"
-	  end
-	  p [ :debug, :reorganize_shift, :gap, :pos, @w_tar.pos, :size_no_head, gap_size ] if $DEBUG
-	  @w_tar.write_header(:name => '.gap', :size => gap_size)
-	  @io_sync.call(@w_tar)
-	end
       else
 	raise 'Bug: too small gap'
       end

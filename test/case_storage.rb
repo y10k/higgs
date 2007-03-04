@@ -533,7 +533,7 @@ module Higgs::StorageTest
 
       # gap size < updated data size
       @s.write_and_commit([ [ 'foo', :write, 0xFF.chr * 0 ] ])
-      @s.write_and_commit([ [ 'foo', :write, 0xFF.chr * BLKSIZ * 100 ] ])
+      @s.write_and_commit([ [ 'foo', :write, 0xFF.chr * BLKSIZ * 128 ] ])
 
       @s.verify
       @s.reorganize
