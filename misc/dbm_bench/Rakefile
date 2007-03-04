@@ -13,6 +13,10 @@ def run(cmd)
   ruby '-I', LIB_DIR, cmd, LOOP_COUNT, DATA_COUNT, MAX_DAT_LEN
 end
 
+def prof(cmd)
+  ruby '-I', LIB_DIR, '-r', 'profile', cmd, LOOP_COUNT, DATA_COUNT, MAX_DAT_LEN
+end
+
 task :default => [ :run ]
 
 task :run => [ :clean ] do
@@ -27,6 +31,21 @@ task :run => [ :clean ] do
   run 'st_verify.rb'
   run 'dbm_rnd_delete.rb'
   run 'st_reorganize.rb'
+  run 'st_verify.rb'
+end
+
+task :prof => [ :clean ] do
+  print "\n"
+  prof 'dbm_seq_write.rb'
+  run 'st_verify.rb'
+  prof 'dbm_seq_read.rb'
+  run 'st_verify.rb'
+  prof 'dbm_rnd_read.rb'
+  run 'st_verify.rb'
+  prof 'dbm_rnd_update.rb'
+  run 'st_verify.rb'
+  prof 'dbm_rnd_delete.rb'
+  prof 'st_reorganize.rb'
   run 'st_verify.rb'
 end
 
