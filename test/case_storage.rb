@@ -544,6 +544,33 @@ module Higgs::StorageTest
         key_list << key
       end
       assert_equal(%w[ foo ], key_list)
+
+      # gap stripes
+      key_max = 1024
+      write_list = []
+      key_max.times do |i|
+	write_list << [ i.to_s, :write, 0xFF.chr ]
+      end
+      @s.write_and_commit(write_list)
+      del_list = []
+      key_max.times do |i|
+	if (i % 2 == 0) then
+	  del_list << [ i.to_s, :delete ]
+	end
+      end
+      @s.write_and_commit(del_list)
+
+      @s.verify
+      @s.reorganize
+      @s.verify
+
+      key_list = []
+      @s.each_key do |key|
+	key_list << key
+      end
+      expected_keys = %w[ foo ]
+      expected_keys += (0...key_max).reject{|i| i % 2 == 0 }.map{|i| i.to_s }
+      assert_equal(expected_keys.sort, key_list.sort)
     end
 
     def test_reorganize_stress
@@ -560,7 +587,7 @@ module Higgs::StorageTest
         ope_count.times do |i|
           k = i.to_s
           key_list << k
-          d = 0xFF.chr * BLKSIZ * rand(max_blks + 1)
+          d = 0xFF.chr * BLKSIZ * rand(max_blks)
           write_list << [ k, :write, d ]
           if (i % commit_count == 0) then
             @s.write_and_commit(write_list)
@@ -573,20 +600,20 @@ module Higgs::StorageTest
         end
 
         @s.verify
-        before_keys = []
+        before_alist = []
         @s.each_key do |key|
-          before_keys << key
+          before_alist << [ key, @s.fetch(key), @s.fetch_properties(key) ]
         end
-        before_keys.sort!
+        before_alist.sort!{|a, b| a[0] <=> b[0] }
 
         @s.reorganize
         @s.verify
-        after_keys = []
+        after_alist = []
         @s.each_key do |key|
-          after_keys << key
+          after_alist << [ key, @s.fetch(key), @s.fetch_properties(key) ]
         end
-        after_keys.sort!
-        assert_equal(before_keys, after_keys, "nth: #{nth}")
+        after_alist.sort!{|a, b| a[0] <=> b[0] }
+        assert_equal(before_alist, after_alist, "nth: #{nth}")
 
         for i in 0..(key_list.length - 2)
           j = i + rand(key_list.length - i)
@@ -600,12 +627,12 @@ module Higgs::StorageTest
           ope_dice = rand(4)
           case (ope_dice)
           when 0, 1
-            d = 0xFF.chr * BLKSIZ * rand(max_blks + 1)
+            d = 0xFF.chr * BLKSIZ * rand(max_blks)
             write_list << [ k, :write, d ]
           when 2
             write_list << [ k, :delete ]
           when 3
-            d = 'Z' * BLKSIZ * rand(max_blks + 1)
+            d = 'Z' * BLKSIZ * rand(max_blks)
             write_list << [ k, :update_properties, { :memo => "#{nth}.#{i}", :padding => d } ]
           else
             raise "overflow ope_dice: #{ope_dice}"
@@ -622,20 +649,20 @@ module Higgs::StorageTest
         end
 
         @s.verify
-        before_keys = []
+        before_alist = []
         @s.each_key do |key|
-          before_keys << key
+          before_alist << [ key, @s.fetch(key), @s.fetch_properties(key) ]
         end
-        before_keys.sort!
+        before_alist.sort!{|a, b| a[0] <=> b[0] }
 
         @s.reorganize
         @s.verify
-        after_keys = []
+        after_alist = []
         @s.each_key do |key|
-          after_keys << key
+          after_alist << [ key, @s.fetch(key), @s.fetch_properties(key) ]
         end
-        after_keys.sort!
-        assert_equal(before_keys, after_keys, "nth: #{nth}")
+        after_alist.sort!{|a, b| a[0] <=> b[0] }
+        assert_equal(before_alist, after_alist, "nth: #{nth}")
       end
     end
 

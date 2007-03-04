@@ -443,6 +443,23 @@ module Higgs
     end
     private :block_alive?
 
+    def _block_alive?(head, pos)
+      key = 'd:' + head[:name]
+      if (read_index(key) == pos) then
+	return key
+      end
+
+      if (head[:name] =~ /\.properties$/) then
+	key = 'p:' + $`
+	if (read_index(key) == pos) then
+	  return key
+	end
+      end
+
+      nil
+    end
+    private :_block_alive?
+
     def reorganize
       if (@read_only) then
         raise NotWritableError, 'failed to reorganize read only storage'
@@ -452,14 +469,16 @@ module Higgs
         curr_pos = 0
         r_tar.seek(0)
         while (head = r_tar.read_header(true))
-          p [ :debug, :reorganize, :curr_pos, curr_pos ] if $DEBUG
           if (block_alive? head, curr_pos) then
+	    p [ :debug, :reorganize, :skip_alive, :curr_pos, curr_pos ] if $DEBUG
             curr_pos = r_tar.pos
           else
+	    p [ :debug, :reorganize, :shift, :curr_pos, curr_pos ] if $DEBUG
             if (next_pos = reorganize_shift(r_tar, curr_pos)) then
               r_tar.seek(next_pos)
               curr_pos = next_pos
             else
+	      p [ :debug, :reorganize, :eoa, :curr_pos, curr_pos ] if $DEBUG
               # end of reorganize
               @idx_db['EOA'] = curr_pos.to_s
               @idx_db.sync
@@ -484,101 +503,141 @@ module Higgs
       'p:' + head[:name].sub(/\.properties$/, '')
     }
 
+    SHIFT_BUNDLE_SIZE = 1024 * 64
+
+    class Bundle
+      include Enumerable
+
+      def initialize
+	@attrs_alist = []
+	@size = 0
+	@buffer = ''
+      end
+
+      attr_reader :size
+
+      def add(key, size, offset)
+	blocked_size = Tar::Block::BLKSIZ             # head
+	blocked_size += Tar::Block.blocked_size(size) # body
+	@attrs_alist << [ key, blocked_size, offset ]
+	@size += blocked_size
+	self
+      end
+
+      def each
+	for key, blocked_size, offset in @attrs_alist
+	  yield(key, blocked_size)
+	end
+	self
+      end
+
+      def read(r_tar)
+	r_io = r_tar.to_io
+	for key, blocked_size, offset in @attrs_alist
+	  r_io.seek(offset)
+	  @buffer << r_io.read(blocked_size)
+	end
+	self
+      end
+
+      def to_s
+	@buffer
+      end
+    end
+
     def reorganize_shift(r_tar, offset)
       p [ :debug, :reorganize_shift, :offset, offset ] if $DEBUG
 
-      alive_head = nil
-      alive_pos = nil
-      fetch_key = nil
-      curr_pos = r_tar.pos
+      shift_bundle = Bundle.new
+      curr_pos = offset
+      r_tar.seek(offset)
       r_tar.each(true) do |head|
-        if (type = block_alive?(head, curr_pos)) then
-          alive_head = head
-          alive_pos = curr_pos
-          case (type)
-          when :data
-            fetch_key = FETCH_DATA_KEY
-          when :properties
-            fetch_key = FETCH_PROPERTIES_KEY
-          else
-            raise "unknown type: #{type}"
-          end
-          break
+        if (key = _block_alive?(head, curr_pos)) then
+	  shift_bundle.add(key, head[:size], curr_pos)
+	  if (shift_bundle.size > SHIFT_BUNDLE_SIZE) then
+	    break
+	  end
         end
         curr_pos = r_tar.pos
       end
-
-      unless (alive_head) then
+      if (shift_bundle.size == 0) then
         return
       end
+      p [ :debug, :reorganize_shift, :shift_bundle, shift_bundle ] if $DEBUG
+      shift_bundle.read(r_tar)
 
-      p [ :debug, :reorganize_shift, :gap, offset, alive_pos ] if $DEBUG
-
-      gap_size = alive_pos - offset
-      alive_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(alive_head[:size])
-
-      # ^ <-- offset
-      # |
-      # | gap_size
-      # |
-      # V
-      # ^ <-- alive_pos
-      # |
-      # | Tar::Block::BLKSIZ (header)
-      # |
-      # V
-      # ^
-      # |
-      # | Tar::Block.blocked_size(alive_head[:size])
-      # |
-      # V
-
-      if (gap_size >= alive_size + Tar::Block::BLKSIZ) then
-        puts "debug: reorganize_shift: gap_size(#{gap_size}) >= alive_size(#{alive_size}) + Tar::Block::BLKSIZ" if $DEBUG
-        @w_tar.seek(offset + alive_size)
-        @w_tar.write_header(:name => '.gap', :size => gap_size - alive_size - Tar::Block::BLKSIZ)
-        @io_sync.call(@w_tar)
-        copy(r_tar, alive_size, alive_pos, offset)
-        @idx_db[fetch_key.call(alive_head)] = offset.to_s
-        @idx_db.sync
-        return offset + alive_size
-      elsif (gap_size == alive_size) then
-        puts "debug: reorganize_shift: gap_size(#{gap_size}) == alive_size(#{alive_size})" if $DEBUG
-        copy(r_tar, alive_size, alive_pos, offset)
-        @idx_db[fetch_key.call(alive_head)] = offset.to_s
-        @idx_db.sync
-        return offset + alive_size
-      else
-        puts 'debug: reorganize_shift: EOA' if $DEBUG
-        eoa = @idx_db['EOA'].to_i
-        copy(r_tar, alive_size, alive_pos, eoa)
-        next_eoa = eoa + alive_size
-        @w_tar.seek(next_eoa)
-        @w_tar.write_EOA
-        @io_sync.call(@w_tar)
-        @idx_db['EOA'] = next_eoa.to_s
-        @idx_db.sync
-        @idx_db[fetch_key.call(alive_head)] = eoa.to_s
-        @idx_db.sync
-        return offset
+      gap_bundle = Bundle.new
+      move_tail_bundle = Bundle.new
+      curr_pos = offset
+      r_tar.seek(offset)
+      r_tar.each(true) do |head|
+	if (key = _block_alive?(head, curr_pos)) then
+	  gap_bundle.add(key, head[:size], curr_pos)
+	  move_tail_bundle.add(key, head[:size], curr_pos)
+	else
+	  gap_bundle.add(:no_key, head[:size], curr_pos)
+	end
+	if (gap_bundle.size >= shift_bundle.size) then
+	  break
+	end
+	curr_pos = r_tar.pos
       end
 
-      raise 'Bug: not to reach'
+      p [ :debug, :reorganize_shift, :gap_bundle, gap_bundle ] if $DEBUG
+      p [ :debug, :reorganize_shift, :move_tail_bundle, move_tail_bundle ] if $DEBUG
+
+      if (move_tail_bundle.size > 0) then
+	move_tail_bundle.read(r_tar)
+	eoa = @idx_db['EOA'].to_i
+	w_io = @w_tar.to_io
+	w_io.seek(eoa)
+	w_io.write(move_tail_bundle.to_s)
+	@w_tar.write_EOA
+	@io_sync.call(@w_tar)
+	@idx_db['EOA'] = (eoa + move_tail_bundle.size).to_s
+	@idx_db.sync
+	curr_pos = eoa
+	for key, blocked_size in move_tail_bundle
+	  p [ :debug, :reorganize_shift, :move_tail, key, :pos, curr_pos, :size, blocked_size ] if $DEBUG
+	  @idx_db[key] = curr_pos.to_s
+	  curr_pos += blocked_size
+	end
+	@idx_db.sync
+      end
+
+      if (gap_bundle.size >= shift_bundle.size) then
+	eoa = @idx_db['EOA'].to_i
+	w_io = @w_tar.to_io
+	w_io.seek(offset)
+	w_io.write(shift_bundle.to_s)
+	@io_sync.call(@w_tar)
+	curr_pos = offset
+	for key, blocked_size in shift_bundle
+	  p [ :debug, :reorganize_shift, :shift, key, :pos, curr_pos, :size, blocked_size ] if $DEBUG
+	  @idx_db[key] = curr_pos.to_s
+	  curr_pos += blocked_size
+	end
+	@idx_db.sync
+
+	if (gap_bundle.size > shift_bundle.size) then
+	  @w_tar.seek(offset + shift_bundle.size)
+	  gap_size = gap_bundle.size - shift_bundle.size
+	  gap_size -= Tar::Block::BLKSIZ # header size
+	  if (gap_size < 0) then
+	    raise "Bug: mismatch negative gap size: #{gap_size}"
+	  end
+	  p [ :debug, :reorganize_shift, :gap, :pos, @w_tar.pos, :size_no_head, gap_size ] if $DEBUG
+	  @w_tar.write_header(:name => '.gap', :size => gap_size)
+	  @io_sync.call(@w_tar)
+	end
+      else
+	# retry
+	return offset
+      end
+
+      offset + shift_bundle.size
     end
     private :reorganize_shift
-
-    def copy(r_tar, size, from_pos, to_pos)
-      r_io = r_tar.to_io
-      r_io.seek(from_pos)
-      data = r_io.read(size)
-      w_io = @w_tar.to_io
-      w_io.seek(to_pos)
-      w_io.write(data)
-      @io_sync.call(w_io)
-      w_io.fsync
-      nil
-    end
-    private :copy
 
     def dump(out=STDOUT)
       @r_tar_pool.transaction{|r_tar|

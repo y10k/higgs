@@ -23,7 +23,7 @@ Benchmark.bm do |x|
     loop_count.times do |i|
       db.transaction{|tx|
 	data_count.times do |j|
-	  k = (i + j).to_s
+	  k = (i * data_count + j).to_s
 	  d = 0xFF.chr * (rand(max_dat_len))
 	  tx[k] = d
 	end
