@@ -624,15 +624,14 @@ module Higgs
 	  gap_size = gap_bundle.size - shift_bundle.size
 	  gap_size -= Tar::Block::BLKSIZ # header size
 	  if (gap_size < 0) then
-	    raise "Bug: mismatch negative gap size: #{gap_size}"
+	    raise "Bug: negative gap body size: #{gap_size}"
 	  end
 	  p [ :debug, :reorganize_shift, :gap, :pos, @w_tar.pos, :size_no_head, gap_size ] if $DEBUG
 	  @w_tar.write_header(:name => '.gap', :size => gap_size)
 	  @io_sync.call(@w_tar)
 	end
       else
-	# retry
-	return offset
+	raise 'Bug: too small gap'
       end
 
       offset + shift_bundle.size
