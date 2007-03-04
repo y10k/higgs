@@ -431,19 +431,6 @@ module Higgs
     private :rollback
 
     def block_alive?(head, pos)
-      if (read_index('d:' + head[:name]) == pos) then
-        return :data
-      end
-      if (head[:name] =~ /\.properties$/) then
-        if (read_index('p:' + head[:name].sub(/\.properties$/, '')) == pos) then
-          return :properties
-        end
-      end
-      nil
-    end
-    private :block_alive?
-
-    def _block_alive?(head, pos)
       key = 'd:' + head[:name]
       if (read_index(key) == pos) then
 	return key
@@ -458,7 +445,7 @@ module Higgs
 
       nil
     end
-    private :_block_alive?
+    private :block_alive?
 
     def reorganize
       if (@read_only) then
@@ -494,16 +481,6 @@ module Higgs
       nil
     end
     transaction_guard :reorganize
-
-    FETCH_DATA_KEY = proc{|head|
-      'd:' + head[:name]
-    }
-
-    FETCH_PROPERTIES_KEY = proc{|head|
-      'p:' + head[:name].sub(/\.properties$/, '')
-    }
-
-    SHIFT_BUNDLE_SIZE = 1024 * 64
 
     class Bundle
       include Enumerable
@@ -545,6 +522,8 @@ module Higgs
       end
     end
 
+    SHIFT_BUNDLE_SIZE = 1024 * 64
+
     def reorganize_shift(r_tar, offset)
       p [ :debug, :reorganize_shift, :offset, offset ] if $DEBUG
 
@@ -552,7 +531,7 @@ module Higgs
       curr_pos = offset
       r_tar.seek(offset)
       r_tar.each(true) do |head|
-        if (key = _block_alive?(head, curr_pos)) then
+        if (key = block_alive?(head, curr_pos)) then
 	  shift_bundle.add(key, head[:size], curr_pos)
 	  if (shift_bundle.size > SHIFT_BUNDLE_SIZE) then
 	    break
@@ -571,7 +550,7 @@ module Higgs
       curr_pos = offset
       r_tar.seek(offset)
       r_tar.each(true) do |head|
-	if (key = _block_alive?(head, curr_pos)) then
+	if (key = block_alive?(head, curr_pos)) then
 	  gap_bundle.add(key, head[:size], curr_pos)
 	  move_tail_bundle.add(key, head[:size], curr_pos)
 	else
@@ -643,11 +622,11 @@ module Higgs
         curr_pos = 0
         r_tar.seek(0)
         r_tar.each(true) do |head|
-          if (type = block_alive?(head, curr_pos)) then
-            case (type)
-            when :data
+          if (key = block_alive?(head, curr_pos)) then
+            case (key)
+            when /^d:/
               out << [ :data, curr_pos, head ].inspect << "\n"
-            when :properties
+            when /^p:/
               out << [ :properties, curr_pos, head ].inspect << "\n"
             else
               raise "unknown type: #{type}"
