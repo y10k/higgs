@@ -199,9 +199,10 @@ module Higgs
       end
       value = read_record_body('d:' + key) or return
       properties = unguarded_fetch_properties(key) or raise BrokenError, "failed to read properties: #{key}"
+      expected_hash = properties['system_properties']['hash']
       content_hash = Digest::SHA512.hexdigest(value)
-      if (content_hash != properties['hash']) then
-        raise BrokenError, "mismatch content hash at #{key}: expected<#{properties['hash']}> but was <#{content_hash}>"
+      if (content_hash != expected_hash) then
+        raise BrokenError, "mismatch content hash at #{key}: expected<#{expected_hash}> but was <#{content_hash}>"
       end
       value
     end
@@ -276,12 +277,17 @@ module Higgs
             commit_log['d:' + key] = @w_tar.pos
             @w_tar.add(key, value, :mtime => commit_time)
             if (properties = unguarded_fetch_properties(key)) then
-              properties['hash'] = Digest::SHA512.hexdigest(value)
+              properties['system_properties']['hash'] = Digest::SHA512.hexdigest(value)
+	      properties['system_properties']['modified_time'] = commit_time
               new_properties[key] = properties
             else
               properties = {
-                'hash' => Digest::SHA512.hexdigest(value),
-                'created_time' => commit_time,
+		'system_properties' => {
+		  'hash' => Digest::SHA512.hexdigest(value),
+		  'created_time' => commit_time,
+		  'changed_time' => commit_time,
+		  'modified_time' => commit_time
+		},
                 'custom_properties' => {}
               }
               new_properties[key] = properties
@@ -308,6 +314,7 @@ module Higgs
               raise key_error, "not exist properties at key: #{key}"
             end
             @shared_properties_cache.delete(key)
+	    properties['system_properties']['changed_time'] = commit_time
             properties['custom_properties'] = value
             new_properties[key] = properties
             commit_log['p:' + key] = @w_tar.pos
