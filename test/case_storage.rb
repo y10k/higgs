@@ -65,8 +65,8 @@ module Higgs::StorageTest
       info_yml = @s.fetch('.higgs')
       assert_not_nil(info_yml)
       properties = @s.fetch_properties('.higgs')
-      assert_equal(Digest::SHA512.hexdigest(info_yml), properties['hash'])
-      assert_instance_of(Time, properties['created_time'])
+      assert_equal(Digest::SHA512.hexdigest(info_yml), properties['system_properties']['hash'])
+      assert_instance_of(Time, properties['system_properties']['created_time'])
       assert_equal({}, properties['custom_properties'])
     end
 
@@ -95,7 +95,7 @@ module Higgs::StorageTest
 
       assert_equal("Hello world.\n", @s.fetch('foo'))
       properties = @s.fetch_properties('foo')
-      assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['hash'])
+      assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['system_properties']['hash'])
       assert_equal({}, properties['custom_properties'])
 
       # update properties
@@ -103,7 +103,7 @@ module Higgs::StorageTest
 
       assert_equal("Hello world.\n", @s.fetch('foo'))
       properties = @s.fetch_properties('foo')
-      assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['hash'])
+      assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['system_properties']['hash'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
 
       # update
@@ -111,7 +111,7 @@ module Higgs::StorageTest
 
       assert_equal("Good bye.\n", @s.fetch('foo'))
       properties = @s.fetch_properties('foo')
-      assert_equal(Digest::SHA512.hexdigest("Good bye.\n"), properties['hash'])
+      assert_equal(Digest::SHA512.hexdigest("Good bye.\n"), properties['system_properties']['hash'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
 
       # delete
@@ -129,7 +129,7 @@ module Higgs::StorageTest
 
       assert_equal('', @s.fetch('foo'))
       properties = @s.fetch_properties('foo')
-      assert_equal(Digest::SHA512.hexdigest(''), properties['hash'])
+      assert_equal(Digest::SHA512.hexdigest(''), properties['system_properties']['hash'])
       assert_equal({}, properties['custom_properties'])
     end
 
