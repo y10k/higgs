@@ -25,7 +25,7 @@ module Higgs
       def [](key)
 	if (cached_pair = @cache[key]) then
 	  c = @count
-	  @count += 1
+	  @count = @count.succ
 	  cached_pair[1] = c
 	  return cached_pair[0]
 	end
@@ -34,7 +34,7 @@ module Higgs
 
       def []=(key, value)
 	c = @count
-	@count += 1
+	@count = @count.succ
 	if (cached_pair = @cache[key]) then
 	  cached_pair[1] = c
 	else
