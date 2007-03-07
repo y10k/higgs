@@ -309,9 +309,7 @@ module Higgs
             elsif (properties = unguarded_fetch_properties(key)) then
               # nothing to do.
             else
-              # KeyError : ruby 1.9 feature
-              key_error = (defined? KeyError) ? KeyError : IndexError
-              raise key_error, "not exist properties at key: #{key}"
+              raise IndexError, "not exist properties at key: #{key}"
             end
             @shared_properties_cache.delete(key)
 	    properties['system_properties']['changed_time'] = commit_time
@@ -709,10 +707,15 @@ module Higgs
 	@storage = storage
 	@read_cache = read_cache
 	@local_cache = Hash.new{|hash, key| hash[key] = @read_cache[key] }
+	@properties_cache = Hash.new{|hash, key|
+	  properties = @storage.fetch_properties(key)
+	  hash[key] = Marshal.load(Marshal.dump(properties)) # deep copy
+	}
 	@lock_handler = lock_handler
 	@locked_map = {}
 	@locked_map.default = false
 	@write_map = {}
+	@update_properties = {}
       end
 
       def locked?(key)
@@ -747,12 +750,51 @@ module Higgs
 	@local_cache[key] = value
       end
 
+      def property(key, name)
+	case (name)
+	when Symbol, String
+	  # good
+	else
+	  raise TypeError, "can't convert #{value.class} (name) to Symbol or String"
+	end
+
+	lock(key)
+	if (@write_map[key] != :delete) then
+	  if (properties = @properties_cache[key]) then
+	    case (name)
+	    when Symbol
+	      properties['system_properties'][name.to_s]
+	    when String
+	      properties['custom_properties'][name]
+	    else
+	      raise 'Bug: not to reach'
+	    end
+	  end
+	end
+      end
+
+      def set_property(key, name, value)
+	unless (value.kind_of? String) then
+	  raise TypeError, "can't convert #{value.class} (name) to String"
+	end
+	lock(key)
+	unless (self.key? key) then
+	  raise IndexError, "not exist properties at key: #{key}"
+	end
+	properties = @properties_cache[key]['custom_properties']
+	properties[name] = value
+	@update_properties[key] = properties
+	self
+      end
+
       def delete(key)
 	lock(key)
 	if (@write_map[key] != :delete) then
 	  @write_map[key] = :delete
+	  @update_properties.delete(key)
 	  @local_cache[key]	# load from storage
 	  @read_cache.delete(key)
+	  @properties_cache.delete(key)
 	  @local_cache.delete(key)
 	end
       end
@@ -779,6 +821,42 @@ module Higgs
 	self
       end
 
+      def property?(key, name)
+	case (name)
+	when Symbol, String
+	  # good
+	else
+	  raise TypeError, "can't convert #{value.class} (name) to Symbol or String"
+	end
+
+	lock(key)
+	if (self.key? key) then
+	  case (name)
+	  when Symbol
+	    return (@properties_cache[key]['system_properties'].key? key)
+	  when String
+	    return (@properties_cache[key]['custom_properties'].key? key)
+	  else
+	    raise 'Bug: not to reach'
+	  end
+	end
+	false
+      end
+
+      def each_property(key)
+	lock(key)
+	unless (self.key? key) then
+	  raise IndexError, "not exist properties at key: #{key}"
+	end
+	@properties_cache[key]['system_properties'].each_pair do |name, value|
+	  yield(name.to_sym, value)
+	end
+	@properties_cache[key]['custom_properties'].each_pair do |name, value|
+	  yield(name, value)
+	end
+	self
+      end
+
       def write_list
 	@write_map.map{|key, ope|
 	  case (ope)
@@ -787,6 +865,8 @@ module Higgs
 	  else
 	    [ key, ope, @local_cache[key] ]
 	  end
+	} + @update_properties.map{|key, properties|
+	  [ key, :update_properties, properties ]
 	}
       end
 
