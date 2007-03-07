@@ -152,9 +152,8 @@ module Higgs::StorageTest
       }
     end
 
-    def test_write_and_commit_KeyError_not_exist_properties
-      # KeyError : ruby 1.9 feature
-      assert_exception((defined? KeyError) ? KeyError : IndexError) {
+    def test_write_and_commit_IndexError_not_exist_properties
+      assert_exception(IndexError) {
         @s.write_and_commit([ [ 'foo', :update_properties, {} ] ])
       }
     end
@@ -767,6 +766,25 @@ module Higgs::StorageTest
 	assert_equal('apple', tx['foo'])
 	assert_equal(nil,     tx['bar'])
       }
+    end
+
+    def test_property
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'foo', :update_properties, { 'type' => 'fruit' } ] ])
+      transaction{|tx|
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('fruit', tx.property('foo', 'type'))
+      }
+    end
+
+    def test_set_property
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
+      transaction{|tx|
+	tx.set_property('foo', 'type', 'fruit')
+      }
+      assert_equal({ 'type' => 'fruit' }, @s.fetch_properties('foo')['custom_properties'])
     end
 
     def test_key
