@@ -865,7 +865,8 @@ module Higgs
 	  else
 	    [ key, ope, @local_cache[key] ]
 	  end
-	} + @update_properties.map{|key, properties|
+	} + \
+	@update_properties.map{|key, properties|
 	  [ key, :update_properties, properties ]
 	}
       end
