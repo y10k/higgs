@@ -806,6 +806,35 @@ module Higgs::StorageTest
       }
     end
 
+    def test_property_and_set_property
+      transaction{|tx|
+	tx['foo'] = 'apple'
+	assert_equal(nil, tx.property('foo', :created_time))
+	assert_equal(nil, tx.property('foo', :changed_time))
+	assert_equal(nil, tx.property('foo', :modified_time))
+	assert_equal(nil, tx.property('foo', :hash))
+	assert_equal(nil, tx.property('foo', 'bar'))
+	assert_equal(nil, tx.property('foo', 'baz'))
+
+	tx.set_property('foo', 'bar', 'banana')
+	assert_equal(nil, tx.property('foo', :created_time))
+	assert_equal(nil, tx.property('foo', :changed_time))
+	assert_equal(nil, tx.property('foo', :modified_time))
+	assert_equal(nil, tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+	assert_equal(nil, tx.property('foo', 'baz'))
+      }
+
+      transaction{|tx|
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+	assert_equal(nil, tx.property('foo', 'baz'))
+      }
+    end
+
     def test_key
       @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
       transaction{|tx|

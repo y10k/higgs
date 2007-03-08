@@ -708,7 +708,8 @@ module Higgs
 	@read_cache = read_cache
 	@local_cache = Hash.new{|hash, key| hash[key] = @read_cache[key] }
 	@properties_cache = Hash.new{|hash, key|
-	  properties = @storage.fetch_properties(key)
+	  properties = @storage.fetch_properties(key) or
+	    properties = { 'system_properties' => {}, 'custom_properties' => {} }
 	  hash[key] = Marshal.load(Marshal.dump(properties)) # deep copy
 	}
 	@lock_handler = lock_handler
@@ -755,7 +756,7 @@ module Higgs
 	when Symbol, String
 	  # good
 	else
-	  raise TypeError, "can't convert #{value.class} (name) to Symbol or String"
+	  raise TypeError, "can't convert #{name.class} (name) to Symbol or String"
 	end
 
 	lock(key)
@@ -774,8 +775,8 @@ module Higgs
       end
 
       def set_property(key, name, value)
-	unless (value.kind_of? String) then
-	  raise TypeError, "can't convert #{value.class} (name) to String"
+	unless (name.kind_of? String) then
+	  raise TypeError, "can't convert #{name.class} (name) to String"
 	end
 	lock(key)
 	unless (self.key? key) then
