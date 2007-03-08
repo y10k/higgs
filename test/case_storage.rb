@@ -768,73 +768,6 @@ module Higgs::StorageTest
       }
     end
 
-    def test_property
-      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'foo', :update_properties, { 'type' => 'fruit' } ] ])
-      transaction{|tx|
-	assert_instance_of(Time, tx.property('foo', :created_time))
-	assert_instance_of(Time, tx.property('foo', :changed_time))
-	assert_instance_of(Time, tx.property('foo', :modified_time))
-	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
-	assert_equal('fruit', tx.property('foo', 'type'))
-      }
-    end
-
-    def test_property_TypeError_name
-      transaction{|tx|
-	assert_exception(TypeError) { tx.property('foo', 123) }
-      }
-    end
-
-    def test_set_property
-      @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
-      transaction{|tx|
-	tx.set_property('foo', 'type', 'fruit')
-      }
-      assert_equal({ 'type' => 'fruit' }, @s.fetch_properties('foo')['custom_properties'])
-    end
-
-    def test_set_property_TypeError_name
-      transaction{|tx|
-	assert_exception(TypeError) { tx.set_property('foo', :type, 'fruit') }
-	assert_exception(TypeError) { tx.set_property('foo', 123, 'fruit') }
-      }
-    end
-
-    def test_set_property_IndexError_key
-      transaction{|tx|
-	assert_exception(IndexError) { tx.set_property('foo', 'type', 'fruit') }
-      }
-    end
-
-    def test_property_and_set_property
-      transaction{|tx|
-	tx['foo'] = 'apple'
-	assert_equal(nil, tx.property('foo', :created_time))
-	assert_equal(nil, tx.property('foo', :changed_time))
-	assert_equal(nil, tx.property('foo', :modified_time))
-	assert_equal(nil, tx.property('foo', :hash))
-	assert_equal(nil, tx.property('foo', 'bar'))
-	assert_equal(nil, tx.property('foo', 'baz'))
-
-	tx.set_property('foo', 'bar', 'banana')
-	assert_equal(nil, tx.property('foo', :created_time))
-	assert_equal(nil, tx.property('foo', :changed_time))
-	assert_equal(nil, tx.property('foo', :modified_time))
-	assert_equal(nil, tx.property('foo', :hash))
-	assert_equal('banana', tx.property('foo', 'bar'))
-	assert_equal(nil, tx.property('foo', 'baz'))
-      }
-
-      transaction{|tx|
-	assert_instance_of(Time, tx.property('foo', :created_time))
-	assert_instance_of(Time, tx.property('foo', :changed_time))
-	assert_instance_of(Time, tx.property('foo', :modified_time))
-	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
-	assert_equal('banana', tx.property('foo', 'bar'))
-	assert_equal(nil, tx.property('foo', 'baz'))
-      }
-    end
-
     def test_key
       @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
       transaction{|tx|
@@ -1027,6 +960,73 @@ module Higgs::StorageTest
 	  assert_equal(expected_keys.delete(key), key)
 	end
 	assert(expected_keys.empty?)
+      }
+    end
+
+    def test_property
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'foo', :update_properties, { 'type' => 'fruit' } ] ])
+      transaction{|tx|
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('fruit', tx.property('foo', 'type'))
+      }
+    end
+
+    def test_property_TypeError_name
+      transaction{|tx|
+	assert_exception(TypeError) { tx.property('foo', 123) }
+      }
+    end
+
+    def test_set_property
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
+      transaction{|tx|
+	tx.set_property('foo', 'type', 'fruit')
+      }
+      assert_equal({ 'type' => 'fruit' }, @s.fetch_properties('foo')['custom_properties'])
+    end
+
+    def test_set_property_TypeError_name
+      transaction{|tx|
+	assert_exception(TypeError) { tx.set_property('foo', :type, 'fruit') }
+	assert_exception(TypeError) { tx.set_property('foo', 123, 'fruit') }
+      }
+    end
+
+    def test_set_property_IndexError_key
+      transaction{|tx|
+	assert_exception(IndexError) { tx.set_property('foo', 'type', 'fruit') }
+      }
+    end
+
+    def test_property_and_set_property
+      transaction{|tx|
+	tx['foo'] = 'apple'
+	assert_equal(nil, tx.property('foo', :created_time))
+	assert_equal(nil, tx.property('foo', :changed_time))
+	assert_equal(nil, tx.property('foo', :modified_time))
+	assert_equal(nil, tx.property('foo', :hash))
+	assert_equal(nil, tx.property('foo', 'bar'))
+	assert_equal(nil, tx.property('foo', 'baz'))
+
+	tx.set_property('foo', 'bar', 'banana')
+	assert_equal(nil, tx.property('foo', :created_time))
+	assert_equal(nil, tx.property('foo', :changed_time))
+	assert_equal(nil, tx.property('foo', :modified_time))
+	assert_equal(nil, tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+	assert_equal(nil, tx.property('foo', 'baz'))
+      }
+
+      transaction{|tx|
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+	assert_equal(nil, tx.property('foo', 'baz'))
       }
     end
 
