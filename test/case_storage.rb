@@ -779,12 +779,31 @@ module Higgs::StorageTest
       }
     end
 
+    def test_property_TypeError_name
+      transaction{|tx|
+	assert_exception(TypeError) { tx.property('foo', 123) }
+      }
+    end
+
     def test_set_property
       @s.write_and_commit([ [ 'foo', :write, 'apple' ] ])
       transaction{|tx|
 	tx.set_property('foo', 'type', 'fruit')
       }
       assert_equal({ 'type' => 'fruit' }, @s.fetch_properties('foo')['custom_properties'])
+    end
+
+    def test_set_property_TypeError_name
+      transaction{|tx|
+	assert_exception(TypeError) { tx.set_property('foo', :type, 'fruit') }
+	assert_exception(TypeError) { tx.set_property('foo', 123, 'fruit') }
+      }
+    end
+
+    def test_set_property_IndexError_key
+      transaction{|tx|
+	assert_exception(IndexError) { tx.set_property('foo', 'type', 'fruit') }
+      }
     end
 
     def test_key
