@@ -834,9 +834,9 @@ module Higgs
 	if (self.key? key) then
 	  case (name)
 	  when Symbol
-	    return (@properties_cache[key]['system_properties'].key? key)
+	    return (@properties_cache[key]['system_properties'].key? name.to_s)
 	  when String
-	    return (@properties_cache[key]['custom_properties'].key? key)
+	    return (@properties_cache[key]['custom_properties'].key? name)
 	  else
 	    raise 'Bug: not to reach'
 	  end

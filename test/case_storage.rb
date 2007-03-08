@@ -1030,6 +1030,42 @@ module Higgs::StorageTest
       }
     end
 
+    def test_has_property
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'foo', :update_properties, { 'bar' => 'banana' } ] ])
+      transaction{|tx|
+	assert_equal(true,  (tx.property? 'foo', :created_time))
+	assert_equal(true,  (tx.property? 'foo', :changed_time))
+	assert_equal(true,  (tx.property? 'foo', :modified_time))
+	assert_equal(true,  (tx.property? 'foo', :hash))
+	assert_equal(false, (tx.property? 'foo', :no_property))
+	assert_equal(true,  (tx.property? 'foo', 'bar'))
+	assert_equal(false, (tx.property? 'foo', 'baz'))
+
+	assert_equal(false, (tx.property? 'bar', :created_time))
+	assert_equal(false, (tx.property? 'bar', :changed_time))
+	assert_equal(false, (tx.property? 'bar', :modified_time))
+	assert_equal(false, (tx.property? 'bar', :hash))
+	assert_equal(false, (tx.property? 'bar', 'baz'))
+
+	tx['bar'] = 'banana'
+	tx.set_property('bar', 'baz', 'orange')
+
+	assert_equal(false, (tx.property? 'bar', :created_time))
+	assert_equal(false, (tx.property? 'bar', :changed_time))
+	assert_equal(false, (tx.property? 'bar', :modified_time))
+	assert_equal(false, (tx.property? 'bar', :hash))
+	assert_equal(true,  (tx.property? 'bar', 'baz'))
+      }
+
+      transaction{|tx|
+	assert_equal(true, (tx.property? 'bar', :created_time))
+	assert_equal(true, (tx.property? 'bar', :changed_time))
+	assert_equal(true, (tx.property? 'bar', :modified_time))
+	assert_equal(true, (tx.property? 'bar', :hash))
+	assert_equal(true, (tx.property? 'bar', 'baz'))
+      }
+    end
+
     def test_lock_and_unlock_and_locked
       transaction{|tx|
 	assert_equal(false, (tx.locked? 'foo'))
