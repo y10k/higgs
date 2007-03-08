@@ -827,7 +827,7 @@ module Higgs
 	when Symbol, String
 	  # good
 	else
-	  raise TypeError, "can't convert #{value.class} (name) to Symbol or String"
+	  raise TypeError, "can't convert #{name.class} (name) to Symbol or String"
 	end
 
 	lock(key)

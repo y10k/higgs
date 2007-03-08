@@ -1066,6 +1066,12 @@ module Higgs::StorageTest
       }
     end
 
+    def test_has_property_TypeError_name
+      transaction{|tx|
+	assert_exception(TypeError) { tx.property? 'foo', 123 }
+      }
+    end
+
     def test_lock_and_unlock_and_locked
       transaction{|tx|
 	assert_equal(false, (tx.locked? 'foo'))
