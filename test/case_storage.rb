@@ -974,7 +974,7 @@ module Higgs::StorageTest
       }
     end
 
-    def test_property_TypeError_name
+    def test_property_TypeError_name_not_symbol_and_string
       transaction{|tx|
 	assert_exception(TypeError) { tx.property('foo', 123) }
       }
@@ -988,14 +988,14 @@ module Higgs::StorageTest
       assert_equal({ 'type' => 'fruit' }, @s.fetch_properties('foo')['custom_properties'])
     end
 
-    def test_set_property_TypeError_name
+    def test_set_property_TypeError_name_not_string
       transaction{|tx|
 	assert_exception(TypeError) { tx.set_property('foo', :type, 'fruit') }
 	assert_exception(TypeError) { tx.set_property('foo', 123, 'fruit') }
       }
     end
 
-    def test_set_property_IndexError_key
+    def test_set_property_IndexError_not_exist_properties
       transaction{|tx|
 	assert_exception(IndexError) { tx.set_property('foo', 'type', 'fruit') }
       }
@@ -1066,7 +1066,7 @@ module Higgs::StorageTest
       }
     end
 
-    def test_has_property_TypeError_name
+    def test_has_property_TypeError_name_not_symbol_and_string
       transaction{|tx|
 	assert_exception(TypeError) { tx.property? 'foo', 123 }
       }
@@ -1123,7 +1123,7 @@ module Higgs::StorageTest
       }
     end
 
-    def test_each_property_IndexError_not_exist_key
+    def test_each_property_IndexError_not_exist_properties
       transaction{|tx|
 	assert_exception(IndexError) {
 	  tx.each_property('foo') {|key, value|
