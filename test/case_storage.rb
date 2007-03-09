@@ -1072,6 +1072,67 @@ module Higgs::StorageTest
       }
     end
 
+    def test_each_property
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'foo', :update_properties, { 'bar' => 'banana' } ] ])
+      transaction{|tx|
+	assert_alist = [
+	  [ :created_time,  proc{|v| assert_instance_of(Time, v) } ],
+	  [ :changed_time,  proc{|v| assert_instance_of(Time, v) } ],
+	  [ :modified_time, proc{|v| assert_instance_of(Time, v) } ],
+	  [ :hash,          proc{|v| assert_equal(Digest::SHA512.hexdigest('apple'), v) } ],
+	  [ 'bar',          proc{|v| assert_equal('banana', v) } ]
+	]
+	tx.each_property('foo') {|key, value|
+	  assert(assert_pair = assert_alist.assoc(key), "key: #{key}")
+	  assert_pair[1].call(value)
+	  assert_alist.delete(assert_pair)
+	}
+	assert(assert_alist.empty?)
+
+	tx['bar'] = 'banana'
+	tx.each_property('bar') {|key, value|
+	  assert_fail('not to reach')
+	}
+
+	tx.set_property('bar', 'baz', 'orange')
+	assert_alist = [
+	  [ 'baz', proc{|v| assert_equal('orange', v) } ]
+	]
+	tx.each_property('bar') {|key, value|
+	  assert(assert_pair = assert_alist.assoc(key), "key: #{key}")
+	  assert_pair[1].call(value)
+	  assert_alist.delete(assert_pair)
+	}
+	assert(assert_alist.empty?)
+      }
+
+      transaction{|tx|
+	assert_alist = [
+	  [ :created_time,  proc{|v| assert_instance_of(Time, v) } ],
+	  [ :changed_time,  proc{|v| assert_instance_of(Time, v) } ],
+	  [ :modified_time, proc{|v| assert_instance_of(Time, v) } ],
+	  [ :hash,          proc{|v| assert_equal(Digest::SHA512.hexdigest('banana'), v) } ],
+	  [ 'baz',          proc{|v| assert_equal('orange', v) } ]
+	]
+	tx.each_property('bar') {|key, value|
+	  assert(assert_pair = assert_alist.assoc(key), "key: #{key}")
+	  assert_pair[1].call(value)
+	  assert_alist.delete(assert_pair)
+	}
+	assert(assert_alist.empty?)
+      }
+    end
+
+    def test_each_property_IndexError_not_exist_key
+      transaction{|tx|
+	assert_exception(IndexError) {
+	  tx.each_property('foo') {|key, value|
+	    assert_fail('not to reach')
+	  }
+	}
+      }
+    end
+
     def test_lock_and_unlock_and_locked
       transaction{|tx|
 	assert_equal(false, (tx.locked? 'foo'))
