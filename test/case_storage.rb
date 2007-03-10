@@ -1133,6 +1133,48 @@ module Higgs::StorageTest
       }
     end
 
+    def test_property_and_delete
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'foo', :update_properties, { 'bar' => 'banana' } ] ])
+      transaction{|tx|
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+
+	tx.delete('foo')
+
+	assert_nil(tx.property('foo', :created_time))
+	assert_nil(tx.property('foo', :changed_time))
+	assert_nil(tx.property('foo', :modified_time))
+	assert_nil(tx.property('foo', :hash))
+	assert_nil(tx.property('foo', 'bar'))
+      }
+
+      transaction{|tx|
+	assert_equal(nil, tx.property('foo', :created_time))
+	assert_equal(nil, tx.property('foo', :changed_time))
+	assert_equal(nil, tx.property('foo', :modified_time))
+	assert_equal(nil, tx.property('foo', :hash))
+	assert_equal(nil, tx.property('foo', 'bar'))
+      }
+    end
+
+    def test_store_and_delete_and_property
+      transaction{|tx|
+	tx['foo'] = 'apple'
+	tx.set_property('foo', 'bar', 'banana')
+	assert_equal('banana', tx.property('foo', 'bar'))
+
+	tx.delete('foo')
+	assert_equal(nil, tx.property('foo', 'bar'))
+      }
+
+      transaction{|tx|
+	assert_equal(nil, tx.property('foo', 'bar'))
+      }
+    end
+
     def test_lock_and_unlock_and_locked
       transaction{|tx|
 	assert_equal(false, (tx.locked? 'foo'))
