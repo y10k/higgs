@@ -1055,6 +1055,27 @@ module Higgs::StorageTest
       }
     end
 
+    def test_delete_property_no_value
+      @s.write_and_commit([ [ 'foo', :write, 'apple' ], [ 'foo', :update_properties, { 'bar' => 'banana' } ] ])
+      transaction{|tx|
+	assert_equal(nil, tx.delete_property('foo', 'baz'))
+
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+      }
+
+      transaction{|tx|
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+      }
+    end
+
     def test_delete_property_TypeError_name_not_string
       transaction{|tx|
 	assert_exception(TypeError) { tx.delete_property('foo', :bar) }
