@@ -100,6 +100,11 @@ module Higgs
       alias has_key? key?
       alias include? key?
 
+      def_delegator :@tx, :property
+      def_delegator :@tx, :each_property
+      def_delegator :@tx, :property?
+      alias has_property? property?
+
       def each_key
 	@tx.each_key do |key|
 	  yield(key)
