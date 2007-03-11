@@ -751,6 +751,40 @@ module Higgs
 	@local_cache[key] = value
       end
 
+      def delete(key)
+	lock(key)
+	if (@write_map[key] != :delete) then
+	  @write_map[key] = :delete
+	  @update_properties.delete(key)
+	  @local_cache[key]	# load from storage
+	  @read_cache.delete(key)
+	  @properties_cache.delete(key)
+	  @local_cache.delete(key)
+	end
+      end
+
+      def key?(key)
+	lock(key)
+	(@write_map[key] != :delete) &&
+	((@local_cache.key? key) && ! @local_cache[key].nil? || (@storage.key? key))
+      end
+
+      def each_key
+	@local_cache.each_key do |key|
+	  lock(key)
+	  if (@write_map[key] != :delete && ! @local_cache[key].nil?) then
+	    yield(key)
+	  end
+	end
+	@storage.each_key do |key|
+	  lock(key)
+	  if ((@write_map[key] != :delete) && ! (@local_cache.key? key)) then
+	    yield(key)
+	  end
+	end
+	self
+      end
+
       def property(key, name)
 	case (name)
 	when Symbol, String
@@ -788,38 +822,21 @@ module Higgs
 	self
       end
 
-      def delete(key)
+      def delete_property(key, name)
+	unless (name.kind_of? String) then
+	  raise TypeError, "can't convert #{name.class} (name) to String"
+	end
 	lock(key)
-	if (@write_map[key] != :delete) then
-	  @write_map[key] = :delete
-	  @update_properties.delete(key)
-	  @local_cache[key]	# load from storage
-	  @read_cache.delete(key)
-	  @properties_cache.delete(key)
-	  @local_cache.delete(key)
+	unless (self.key? key) then
+	  raise IndexError, "not exist properties at key: #{key}"
 	end
-      end
-
-      def key?(key)
-	lock(key)
-	(@write_map[key] != :delete) &&
-	((@local_cache.key? key) && ! @local_cache[key].nil? || (@storage.key? key))
-      end
-
-      def each_key
-	@local_cache.each_key do |key|
-	  lock(key)
-	  if (@write_map[key] != :delete && ! @local_cache[key].nil?) then
-	    yield(key)
-	  end
+	properties = @properties_cache[key]['custom_properties']
+	if (properties.include? name) then
+	  value = properties.delete(name)
+	  @update_properties[key] = properties
+	  return value
 	end
-	@storage.each_key do |key|
-	  lock(key)
-	  if ((@write_map[key] != :delete) && ! (@local_cache.key? key)) then
-	    yield(key)
-	  end
-	end
-	self
+	nil
       end
 
       def property?(key, name)

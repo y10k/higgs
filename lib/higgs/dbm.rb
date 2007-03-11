@@ -101,7 +101,6 @@ module Higgs
       alias include? key?
 
       def_delegator :@tx, :property
-      def_delegator :@tx, :each_property
       def_delegator :@tx, :property?
       alias has_property? property?
 
@@ -125,6 +124,13 @@ module Higgs
       end
 
       alias each each_pair
+
+      def each_property(key)
+	@tx.each_property(key) do |name, value|
+	  yield(name, value)
+	end
+	self
+      end
 
       def keys
 	key_list = []
@@ -160,6 +166,8 @@ module Higgs
     class ReadWriteTransactionContext < ReadTransactionContext
       def_delegator :@tx, :[]=
       def_delegator :@tx, :delete
+      def_delegator :@tx, :set_property
+      def_delegator :@tx, :delete_property
 
       def delete_if(*keys)
 	del_list = []
