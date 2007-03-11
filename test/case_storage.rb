@@ -1140,27 +1140,27 @@ module Higgs::StorageTest
 	  [ :hash,          proc{|v| assert_equal(Digest::SHA512.hexdigest('apple'), v) } ],
 	  [ 'bar',          proc{|v| assert_equal('banana', v) } ]
 	]
-	tx.each_property('foo') {|key, value|
-	  assert(assert_pair = assert_alist.assoc(key), "key: #{key}")
+	tx.each_property('foo') do |name, value|
+	  assert(assert_pair = assert_alist.assoc(name), "name: #{name}")
 	  assert_pair[1].call(value)
 	  assert_alist.delete(assert_pair)
-	}
+	end
 	assert(assert_alist.empty?)
 
 	tx['bar'] = 'banana'
-	tx.each_property('bar') {|key, value|
+	tx.each_property('bar') do |name, value|
 	  assert_fail('not to reach')
-	}
+	end
 
 	tx.set_property('bar', 'baz', 'orange')
 	assert_alist = [
 	  [ 'baz', proc{|v| assert_equal('orange', v) } ]
 	]
-	tx.each_property('bar') {|key, value|
-	  assert(assert_pair = assert_alist.assoc(key), "key: #{key}")
+	tx.each_property('bar') do |name, value|
+	  assert(assert_pair = assert_alist.assoc(name), "name: #{name}")
 	  assert_pair[1].call(value)
 	  assert_alist.delete(assert_pair)
-	}
+	end
 	assert(assert_alist.empty?)
       }
 
@@ -1172,11 +1172,11 @@ module Higgs::StorageTest
 	  [ :hash,          proc{|v| assert_equal(Digest::SHA512.hexdigest('banana'), v) } ],
 	  [ 'baz',          proc{|v| assert_equal('orange', v) } ]
 	]
-	tx.each_property('bar') {|key, value|
-	  assert(assert_pair = assert_alist.assoc(key), "key: #{key}")
+	tx.each_property('bar') do |name, value|
+	  assert(assert_pair = assert_alist.assoc(name), "name: #{name}")
 	  assert_pair[1].call(value)
 	  assert_alist.delete(assert_pair)
-	}
+	end
 	assert(assert_alist.empty?)
       }
     end
@@ -1184,9 +1184,9 @@ module Higgs::StorageTest
     def test_each_property_IndexError_not_exist_properties
       transaction{|tx|
 	assert_exception(IndexError) {
-	  tx.each_property('foo') {|key, value|
+	  tx.each_property('foo') do |name, value|
 	    assert_fail('not to reach')
-	  }
+	  end
 	}
       }
     end

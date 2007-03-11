@@ -332,6 +332,138 @@ module Higgs::DBMTest
       }
     end
 
+    def test_property
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx.set_property('foo', 'bar', 'banana')
+
+	assert_equal(nil, tx.property('foo', :created_time))
+	assert_equal(nil, tx.property('foo', :changed_time))
+	assert_equal(nil, tx.property('foo', :modified_time))
+	assert_equal(nil, tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+	assert_equal(nil, tx.property('foo', 'baz'))
+
+	assert_equal(nil, tx.property('bar', :created_time))
+	assert_equal(nil, tx.property('bar', :changed_time))
+	assert_equal(nil, tx.property('bar', :modified_time))
+	assert_equal(nil, tx.property('bar', :hash))
+	assert_equal(nil, tx.property('bar', 'baz'))
+      }
+
+      @db.transaction{|tx|
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+
+	assert_equal(nil, tx.property('bar', :created_time))
+	assert_equal(nil, tx.property('bar', :changed_time))
+	assert_equal(nil, tx.property('bar', :modified_time))
+	assert_equal(nil, tx.property('bar', :hash))
+	assert_equal(nil, tx.property('bar', 'baz'))
+      }
+    end
+
+    def test_has_property
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx.set_property('foo', 'bar', 'banana')
+
+	assert_equal(false, (tx.property? 'foo', :created_time))
+	assert_equal(false, (tx.property? 'foo', :changed_time))
+	assert_equal(false, (tx.property? 'foo', :modified_time))
+	assert_equal(false, (tx.property? 'foo', :hash))
+	assert_equal(true,  (tx.property? 'foo', 'bar'))
+	assert_equal(false, (tx.property? 'foo', 'baz'))
+
+	assert_equal(false, (tx.property? 'bar', :created_time))
+	assert_equal(false, (tx.property? 'bar', :changed_time))
+	assert_equal(false, (tx.property? 'bar', :modified_time))
+	assert_equal(false, (tx.property? 'bar', :hash))
+	assert_equal(false, (tx.property? 'bar', 'baz'))
+      }
+
+      @db.transaction{|tx|
+	assert_equal(true, (tx.property? 'foo', :created_time))
+	assert_equal(true, (tx.property? 'foo', :changed_time))
+	assert_equal(true, (tx.property? 'foo', :modified_time))
+	assert_equal(true, (tx.property? 'foo', :hash))
+	assert_equal(true,  (tx.property? 'foo', 'bar'))
+	assert_equal(false, (tx.property? 'foo', 'baz'))
+
+	assert_equal(false, (tx.property? 'bar', :created_time))
+	assert_equal(false, (tx.property? 'bar', :changed_time))
+	assert_equal(false, (tx.property? 'bar', :modified_time))
+	assert_equal(false, (tx.property? 'bar', :hash))
+	assert_equal(false, (tx.property? 'bar', 'baz'))
+      }
+    end
+
+    def test_delete_property
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx.set_property('foo', 'bar', 'banana')
+	tx.set_property('foo', 'baz', 'orange')
+      }
+
+      @db.transaction{|tx|
+	assert_equal('banana', tx.property('foo', 'bar'))
+	assert_equal(true,     (tx.property? 'foo', 'bar'))
+	assert_equal('orange', tx.property('foo', 'baz'))
+	assert_equal(true,     (tx.property? 'foo', 'baz'))
+
+	assert_equal('banana', tx.delete_property('foo', 'bar'))
+	assert_equal(nil,      tx.delete_property('foo', 'no_property'))
+
+	assert_equal(nil,      tx.property('foo', 'bar'))
+	assert_equal(false,     (tx.property? 'foo', 'bar'))
+	assert_equal('orange', tx.property('foo', 'baz'))
+	assert_equal(true,     (tx.property? 'foo', 'baz'))
+      }
+
+      @db.transaction{|tx|
+	assert_equal(nil,      tx.property('foo', 'bar'))
+	assert_equal(false,     (tx.property? 'foo', 'bar'))
+	assert_equal('orange', tx.property('foo', 'baz'))
+	assert_equal(true,     (tx.property? 'foo', 'baz'))
+      }
+    end
+
+    def test_each_property
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx.set_property('foo', 'bar', 'banana')
+
+	assert_alist = [
+	  [ 'bar', proc{|v| assert_equal('banana', v) } ]
+	]
+	tx.each_property('foo') do |name, value|
+	  assert(assert_pair = assert_alist.assoc(name), "name: #{name}")
+	  assert_pair[1].call(value)
+	  assert_alist.delete(assert_pair)
+	end
+	assert(assert_alist.empty?)
+      }
+
+      @db.transaction{|tx|
+	assert_alist = [
+	  [ :created_time,  proc{|v| assert_instance_of(Time, v) } ],
+	  [ :changed_time,  proc{|v| assert_instance_of(Time, v) } ],
+	  [ :modified_time, proc{|v| assert_instance_of(Time, v) } ],
+	  [ :hash,          proc{|v| assert_equal(Digest::SHA512.hexdigest('apple'), v) } ],
+	  [ 'bar',          proc{|v| assert_equal('banana', v) } ]
+	]
+	tx.each_property('foo') do |name, value|
+	  assert(assert_pair = assert_alist.assoc(name), "name: #{name}")
+	  assert_pair[1].call(value)
+	  assert_alist.delete(assert_pair)
+	end
+	assert(assert_alist.empty?)
+      }
+    end
+
     def test_commit_and_rollback
       @db.transaction{|tx|
 	tx['foo'] = 'apple'
