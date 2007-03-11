@@ -2,6 +2,7 @@
 
 require 'forwardable'
 require 'higgs/cache'
+require 'higgs/exceptions'
 require 'thread'
 
 module Higgs
@@ -11,6 +12,13 @@ module Higgs
 
     extend Forwardable
     include Cache
+    include Exceptions
+
+    class Error < HiggsError
+    end
+
+    class NotWritableError < Error
+    end
 
     module InitOptions
       include Cache
@@ -70,7 +78,7 @@ module Higgs
 	}
       else
 	if (@read_only) then
-	  raise 'not writable'
+	  raise NotWritableError, 'not writable'
 	end
 	@lock_manager.transaction(false) {|lock_handler|
 	  tx = ReadWriteTransactionContext.new(@storage, @shared_read_cache, lock_handler, @commit_lock)

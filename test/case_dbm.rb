@@ -591,6 +591,12 @@ module Higgs::DBMTest
 	assert_exception(NoMethodError) { tx.commit }
 	assert_exception(NoMethodError) { tx.rollback }
       }
+
+      assert_exception(DBM::NotWritableError) {
+	@db.transaction(false) {|tx|
+	  assert_fail('not to reach')
+	}
+      }
     end
   end
 end
