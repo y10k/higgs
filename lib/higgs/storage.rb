@@ -940,8 +940,7 @@ module Higgs
 
       def write_list
 	@write_map.map{|key, ope|
-	  case (ope)
-	  when :delete
+	  if (ope == :delete) then
 	    [ key, ope ]
 	  else
 	    [ key, ope, @local_cache[key] ]
