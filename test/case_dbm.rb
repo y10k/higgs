@@ -547,7 +547,7 @@ module Higgs::DBMTest
       @db = nil
 
       @db = new_dbm(:read_only => true)
-      @db.transaction(true) {|tx|
+      @db.transaction{|tx|
 	assert_equal('apple', tx['foo'])
 	assert_equal(true, (tx.key? 'foo'))
 	assert_equal([ %w[ foo apple ] ], tx.to_a)
