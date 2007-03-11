@@ -200,7 +200,9 @@ module Higgs
       def commit
 	write_list = @tx.write_list
 	unless (write_list.empty?) then
-	  @storage.write_and_commit(write_list)
+          @commit_lock.synchronize{
+            @storage.write_and_commit(write_list)
+          }
 	  @tx.write_clear
 	end
 	nil
