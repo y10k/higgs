@@ -34,14 +34,7 @@ module Higgs
           @storage_type = options[:storage_type]
         else
           require 'higgs/storage'
-          @storage_type = Storage
-        end
-
-        if (options.include? :read_cache) then
-          @read_cache = options[:read_cache]
-        else
-          # require 'higgs/cache'
-          @read_cache = LRUCache.new
+          @storage_type = Storage::CacheManager
         end
 
         if (options.include? :lock_manager) then
@@ -61,9 +54,6 @@ module Higgs
       @name = name
       init_options(options)
       @storage = @storage_type.new(name, options)
-      @shared_read_cache = SharedWorkCache.new(@read_cache) {|key|
-        @storage.fetch(key)
-      }
       @commit_lock = Mutex.new
     end
 
@@ -73,7 +63,7 @@ module Higgs
       r = nil
       if (read_only) then
 	@lock_manager.transaction(true) {|lock_handler|
-	  tx = ReadTransactionContext.new(@storage, @shared_read_cache, lock_handler, @commit_lock)
+	  tx = ReadTransactionContext.new(@storage, lock_handler, @commit_lock)
 	  r = yield(tx)
 	}
       else
@@ -81,7 +71,7 @@ module Higgs
 	  raise NotWritableError, 'not writable'
 	end
 	@lock_manager.transaction(false) {|lock_handler|
-	  tx = ReadWriteTransactionContext.new(@storage, @shared_read_cache, lock_handler, @commit_lock)
+	  tx = ReadWriteTransactionContext.new(@storage, lock_handler, @commit_lock)
 	  r = yield(tx)
 	  tx.commit
 	}
@@ -93,8 +83,8 @@ module Higgs
       extend Forwardable
       include Enumerable
 
-      def initialize(storage, read_cache, lock_handler, commit_lock)
-	@tx = storage.class::TransactionContext.new(storage, read_cache, lock_handler)
+      def initialize(storage, lock_handler, commit_lock)
+	@tx = Storage::TransactionContext.new(storage, lock_handler)
 	@storage = storage
 	@commit_lock = commit_lock
       end

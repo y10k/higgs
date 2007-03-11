@@ -1,6 +1,7 @@
 # $Id$
 
 require 'digest/sha2'
+require 'forwardable'
 require 'higgs/cache'
 require 'higgs/exceptions'
 require 'higgs/tar'
@@ -69,7 +70,7 @@ module Higgs
         if (options.include? :properties_cache) then
           @properties_cache = options[:properties_cache]
         else
-          # require 'higgs/cache'
+          require 'higgs/cache'
           @properties_cache = LRUCache.new
         end
 
@@ -114,6 +115,8 @@ module Higgs
         raise
       end
     end
+
+    attr_reader :name
 
     def self.transaction_guard(name)
       class_eval(<<-EOF, "transaction_guard(#{name}) => #{__FILE__}", __LINE__ + 1)
@@ -702,11 +705,73 @@ module Higgs
       nil
     end
 
+    class CacheManager
+      extend Forwardable
+
+      module InitOptions
+	include Cache
+
+	def init_options(options)
+	  if (options.include? :source_storage_type) then
+	    @source_storage_type = options[:source_storage_type]
+	  else
+	    @source_storage_type = Storage
+	  end
+
+	  if (options.include? :io_conversion) then
+	    @read = options[:io_conversion][:read] or raise 'required read procedure'
+	    @write = options[:io_conversion][:write] or raise 'required write procedure'
+	  else
+	    @read = proc{|s| s } # no conversion
+	    @write = proc{|s| s } # no conversion
+	  end
+
+	  if (options.include? :read_cache) then
+	    @read_cache = options[:read_cache]
+	  else
+	    require 'higgs/cache'
+	    @read_cache = LRUCache.new
+	  end
+	end
+	private :init_options
+      end
+      include InitOptions
+
+      def initialize(name, options={})
+	init_options(options)
+	@storage = @source_storage_type.new(name, options)
+	@shared_read_cache = SharedWorkCache.new(@read_cache) {|key|
+	  @read.call(@storage.fetch(key))
+	}
+      end
+
+      def fetch(key)
+	@shared_read_cache[key]
+      end
+
+      def write_and_commit(write_list)
+	write_list.find_all{|key, ope, value|
+	  ope == :write || ope == :delete
+	}.each do |key, ope, value|
+	  @shared_read_cache.delete(key)
+	end
+	@storage.write_and_commit(write_list)
+      end
+
+      def_delegator :@storage, :name
+      def_delegator :@storage, :fetch_properties # properties cached by storage
+      def_delegator :@storage, :key?
+      def_delegator :@storage, :each_key
+      def_delegator :@storage, :reorganize
+      def_delegator :@storage, :dump
+      def_delegator :@storage, :verify
+      def_delegator :@storage, :shutdown
+    end
+
     class TransactionContext
-      def initialize(storage, read_cache, lock_handler)
+      def initialize(storage, lock_handler)
 	@storage = storage
-	@read_cache = read_cache
-	@local_cache = Hash.new{|hash, key| hash[key] = @read_cache[key] }
+	@local_cache = Hash.new{|hash, key| hash[key] = @storage.fetch(key) }
 	@properties_cache = Hash.new{|hash, key|
 	  properties = @storage.fetch_properties(key) or
 	    properties = { 'system_properties' => {}, 'custom_properties' => {} }
@@ -747,7 +812,6 @@ module Higgs
       def []=(key, value)
 	lock(key)
 	@write_map[key] = :write
-	@read_cache.delete(key)
 	@local_cache[key] = value
       end
 
@@ -757,7 +821,6 @@ module Higgs
 	  @write_map[key] = :delete
 	  @update_properties.delete(key)
 	  @local_cache[key]	# load from storage
-	  @read_cache.delete(key)
 	  @properties_cache.delete(key)
 	  @local_cache.delete(key)
 	end

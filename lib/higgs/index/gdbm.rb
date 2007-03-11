@@ -7,7 +7,7 @@ if (defined? Depot) then
   #   require 'gdbm'
   #   require 'depot'
   #
-  # WRONG CASE:
+  # BAD CASE:
   #   require 'depot'
   #   require 'gdbm'
   #

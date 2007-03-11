@@ -14,8 +14,7 @@ module Higgs::DBMTest
       init_options({})
       assert_equal(false, @read_only)
       assert_equal(false, self.read_only)
-      assert_equal(Higgs::Storage, @storage_type) # higss/storage auto-require
-      assert_instance_of(Higgs::Cache::LRUCache, @read_cache) # higgs/cache auto-require
+      assert_equal(Higgs::Storage::CacheManager, @storage_type) # higss/storage auto-require
       assert_instance_of(Higgs::Lock::FineGrainLockManager, @lock_manager) # higgs/lock auto-require
     end
 
@@ -34,11 +33,6 @@ module Higgs::DBMTest
     def test_init_options_storage_type
       init_options(:storage_type => :dummy_storage_type)
       assert_equal(:dummy_storage_type, @storage_type)
-    end
-
-    def test_init_options_read_cache
-      init_options(:read_cache => :dummy_cache)
-      assert_equal(:dummy_cache, @read_cache)
     end
 
     def test_init_options_lock_manager

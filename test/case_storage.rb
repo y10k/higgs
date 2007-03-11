@@ -21,6 +21,10 @@ module Higgs::StorageTest
       raise NotImplementedError, 'not implemented'
     end
 
+    def storage_type
+      Storage
+    end
+
     def open_idx
       db = dbm_open[:write].call(@name + '.idx')
       begin
@@ -33,7 +37,7 @@ module Higgs::StorageTest
 
     def new_storage(options={})
       options[:dbm_open] = dbm_open unless (options.include? :dbm_open)
-      Storage.new(@name, options)
+      storage_type.new(@name, options)
     end
     private :new_storage
 
@@ -702,7 +706,7 @@ module Higgs::StorageTest
 
     def new_storage(options={})
       options[:dbm_open] = dbm_open unless (options.include? :dbm_open)
-      Storage.new(@name, options)
+      Storage::CacheManager.new(@name, options)
     end
     private :new_storage
 
@@ -711,7 +715,6 @@ module Higgs::StorageTest
       FileUtils.mkdir_p(@tmp_dir)
       @name = File.join(@tmp_dir, 'storage_test')
       @s = new_storage
-      @read_cache = Cache::SharedWorkCache.new{|key| @s.fetch(key) }
       @lock_manager = Lock::FineGrainLockManager.new
     end
 
@@ -723,7 +726,7 @@ module Higgs::StorageTest
     def transaction
       r = nil
       @lock_manager.transaction{|lock_handler|
-	tx = Storage::TransactionContext.new(@s, @read_cache, lock_handler)
+	tx = Storage::TransactionContext.new(@s, lock_handler)
 	r = yield(tx)
 	p tx.write_list if $DEBUG
 	@s.write_and_commit(tx.write_list)
