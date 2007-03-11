@@ -1302,6 +1302,38 @@ module Higgs::StorageTest
 	assert_equal(true, (tx.locked? 'baz'))
 	assert_equal(false, (tx.locked? 'qux'))
       }
+
+      transaction{|tx|
+	assert_equal(false, (tx.locked? 'foo'))
+	tx.property('foo', 'bar')
+	assert_equal(true, (tx.locked? 'foo'))
+      }
+
+      transaction{|tx|
+	assert_equal(false, (tx.locked? 'foo'))
+	tx.set_property('foo', 'bar', 'banana')
+	assert_equal(true, (tx.locked? 'foo'))
+      }
+
+      transaction{|tx|
+	assert_equal(false, (tx.locked? 'foo'))
+	tx.delete_property('foo', 'bar')
+	assert_equal(true, (tx.locked? 'foo'))
+      }
+
+      transaction{|tx|
+	assert_equal(false, (tx.locked? 'foo'))
+	tx.property? 'foo', 'bar'
+	assert_equal(true, (tx.locked? 'foo'))
+      }
+
+      transaction{|tx|
+	assert_equal(false, (tx.locked? 'foo'))
+	tx.each_property('foo') do |name, value|
+	  # nothing to do.
+	end
+	assert_equal(true, (tx.locked? 'foo'))
+      }
     end
 
     def test_write_clear
