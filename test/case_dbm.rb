@@ -537,5 +537,60 @@ module Higgs::DBMTest
 	assert_exception(NoMethodError) { tx.rollback }
       }
     end
+
+    def test_read_only_dbm
+      @db.transaction{|tx|
+	tx['foo'] = 'apple'
+	tx.set_property('foo', 'bar', 'banana')
+      }
+      @db.shutdown
+      @db = nil
+
+      @db = new_dbm(:read_only => true)
+      @db.transaction(true) {|tx|
+	assert_equal('apple', tx['foo'])
+	assert_equal(true, (tx.key? 'foo'))
+	assert_equal([ %w[ foo apple ] ], tx.to_a)
+	assert_equal(%w[ foo ], tx.keys)
+	assert_equal(%w[ apple ], tx.values)
+	assert_equal(1, tx.length)
+	assert_equal(false, tx.empty?)
+
+	assert_instance_of(Time, tx.property('foo', :created_time))
+	assert_instance_of(Time, tx.property('foo', :changed_time))
+	assert_instance_of(Time, tx.property('foo', :modified_time))
+	assert_equal(Digest::SHA512.hexdigest('apple'), tx.property('foo', :hash))
+	assert_equal('banana', tx.property('foo', 'bar'))
+
+	assert_equal(true, (tx.property? 'foo', :created_time))
+	assert_equal(true, (tx.property? 'foo', :changed_time))
+	assert_equal(true, (tx.property? 'foo', :modified_time))
+	assert_equal(true, (tx.property? 'foo', :hash))
+	assert_equal(true, (tx.property? 'foo', 'bar'))
+
+	assert_alist = [
+	  [ :created_time,  proc{|v| assert_instance_of(Time, v) } ],
+	  [ :changed_time,  proc{|v| assert_instance_of(Time, v) } ],
+	  [ :modified_time, proc{|v| assert_instance_of(Time, v) } ],
+	  [ :hash,          proc{|v| assert_equal(Digest::SHA512.hexdigest('apple'), v) } ],
+	  [ 'bar',          proc{|v| assert_equal('banana', v) } ]
+	]
+	tx.each_property('foo') do |name, value|
+	  assert(assert_pair = assert_alist.assoc(name), "name: #{name}")
+	  assert_pair[1].call(value)
+	  assert_alist.delete(assert_pair)
+	end
+	assert(assert_alist.empty?)
+
+	assert_exception(NoMethodError) { tx['foo'] = 'melon' }
+	assert_exception(NoMethodError) { tx.delete('foo') }
+	assert_exception(NoMethodError) { tx.delete_if{|key, value| value == 'apple' } }
+	assert_exception(NoMethodError) { tx.set_property('foo', 'baz', 'orange') }
+	assert_exception(NoMethodError) { tx.delete_property('foo', 'bar') }
+	assert_exception(NoMethodError) { tx.clear }
+	assert_exception(NoMethodError) { tx.commit }
+	assert_exception(NoMethodError) { tx.rollback }
+      }
+    end
   end
 end
