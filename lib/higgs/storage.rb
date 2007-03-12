@@ -6,6 +6,7 @@ require 'higgs/cache'
 require 'higgs/exceptions'
 require 'higgs/tar'
 require 'higgs/thread'
+require 'thread'
 require 'yaml'
 
 module Higgs
@@ -93,6 +94,7 @@ module Higgs
       @tar_name = "#{@name}.tar"
       @idx_name = "#{@name}.idx"
 
+      @commit_lock = Mutex.new
       @shutdown = false
       @sd_r_lock, @sd_w_lock = Thread::ReadWriteLock.new.to_a
 
@@ -251,144 +253,146 @@ module Higgs
         raise NotWritableError, 'failed to write to read only storage'
       end
 
-      commit_time = Time.now
-      committed = false
-      commit_log = {}
-      rollback_log = {}
-      new_properties = {}
+      @commit_lock.synchronize{
+	commit_time = Time.now
+	committed = false
+	commit_log = {}
+	rollback_log = {}
+	new_properties = {}
 
-      __debug_rollback_before_rollback_log_write__ = false
-      __debug_rollback_after_rollback_log_write__ = false
-      __debug_rollback_after_commit_log_write__ = false
-      __debug_rollback_commit_completed__ = false
-      __debug_rollback_log_deleted__ = false
+	__debug_rollback_before_rollback_log_write__ = false
+	__debug_rollback_after_rollback_log_write__ = false
+	__debug_rollback_after_commit_log_write__ = false
+	__debug_rollback_commit_completed__ = false
+	__debug_rollback_log_deleted__ = false
 
-      begin
-        eoa = @idx_db['EOA'].to_i
-        rollback_log[:EOA] = eoa
-        @w_tar.seek(eoa)
+	begin
+	  eoa = @idx_db['EOA'].to_i
+	  rollback_log[:EOA] = eoa
+	  @w_tar.seek(eoa)
 
-        for key, ope, value in write_list
-          unless (key.kind_of? String) then
-            raise TypeError, "can't convert #{key.class} (key) to String"
-          end
-          case (ope)
-          when :write
-            unless (value.kind_of? String) then
-              raise TypeError, "can't convert #{value.class} (value) to String"
-            end
-            commit_log['d:' + key] = @w_tar.pos
-            @w_tar.add(key, value, :mtime => commit_time)
-            if (properties = unguarded_fetch_properties(key)) then
-              properties['system_properties']['hash'] = Digest::SHA512.hexdigest(value)
-	      properties['system_properties']['modified_time'] = commit_time
-              new_properties[key] = properties
-            else
-              properties = {
-		'system_properties' => {
-		  'hash' => Digest::SHA512.hexdigest(value),
-		  'created_time' => commit_time,
-		  'changed_time' => commit_time,
-		  'modified_time' => commit_time
-		},
-                'custom_properties' => {}
-              }
-              new_properties[key] = properties
-            end
-            @shared_properties_cache.delete(key)
-            commit_log['p:' + key] = @w_tar.pos
-            @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
-          when :delete
-            @shared_properties_cache.delete(key)
-            if (@idx_db.key? 'd:' + key) then
-              commit_log['d:' + key] = :delete
-            end
-            if (@idx_db.key? 'p:' + key) then
-              commit_log['p:' + key] = :delete
-            end
-          when :update_properties
-            if (properties = new_properties[key]) then
-              # nothing to do.
-            elsif (properties = unguarded_fetch_properties(key)) then
-              # nothing to do.
-            else
-              raise IndexError, "not exist properties at key: #{key}"
-            end
-            @shared_properties_cache.delete(key)
-	    properties['system_properties']['changed_time'] = commit_time
-            properties['custom_properties'] = value
-            new_properties[key] = properties
-            commit_log['p:' + key] = @w_tar.pos
-            @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
-          when :__debug_rollback_before_rollback_log_write__
-            __debug_rollback_before_rollback_log_write__ = true
-          when :__debug_rollback_after_rollback_log_write__
-            __debug_rollback_after_rollback_log_write__ = true
-          when :__debug_rollback_after_commit_log_write__
-            __debug_rollback_after_commit_log_write__ = true
-          when :__debug_rollback_commit_completed__
-            __debug_rollback_commit_completed__ = true
-          when :__debug_rollback_log_deleted__
-            __debug_rollback_log_deleted__ = true
-          else
-            raise ArgumentError, "unknown operation: #{ope}"
-          end
-        end
+	  for key, ope, value in write_list
+	    unless (key.kind_of? String) then
+	      raise TypeError, "can't convert #{key.class} (key) to String"
+	    end
+	    case (ope)
+	    when :write
+	      unless (value.kind_of? String) then
+		raise TypeError, "can't convert #{value.class} (value) to String"
+	      end
+	      commit_log['d:' + key] = @w_tar.pos
+	      @w_tar.add(key, value, :mtime => commit_time)
+	      if (properties = unguarded_fetch_properties(key)) then
+		properties['system_properties']['hash'] = Digest::SHA512.hexdigest(value)
+		properties['system_properties']['modified_time'] = commit_time
+		new_properties[key] = properties
+	      else
+		properties = {
+		  'system_properties' => {
+		    'hash' => Digest::SHA512.hexdigest(value),
+		    'created_time' => commit_time,
+		    'changed_time' => commit_time,
+		    'modified_time' => commit_time
+		  },
+		  'custom_properties' => {}
+		}
+		new_properties[key] = properties
+	      end
+	      @shared_properties_cache.delete(key)
+	      commit_log['p:' + key] = @w_tar.pos
+	      @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
+	    when :delete
+	      @shared_properties_cache.delete(key)
+	      if (@idx_db.key? 'd:' + key) then
+		commit_log['d:' + key] = :delete
+	      end
+	      if (@idx_db.key? 'p:' + key) then
+		commit_log['p:' + key] = :delete
+	      end
+	    when :update_properties
+	      if (properties = new_properties[key]) then
+		# nothing to do.
+	      elsif (properties = unguarded_fetch_properties(key)) then
+		# nothing to do.
+	      else
+		raise IndexError, "not exist properties at key: #{key}"
+	      end
+	      @shared_properties_cache.delete(key)
+	      properties['system_properties']['changed_time'] = commit_time
+	      properties['custom_properties'] = value
+	      new_properties[key] = properties
+	      commit_log['p:' + key] = @w_tar.pos
+	      @w_tar.add(key + '.properties', properties.to_yaml, :mtime => commit_time)
+	    when :__debug_rollback_before_rollback_log_write__
+	      __debug_rollback_before_rollback_log_write__ = true
+	    when :__debug_rollback_after_rollback_log_write__
+	      __debug_rollback_after_rollback_log_write__ = true
+	    when :__debug_rollback_after_commit_log_write__
+	      __debug_rollback_after_commit_log_write__ = true
+	    when :__debug_rollback_commit_completed__
+	      __debug_rollback_commit_completed__ = true
+	    when :__debug_rollback_log_deleted__
+	      __debug_rollback_log_deleted__ = true
+	    else
+	      raise ArgumentError, "unknown operation: #{ope}"
+	    end
+	  end
 
-        eoa = @w_tar.pos
-        @w_tar.write_EOA
-        @io_sync.call(@w_tar)
+	  eoa = @w_tar.pos
+	  @w_tar.write_EOA
+	  @io_sync.call(@w_tar)
 
-        if (__debug_rollback_before_rollback_log_write__) then
-          raise DebugRollbackBeforeRollbackLogWriteException, 'debug'
-        end
+	  if (__debug_rollback_before_rollback_log_write__) then
+	    raise DebugRollbackBeforeRollbackLogWriteException, 'debug'
+	  end
 
-        commit_log.each_key do |key|
-          if (pos = read_index(key)) then
-            rollback_log[key] = pos.to_i
-          else
-            rollback_log[key] = :new
-          end
-        end
-        @idx_db['rollback'] = Marshal.dump(rollback_log)
-        @idx_db.sync
+	  commit_log.each_key do |key|
+	    if (pos = read_index(key)) then
+	      rollback_log[key] = pos.to_i
+	    else
+	      rollback_log[key] = :new
+	    end
+	  end
+	  @idx_db['rollback'] = Marshal.dump(rollback_log)
+	  @idx_db.sync
 
-        if (__debug_rollback_after_rollback_log_write__) then
-          raise DebugRollbackAfterRollbackLogWriteException, 'debug'
-        end
+	  if (__debug_rollback_after_rollback_log_write__) then
+	    raise DebugRollbackAfterRollbackLogWriteException, 'debug'
+	  end
 
-        commit_log.each_pair do |key, pos|
-          case (pos)
-          when :delete
-            @idx_db.delete(key)
-          else
-            @idx_db[key] = pos.to_s
-          end
-        end
-        @idx_db.sync
+	  commit_log.each_pair do |key, pos|
+	    case (pos)
+	    when :delete
+	      @idx_db.delete(key)
+	    else
+	      @idx_db[key] = pos.to_s
+	    end
+	  end
+	  @idx_db.sync
 
-        if (__debug_rollback_after_commit_log_write__) then
-          raise DebugRollbackAfterCommitLogWriteException, 'debug'
-        end
+	  if (__debug_rollback_after_commit_log_write__) then
+	    raise DebugRollbackAfterCommitLogWriteException, 'debug'
+	  end
 
-        @idx_db['EOA'] = eoa.to_s
-        @idx_db.sync
+	  @idx_db['EOA'] = eoa.to_s
+	  @idx_db.sync
 
-        if (__debug_rollback_commit_completed__) then
-          raise DebugRollbackCommitCompletedException, 'debug'
-        end
+	  if (__debug_rollback_commit_completed__) then
+	    raise DebugRollbackCommitCompletedException, 'debug'
+	  end
 
-        @idx_db.delete('rollback')
-        @idx_db.sync
+	  @idx_db.delete('rollback')
+	  @idx_db.sync
 
-        if (__debug_rollback_log_deleted__) then
-          raise DebugRollbackLogDeletedException, 'debug'
-        end
+	  if (__debug_rollback_log_deleted__) then
+	    raise DebugRollbackLogDeletedException, 'debug'
+	  end
 
-        committed = true
-      ensure
-        rollback unless committed
-      end
+	  committed = true
+	ensure
+	  rollback unless committed
+	end
+      }
       nil
     end
     transaction_guard :write_and_commit
@@ -750,12 +754,18 @@ module Higgs
       end
 
       def write_and_commit(write_list)
-	write_list.find_all{|key, ope, value|
-	  ope == :write || ope == :delete
-	}.each do |key, ope, value|
-	  @shared_read_cache.delete(key)
-	end
-	@storage.write_and_commit(write_list)
+	@storage.write_and_commit write_list.map{|key, ope, value|
+	  case (ope)
+	  when :write
+	    @shared_read_cache.delete(key)
+	    [ key, ope, @write.call(value) ]
+	  when :delete
+	    @shared_read_cache.delete(key)
+	    [ key, ope ]
+	  else
+	    [ key, ope, value ]
+	  end
+	}
       end
 
       def_delegator :@storage, :name

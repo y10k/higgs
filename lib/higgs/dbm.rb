@@ -54,7 +54,6 @@ module Higgs
       @name = name
       init_options(options)
       @storage = @storage_type.new(name, options)
-      @commit_lock = Mutex.new
     end
 
     def_delegator :@storage, :shutdown
@@ -63,7 +62,7 @@ module Higgs
       r = nil
       if (read_only) then
 	@lock_manager.transaction(true) {|lock_handler|
-	  tx = ReadTransactionContext.new(@storage, lock_handler, @commit_lock)
+	  tx = ReadTransactionContext.new(@storage, lock_handler)
 	  r = yield(tx)
 	}
       else
@@ -71,7 +70,7 @@ module Higgs
 	  raise NotWritableError, 'not writable'
 	end
 	@lock_manager.transaction(false) {|lock_handler|
-	  tx = ReadWriteTransactionContext.new(@storage, lock_handler, @commit_lock)
+	  tx = ReadWriteTransactionContext.new(@storage, lock_handler)
 	  r = yield(tx)
 	  tx.commit
 	}
@@ -83,10 +82,9 @@ module Higgs
       extend Forwardable
       include Enumerable
 
-      def initialize(storage, lock_handler, commit_lock)
+      def initialize(storage, lock_handler)
 	@tx = Storage::TransactionContext.new(storage, lock_handler)
 	@storage = storage
-	@commit_lock = commit_lock
       end
 
       def_delegator :@tx, :locked?
@@ -200,9 +198,7 @@ module Higgs
       def commit
 	write_list = @tx.write_list
 	unless (write_list.empty?) then
-          @commit_lock.synchronize{
-            @storage.write_and_commit(write_list)
-          }
+	  @storage.write_and_commit(write_list)
 	  @tx.write_clear
 	end
 	nil
