@@ -86,7 +86,10 @@ module Higgs
 
       def tar?(path)
         if (File.file? path) then
-          head = File.open(path, 'rb') {|input| input.read(BLKSIZ) }
+          head = File.open(path, 'rb') {|r_io|
+            r_io.binmode
+            r_io.read(BLKSIZ)
+          }
           if (head && head.length == BLKSIZ) then
             if (head.unpack(HEAD_FMT)[9] == MAGIC) then
               return true
@@ -346,15 +349,15 @@ module Higgs
         end
         write_header(head)
         if (stat.ftype == 'file') then
-          File.open(path, 'rb') {|input|
+          File.open(path, 'rb') {|r_io|
             chunk_size = BLKSIZ * 128
             remaining_size = stat.size
             while (remaining_size > chunk_size)
-              s = input.read(chunk_size) or raise IOError, 'unexpected EOF'
+              s = r_io.read(chunk_size) or raise IOError, 'unexpected EOF'
               @io.write(s)
               remaining_size -= chunk_size
             end
-            s = input.read(chunk_size) or raise IOError, 'unexpected EOF'
+            s = r_io.read(chunk_size) or raise IOError, 'unexpected EOF'
             s += "\0" * padding_size(stat.size)
             @io.write(s)
           }

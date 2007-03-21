@@ -150,11 +150,14 @@ module Higgs
           w_io = File.open(@tar_name, File::WRONLY, 0660)
           first_time = false
         end
+        w_io.binmode
         @w_tar = Tar::ArchiveWriter.new(w_io)
         @w_tar_opened = true
       end
       @r_tar_pool = Thread::Pool.new(@number_of_read_io) {
-        Tar::ArchiveReader.new(Tar::RawIO.new(File.open(@tar_name, File::RDONLY)))
+        r_io = File.open(@tar_name, File::RDONLY)
+        r_io.binmode
+        Tar::ArchiveReader.new(Tar::RawIO.new(r_io))
       }
       first_time
     end
