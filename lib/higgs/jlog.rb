@@ -50,12 +50,6 @@ module Higgs
       self
     end
 
-    def rewind
-      @out.truncate(0)
-      @out.fsync
-      self
-    end
-
     def close
       @out.fsync
       @out.close
