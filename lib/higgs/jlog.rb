@@ -64,13 +64,13 @@ module Higgs
       end
 
       def open(path)
-	f = File.open(path, File::WRONLY | File::CREAT, 0660)
+	f = File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0660)
 	f.binmode
 	new(f)
       end
 
       def each_log(path)
-	File.open(path, 'r') do |f|
+	File.open(path, 'r') {|f|
 	  f.binmode
 
 	  while (head_block = f.read(BLOCK_SIZE))
@@ -111,7 +111,7 @@ module Higgs
 	    log = Marshal.load(bin_log)
 	    yield(log)
 	  end
-	end
+	}
 	nil
       end
     end
