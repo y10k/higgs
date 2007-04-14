@@ -42,11 +42,20 @@ module Higgs
 	CKSUM_LENGTH,
 	Digest::SHA512.digest(bin_log)
       ].pack(HEAD_FMT)
-      @out.write(head_block)
-      @out.write(bin_log)
-      @out.write("\0" * JournalLogger.padding_size(bin_log.length))
-      @out.write(EOL)
-      @out.fsync
+
+      start_point = @out.pos
+      commit_completed = false
+      begin
+	@out.write(head_block)
+	@out.write(bin_log)
+	@out.write("\0" * JournalLogger.padding_size(bin_log.length))
+	@out.write(EOL)
+	@out.fsync
+	commit_completed = true
+      ensure
+	@out.truncate(start_point) unless commit_completed
+      end
+
       self
     end
 
