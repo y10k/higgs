@@ -1,14 +1,11 @@
 # $Id$
 
-require 'forwardable'
 require 'thread'
 
 module Higgs
   class Index
     # for ident(1)
     CVS_ID = '$Id$'
-
-    extend Forwardable
 
     BLOCK_SIZE = 512
 
