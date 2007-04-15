@@ -37,14 +37,14 @@ module Higgs
 	load
       else
 	@index = {
-	  :change_number = 0,
+	  :change_number => 0,
 	  :free_list => {},
 	  :index => {}
 	}
       end
     end
 
-    def chagen_number
+    def change_number
       @lock.synchronize{ @index[:change_number] }
     end
 
@@ -74,7 +74,7 @@ module Higgs
     end
 
     def []=(key, pos)
-      if (pos.kind_of? Integer) then
+      unless (pos.kind_of? Integer) then
 	raise ArgumentError, "not of position type: #{pos.class}"
       end
       @lock.synchronize{ @index[:index][key] = pos }
@@ -100,14 +100,14 @@ module Higgs
       if (@closed) then
 	raise 'closed'
       end
-      store_path_tmp = "#{@store_path}.tmp_#{$$}_#{Thread.current.object_id}"
+      store_path_tmp = "#{@store_path}.tmp_#{$$}}"
       File.open(store_path_tmp, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
 	f.binmode
 	bin_idx = Marshal.dump(@index)
 
 	head_block = [
 	  MAGIC_SYMBOL,
-	  idx_dat.length,
+	  bin_idx.length,
 	  FMT_VERSION,
 	  CKSUM_TYPE,
 	  CKSUM_LENGTH,
