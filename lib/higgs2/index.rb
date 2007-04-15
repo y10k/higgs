@@ -1,7 +1,5 @@
 # $Id$
 
-require 'thread'
-
 module Higgs
   class Index
     # for ident(1)
@@ -27,7 +25,6 @@ module Higgs
     CKSUM_LENGTH = 64
 
     def initialize(store_path)
-      @lock = Mutex.new
       @closed = false
       @store_path = store_path
       if (File.file? @store_path) then
@@ -37,75 +34,56 @@ module Higgs
 	  :change_number => 0,
 	  :eoa = 0,
 	  :free_list => {},
-	  :index => {}
+	  :data => {},
+	  :properties => {}
 	}
       end
     end
 
     def change_number
-      @lock.synchronize{ @index[:change_number] }
+      @index[:change_number]
     end
 
     def change_number=(value)
-      @lock.synchronize{ @index[:change_number] = value }
+      @index[:change_number] = value
     end
 
     def eoa
-      @lock.synchronize{ @index[:eoa] }
+      @index[:eoa]
     end
 
     def eoa=(pos)
-      unless (pos.kind_of? Integer) then
-	raise ArgumentError, "not of position type: #{pos.class}"
-      end
-      @lock.synchronize{ @index[:eoa] = pos }
+      @index[:eoa] = pos
     end
 
     def fetch_free_block(size)
-      @lock.synchronize{
-	if (@index[:free_list].key? size) then
-	  return @index[:free_list][size].shift
-	end
-      }
+      if (@index[:free_list].key? size) then
+	return @index[:free_list][size].shift
+      end
       nil
     end
 
     def store_free_block(size, pos)
-      @lock.synchronize{
-	@index[:free_list][size] = [] unless (@index[:free_list].key? size)
-	@index[:free_list][size].push(pos)
-      }
+      @index[:free_list][size] = [] unless (@index[:free_list].key? size)
+      @index[:free_list][size].push(pos)
       nil
     end
 
-    def [](key)
-      @lock.synchronize{ @index[:index][key] }
+    def data
+      @index[:data]
     end
 
-    def []=(key, pos)
-      unless (pos.kind_of? Integer) then
-	raise ArgumentError, "not of position type: #{pos.class}"
-      end
-      @lock.synchronize{ @index[:index][key] = pos }
-    end
-
-    def delete(key)
-      @lock.synchronize{ @index[:index].delete(key) }
-    end
-
-    def save
-      @lock.synchronize{ __save__ }
+    def properties
+      @index[:properties]
     end
 
     def close
-      @lock.synchronize{
-	__save__
-	@closed = true
-      }
+      save
+      @closed = true
       nil
     end
 
-    def __save__
+    def save
       if (@closed) then
 	raise 'closed'
       end
@@ -130,7 +108,6 @@ module Higgs
       File.rename(store_path_tmp, @store_path)
       self
     end
-    private :__save__
 
     def load
       if (@closed) then

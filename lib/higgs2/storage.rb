@@ -15,8 +15,8 @@ module Higgs
 
     def initialize(name)
       @name = name
-      @tar_name = "{@name}.tar"
-      @idx_name = "{@name}.idx"
+      @tar_name = "#{@name}.tar"
+      @idx_name = "#{@name}.idx"
       @jlog_name = "#{@name}.jlog"
 
       begin
