@@ -35,6 +35,7 @@ module Higgs
       else
 	@index = {
 	  :change_number => 0,
+	  :eoa = 0,
 	  :free_list => {},
 	  :index => {}
 	}
@@ -47,6 +48,17 @@ module Higgs
 
     def change_number=(value)
       @lock.synchronize{ @index[:change_number] = value }
+    end
+
+    def eoa
+      @lock.synchronize{ @index[:eoa] }
+    end
+
+    def eoa=(pos)
+      unless (pos.kind_of? Integer) then
+	raise ArgumentError, "not of position type: #{pos.class}"
+      end
+      @lock.synchronize{ @index[:eoa] = pos }
     end
 
     def fetch_free_block(size)
