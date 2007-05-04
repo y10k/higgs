@@ -47,7 +47,7 @@ module Higgs
         if (options.include? :properties_cache) then
           @properties_cache = options[:properties_cache]
         else
-          @properties_cache = Cache::LRUCache.new
+          @properties_cache = LRUCache.new
         end
 
 	if (options.include? :jlog_sync) then
@@ -83,7 +83,7 @@ module Higgs
 
       init_options(options)
 
-      @properties_cache = Cache::SharedWorkCache.new(@properties_cache) {|key|
+      @properties_cache = SharedWorkCache.new(@properties_cache) {|key|
 	value = read_record_body(key, :p) and decode_properties(key, value)
       }
 
@@ -104,7 +104,7 @@ module Higgs
 	@w_tar = Tar::ArchiveWriter.new(w_io)
       end
 
-      @r_tar_pool = Thread::Pool.new(@number_of_read_io) {
+      @r_tar_pool = Pool.new(@number_of_read_io) {
         r_io = File.open(@tar_name, File::RDONLY)
         r_io.binmode
         Tar::ArchiveReader.new(Tar::RawIO.new(r_io))

@@ -32,13 +32,13 @@ module Higgs
 	  @lock_manager = lock_manager
 	else
 	  require 'higgs/lock'
-	  @lock_manager = Lock::GiantLockManager.new
+	  @lock_manager = GiantLockManager.new
 	end
 
 	if (options.include? :master_cache) then
 	  @master_cache = options[:master_cache]
 	else
-	  @master_cache = Cache::LRUCache.new
+	  @master_cache = LRUCache.new
 	end
       end
 
@@ -50,7 +50,7 @@ module Higgs
       @storage = storage
       init_options(options)
 
-      @master_cache = Cache::SharedWorkCache.new(@master_cache) {|key|
+      @master_cache = SharedWorkCache.new(@master_cache) {|key|
 	value = @storage.fetch(key) and @decode.call(value)
       }
     end

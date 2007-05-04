@@ -10,8 +10,7 @@ module Higgs::LockTest
   CVS_ID = '$Id$'
 
   module LockManagerTest
-    include Higgs::Lock
-    include Higgs::Thread
+    include Higgs
 
     WORK_COUNT = 100
     THREAD_COUNT = 10
@@ -122,8 +121,7 @@ module Higgs::LockTest
   end
 
   class GiantLockManagerTest < Test::Unit::TestCase
-    include Higgs::Lock
-    include Higgs::Thread
+    include Higgs
     include LockManagerTest
 
     def setup
@@ -165,8 +163,7 @@ module Higgs::LockTest
   end
 
   class FineGrainLockManagerTest < Test::Unit::TestCase
-    include Higgs::Lock
-    include Higgs::Thread
+    include Higgs
     include LockManagerTest
 
     def setup
@@ -208,8 +205,7 @@ module Higgs::LockTest
   end
 
   class GiantLockManagerNoDeadLockTest < Test::Unit::TestCase
-    include Higgs::Lock
-    include Higgs::Thread
+    include Higgs
 
     WORK_COUNT = 1000
 
@@ -247,8 +243,7 @@ module Higgs::LockTest
   end
 
   class FineGrainLockManagerDeadLockTest < Test::Unit::TestCase
-    include Higgs::Lock
-    include Higgs::Thread
+    include Higgs
 
     def setup
       @lock_manager = FineGrainLockManager.new(:spin_lock_count   => 10,
@@ -296,7 +291,7 @@ module Higgs::LockTest
       }
 
       barrier.wait
-      assert_raise(TryLockTimeoutError) {
+      assert_raise(LockManager::TryLockTimeoutError) {
         t1.join
         t2.join
       }

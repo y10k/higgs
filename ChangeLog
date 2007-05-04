@@ -1,0 +1,12 @@
+2007-05-04  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/thread.rb: obsolete name space: Higgs::Thread
+
+	* lib/higgs/lock.rb: obsolete name space: Higgs::Lock
+
+	* lib/higgs/cache.rb: obsolete name space: Higgs::Cache
+
+	* merge from development branch:
+	cvs update -j higgs_snapshot_20070420 -j higgs_snapshot_20070420_branch_20070420_snapshot_20070504
+
+

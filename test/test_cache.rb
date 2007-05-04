@@ -10,7 +10,7 @@ module Higgs::CacheTest
   CVS_ID = '$Id$'
 
   class LRUCacheTest < Test::Unit::TestCase
-    include Higgs::Cache
+    include Higgs
 
     CACHE_LIMIT_SIZE = 10
 
@@ -81,7 +81,7 @@ module Higgs::CacheTest
   end
 
   class SharedWorkCacheTest < Test::Unit::TestCase
-    include Higgs::Cache
+    include Higgs
 
     def setup
       @calc_calls = 0
@@ -139,7 +139,7 @@ module Higgs::CacheTest
     WORK_COUNT = 10000
 
     def calc_race_condition
-      barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS + 1)
+      barrier = Higgs::Barrier.new(NUM_OF_THREADS + 1)
       th_grp = ThreadGroup.new
 
       result_list = [ nil ] * NUM_OF_THREADS
@@ -173,7 +173,7 @@ module Higgs::CacheTest
       assert_equal(1, @calc_calls)
 
       count.times do |n|
-	barrier = Higgs::Thread::Barrier.new(NUM_OF_THREADS + 1)
+	barrier = Higgs::Barrier.new(NUM_OF_THREADS + 1)
 	th_grp = ThreadGroup.new
 	NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
 	  th_grp.add Thread.new{
@@ -192,7 +192,7 @@ module Higgs::CacheTest
   end
 
   class SharedWorkCacheNoWorkBlockTest < Test::Unit::TestCase
-    include Higgs::Cache
+    include Higgs
 
     def test_no_work_block
       assert_raise(RuntimeError) {

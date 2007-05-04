@@ -11,7 +11,7 @@ module Higgs::ThreadTest
   CVS_ID = '$Id$'
 
   class LatchTest < Test::Unit::TestCase
-    include Higgs::Thread
+    include Higgs
     include Timeout
 
     NUM_OF_THREADS = 10
@@ -44,7 +44,7 @@ module Higgs::ThreadTest
   end
 
   class CountDownLatchTest < Test::Unit::TestCase
-    include Higgs::Thread
+    include Higgs
     include Timeout
 
     NUM_OF_THREADS = 10
@@ -85,7 +85,7 @@ module Higgs::ThreadTest
   end
 
   class BarrierTest < Test::Unit::TestCase
-    include Higgs::Thread
+    include Higgs
     include Timeout
 
     NUM_OF_THREADS = 10
@@ -128,7 +128,7 @@ module Higgs::ThreadTest
   end
 
   class SharedWorkTest < Test::Unit::TestCase
-    include Higgs::Thread
+    include Higgs
     include Timeout
 
     NUM_OF_THREADS = 10
@@ -211,7 +211,7 @@ module Higgs::ThreadTest
   end
 
   class ReadWriteLockTest < Test::Unit::TestCase
-    include Higgs::Thread
+    include Higgs
 
     WORK_COUNT = 100
     THREAD_COUNT = 10
@@ -357,7 +357,7 @@ module Higgs::ThreadTest
   end
 
   class PoolTest < Test::Unit::TestCase
-    include Higgs::Thread
+    include Higgs
 
     class Counter
       def initialize
