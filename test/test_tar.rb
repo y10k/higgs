@@ -2,13 +2,13 @@
 
 require 'fileutils'
 require 'higgs/tar'
-require 'rubyunit'
+require 'test/unit'
 
 module Higgs::TarTest
   # for ident(1)
   CVS_ID = '$Id$'
 
-  class BlockTest < RUNIT::TestCase
+  class BlockTest < Test::Unit::TestCase
     include Higgs::Tar
 
     def test_padding_size
@@ -66,7 +66,7 @@ module Higgs::TarTest
     end
   end
 
-  class IOReadTest < RUNIT::TestCase
+  class IOReadTest < Test::Unit::TestCase
     def open_for_read(filename)
       File.open(filename, 'rb')
     end
@@ -140,7 +140,7 @@ module Higgs::TarTest
     end
   end
 
-  class ArchiveReaderTest < RUNIT::TestCase
+  class ArchiveReaderTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
 
@@ -257,7 +257,7 @@ module Higgs::TarTest
     end
   end
 
-  class ArchiveWriterTest < RUNIT::TestCase
+  class ArchiveWriterTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
 
@@ -333,7 +333,7 @@ module Higgs::TarTest
     end
   end
 
-  class ArchiveHeaderTest < RUNIT::TestCase
+  class ArchiveHeaderTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
 
@@ -352,21 +352,21 @@ module Higgs::TarTest
 
     def test_read_header_FormatError_unexpected_EOF
       assert_equal(0, @input.stat.size)
-      assert_exception(FormatError) { @reader.read_header }
+      assert_raise(FormatError) { @reader.read_header }
     end
 
     def test_read_header_FormatError_too_short_header
       @output.write("foo\n")
       @output.flush
       assert_equal(4, @input.stat.size)
-      assert_exception(FormatError) { @reader.read_header }
+      assert_raise(FormatError) { @reader.read_header }
     end
 
     def test_read_header_FormatError_not_of_EOA
       @output.write("\0" * BLKSIZ)
       @output.flush
       assert_equal(BLKSIZ, @input.stat.size)
-      assert_exception(FormatError) { @reader.read_header }
+      assert_raise(FormatError) { @reader.read_header }
     end
 
     def test_read_header_typeflag_AREGTYPE
@@ -383,7 +383,7 @@ module Higgs::TarTest
       @writer.add('foo', "Hello world.\n", :magic => 'unknown')
       @output.flush
       assert_equal(BLKSIZ * 2, @input.stat.size)
-      assert_exception(MagicError) { @reader.read_header }
+      assert_raise(MagicError) { @reader.read_header }
       assert_equal(BLKSIZ, @input.pos)
     end
 
@@ -391,7 +391,7 @@ module Higgs::TarTest
       @writer.add('foo', "Hello world.\n", :chksum => 0)
       @output.flush
       assert_equal(BLKSIZ * 2, @input.stat.size)
-      assert_exception(CheckSumError) { @reader.read_header }
+      assert_raise(CheckSumError) { @reader.read_header }
       assert_equal(BLKSIZ, @input.pos)
     end
 

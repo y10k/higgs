@@ -2,7 +2,7 @@
 
 require 'higgs/lock'
 require 'higgs/thread'
-require 'rubyunit'
+require 'test/unit'
 require 'thwait'
 
 module Higgs::LockTest
@@ -121,7 +121,7 @@ module Higgs::LockTest
     end
   end
 
-  class GiantLockManagerTest < RUNIT::TestCase
+  class GiantLockManagerTest < Test::Unit::TestCase
     include Higgs::Lock
     include Higgs::Thread
     include LockManagerTest
@@ -164,7 +164,7 @@ module Higgs::LockTest
     end
   end
 
-  class FineGrainLockManagerTest < RUNIT::TestCase
+  class FineGrainLockManagerTest < Test::Unit::TestCase
     include Higgs::Lock
     include Higgs::Thread
     include LockManagerTest
@@ -207,7 +207,7 @@ module Higgs::LockTest
     end
   end
 
-  class GiantLockManagerNoDeadLockTest < RUNIT::TestCase
+  class GiantLockManagerNoDeadLockTest < Test::Unit::TestCase
     include Higgs::Lock
     include Higgs::Thread
 
@@ -246,7 +246,7 @@ module Higgs::LockTest
     end
   end
 
-  class FineGrainLockManagerDeadLockTest < RUNIT::TestCase
+  class FineGrainLockManagerDeadLockTest < Test::Unit::TestCase
     include Higgs::Lock
     include Higgs::Thread
 
@@ -296,7 +296,7 @@ module Higgs::LockTest
       }
 
       barrier.wait
-      assert_exception(TryLockTimeoutError) {
+      assert_raise(TryLockTimeoutError) {
         t1.join
         t2.join
       }

@@ -14,21 +14,21 @@ max_dat_len = (ARGV.shift || '32768').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}, MAX_DAT_LEN:#{max_dat_len}"
 
 name = File.join(File.dirname($0), 'foo')
-db = Higgs::DBM.new(name)
+Higgs::DBM.open(name) {|dbm|
+  srand(0)
+  key_list = dbm.transaction{|tx| tx.keys }
 
-srand(0)
-key_list = db.transaction{|tx| tx.keys }
-
-Benchmark.bm do |x|
-  x.report('dbm rnd update:') {
-    loop_count.times do
-      db.transaction{|tx|
-	data_count.times do
-	  k = key_list[rand(key_list.length)]
-	  tx[k] = 0xFF.chr * (rand(max_dat_len))
-	end
-      }
-    end
-  }
-end
-print "\n"
+  Benchmark.bm do |x|
+    x.report('dbm rnd update:') {
+      loop_count.times do
+	dbm.transaction{|tx|
+	  data_count.times do
+	    k = key_list[rand(key_list.length)]
+	    tx[k] = 0xFF.chr * (rand(max_dat_len))
+	  end
+	}
+      end
+    }
+  end
+  print "\n"
+}

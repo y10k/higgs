@@ -129,26 +129,28 @@ module Higgs
       def initialize
         @lock = Mutex.new
         @cond = ConditionVariable.new
-        @reading_count = 0
-        @writing_just_now = false
+        @count_of_standby_writers = 0
+        @count_of_working_readers = 0
+        @priority_to_writer = true
+        @writing = false
       end
 
       def __read_lock__
         @lock.synchronize{
-          while (@writing_just_now)
+          while (@writing || (@priority_to_writer && @count_of_standby_writers > 0))
             @cond.wait(@lock)
           end
-          @reading_count += 1
+          @count_of_working_readers += 1
         }
         nil
       end
 
       def __read_try_lock__
         @lock.synchronize{
-          if (@writing_just_now) then
+          if (@writing || (@priority_to_writer && @count_of_standby_writers > 0)) then
             return false
           else
-            @reading_count += 1
+            @count_of_working_readers += 1
             return true
           end
         }
@@ -156,38 +158,49 @@ module Higgs
 
       def __read_unlock__
         @lock.synchronize{
-          @reading_count -= 1
-          if (@reading_count == 0) then
-            @cond.broadcast
-          end
+          @count_of_working_readers -= 1
+          @priority_to_writer = true
+          @cond.broadcast
         }
         nil
       end
 
       def __write_lock__
         @lock.synchronize{
-          while (@writing_just_now || @reading_count > 0)
-            @cond.wait(@lock)
+          @count_of_standby_writers += 1
+          begin
+            while (@writing || @count_of_working_readers > 0)
+              @cond.wait(@lock)
+            end
+            @writing = true
+          ensure
+            @count_of_standby_writers -= 1
           end
-          @writing_just_now = true
         }
         nil
       end
 
       def __write_try_lock__
         @lock.synchronize{
-          if (@writing_just_now || @reading_count > 0) then
-            return false
-          else
-            @writing_just_now = true
-            return true
+          @count_of_standby_writers += 1
+          begin
+            if (@writing || @count_of_working_readers > 0) then
+              return false
+            else
+              @writing = true
+              return true
+            end
+          ensure
+            @count_of_standby_writers -= 1
           end
         }
+        nil
       end
 
       def __write_unlock__
         @lock.synchronize{
-          @writing_just_now = false
+          @writing = false
+          @priority_to_writer = false
           @cond.broadcast
         }
         nil

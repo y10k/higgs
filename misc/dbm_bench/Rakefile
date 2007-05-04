@@ -29,8 +29,8 @@ def benchmarks
   run 'st_verify.rb'
   yield 'dbm_rnd_delete.rb'
   run 'st_verify.rb'
-  yield 'st_reorganize.rb'
-  run 'st_verify.rb'
+  #yield 'st_reorganize.rb'
+  #run 'st_verify.rb'
   nil
 end
 
@@ -40,6 +40,14 @@ task :run => [ :clean ] do
   benchmarks do |rb|
     run rb
   end
+end
+
+task :dump_index do
+  ruby '-I', LIB_DIR, '../../bin/dump_index.rb', 'foo.idx'
+end
+
+task :dump_jlog do
+  ruby '-I', LIB_DIR, '../../bin/dump_jlog.rb', 'foo.jlog'
 end
 
 task :prof => [ :clean ] do

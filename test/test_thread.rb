@@ -1,14 +1,16 @@
 #!/usr/local/bin/ruby
 
 require 'higgs/thread'
-require 'rubyunit'
+require 'test/unit'
 require 'timeout'
+
+Thread.abort_on_exception = true if $DEBUG
 
 module Higgs::ThreadTest
   # for ident(1)
   CVS_ID = '$Id$'
 
-  class LatchTest < RUNIT::TestCase
+  class LatchTest < Test::Unit::TestCase
     include Higgs::Thread
     include Timeout
 
@@ -41,7 +43,7 @@ module Higgs::ThreadTest
     end
   end
 
-  class CountDownLatchTest < RUNIT::TestCase
+  class CountDownLatchTest < Test::Unit::TestCase
     include Higgs::Thread
     include Timeout
 
@@ -82,7 +84,7 @@ module Higgs::ThreadTest
     end
   end
 
-  class BarrierTest < RUNIT::TestCase
+  class BarrierTest < Test::Unit::TestCase
     include Higgs::Thread
     include Timeout
 
@@ -121,11 +123,11 @@ module Higgs::ThreadTest
     def test_not_recycle
       barrier = Barrier.new(1)
       barrier.wait
-      assert_exception(RuntimeError) { barrier.wait }
+      assert_raise(RuntimeError) { barrier.wait }
     end
   end
 
-  class SharedWorkTest < RUNIT::TestCase
+  class SharedWorkTest < Test::Unit::TestCase
     include Higgs::Thread
     include Timeout
 
@@ -204,11 +206,11 @@ module Higgs::ThreadTest
     end
 
     def test_no_work_block
-      assert_exception(RuntimeError) { SharedWork.new }
+      assert_raise(RuntimeError) { SharedWork.new }
     end
   end
 
-  class ReadWriteLockTest < RUNIT::TestCase
+  class ReadWriteLockTest < Test::Unit::TestCase
     include Higgs::Thread
 
     WORK_COUNT = 100
@@ -354,7 +356,7 @@ module Higgs::ThreadTest
     end
   end
 
-  class PoolTest < RUNIT::TestCase
+  class PoolTest < Test::Unit::TestCase
     include Higgs::Thread
 
     class Counter
@@ -416,7 +418,7 @@ module Higgs::ThreadTest
       THREAD_COUNT.times{|i| # `i' should be local scope of thread block
         th_grp.add Thread.new{
           barrier.wait
-          assert_exception(Pool::ShutdownException) {
+          assert_raise(Pool::ShutdownException) {
             j = 0
             loop do
               @pool.transaction{|c|

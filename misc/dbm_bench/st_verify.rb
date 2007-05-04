@@ -12,10 +12,14 @@ puts $0
 
 name = File.join(File.dirname($0), 'foo')
 st = Higgs::Storage.new(name, :read_only => true)
-
-Benchmark.bm do |x|
-  x.report('st verify') {
-    st.verify
-  }
+begin
+  Benchmark.bm do |x|
+    x.report('st verify') {
+      st.verify
+    }
+  end
+  print "\n"
+ensure
+  st.shutdown
 end
-print "\n"
+

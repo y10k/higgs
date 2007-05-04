@@ -6,6 +6,7 @@ require 'higgs/tar'
 require 'higgs/thread'
 require 'higgs2/index'
 require 'higgs2/jlog'
+require 'thread'
 require 'yaml'
 
 module Higgs
@@ -36,6 +37,8 @@ module Higgs
 
       @index = Index.new(@idx_name)
       @jlog = JournalLogger.open(@jlog_name)
+
+      @commit_lock = Mutex.new
     end
 
     def shutdown
@@ -47,6 +50,39 @@ module Higgs
       }
       @w_tar.close
       nil
+    end
+
+    def write_and_commit(write_list)
+      @commit_lock.synchronize{
+	commit_time = Time.now
+	commit_completed = false
+
+	c_num = @index.change_number.succ
+	eoa = @index.eoa
+	commit_log = {
+	  :change_number => c_num,
+	  :eoa => eoa,
+	  :write_list => []
+	}
+
+	for key, ope, value in write_list
+	  case (ope)
+	  when :write
+	    unless (value.kind_of? String) then
+	      raise TypeError, "can't convert #{value.class} (value) to String"
+	    end
+	    unless (pos = Tar::Block.blocked_size(value.length)) then
+	      
+	    end
+	  when :delete
+	    
+	  when :update_properties
+	    
+	  end
+	end
+
+	@jlog.write(commit_log)
+      }
     end
   end
 end

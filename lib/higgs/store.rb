@@ -5,14 +5,14 @@ require 'higgs/storage'
 require 'higgs/tman'
 
 module Higgs
-  class DBM
+  class Store
     # for ident(1)
     CVS_ID = '$Id$'
 
     extend Forwardable
 
-    DECODE = proc{|r| r }
-    ENCODE = proc{|w| w }
+    DECODE = proc{|r| Marshal.load(r) }
+    ENCODE = proc{|w| Marshal.dump(w) }
 
     def initialize(name, options={})
       @storage = Storage.new(name, options)
@@ -35,11 +35,11 @@ module Higgs
     def_delegator :@tman, :transaction
 
     def self.open(*args)
-      dbm = new(*args)
+      store = new(*args)
       begin
-	r = yield(dbm)
+	r = yield(store)
       ensure
-	dbm.shutdown
+	store.shutdown
       end
       r
     end

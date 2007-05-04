@@ -2,14 +2,14 @@
 
 require 'higgs/cache'
 require 'higgs/thread'
-require 'rubyunit'
+require 'test/unit'
 require 'timeout'
 
 module Higgs::CacheTest
   # for ident(1)
   CVS_ID = '$Id$'
 
-  class LRUCacheTest < RUNIT::TestCase
+  class LRUCacheTest < Test::Unit::TestCase
     include Higgs::Cache
 
     CACHE_LIMIT_SIZE = 10
@@ -80,7 +80,7 @@ module Higgs::CacheTest
     end
   end
 
-  class SharedWorkCacheTest < RUNIT::TestCase
+  class SharedWorkCacheTest < Test::Unit::TestCase
     include Higgs::Cache
 
     def setup
@@ -191,11 +191,11 @@ module Higgs::CacheTest
     end
   end
 
-  class SharedWorkCacheNoWorkBlockTest < RUNIT::TestCase
+  class SharedWorkCacheNoWorkBlockTest < Test::Unit::TestCase
     include Higgs::Cache
 
     def test_no_work_block
-      assert_exception(RuntimeError) {
+      assert_raise(RuntimeError) {
         SharedWorkCache.new
       }
     end
