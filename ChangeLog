@@ -1,3 +1,8 @@
+2007-05-06  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/tman.rb (Higgs::TransactionContext): allow to store
+	nil value to local data cache.
+
 2007-05-04  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/thread.rb: obsolete name space: Higgs::Thread

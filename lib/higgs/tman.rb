@@ -87,7 +87,7 @@ module Higgs
       @encode = encode
 
       @local_data_cache = Hash.new{|hash, key|
-	hash[key] = @master_cache[key]
+        hash[key] = @master_cache[key] if (@storage.key? key)
       }
       @local_properties_cache = Hash.new{|hash, key|
 	if (properties = @storage.fetch_properties(key)) then
@@ -148,7 +148,7 @@ module Higgs
     def key?(key)
       lock(key)
       if (@ope_map[key] != :delete) then
-	if ((@local_data_cache.key? key) && (@local_data_cache[key] != nil)) then
+	if (@local_data_cache.key? key) then
 	  return true
 	end
 	if (@storage.key? key) then
