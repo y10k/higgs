@@ -57,5 +57,32 @@ module Higgs::StoreTest
         assert_equal(true, (tx.key? 0))
       }
     end
+
+    def test_aliasing_problem
+      @st.transaction{|tx|
+        tx[:foo] = 'a'
+        tx[:bar] = tx[:foo]
+
+        assert_equal('a', tx[:foo])
+        assert_equal('a', tx[:bar])
+        assert_same(tx[:foo], tx[:bar])
+
+        tx[:foo].succ!
+        assert_equal('b', tx[:foo])
+        assert_equal('b', tx[:bar])
+        assert_same(tx[:foo], tx[:bar])
+      }
+
+      @st.transaction{|tx|
+        assert_equal('b', tx[:foo])
+        assert_equal('b', tx[:bar])
+        assert_not_same(tx[:foo], tx[:bar])
+
+        tx[:foo].succ!
+        assert_equal('c', tx[:foo])
+        assert_equal('b', tx[:bar])
+        assert_not_same(tx[:foo], tx[:bar])
+      }
+    end
   end
 end
