@@ -77,8 +77,8 @@ module Higgs
       @lock_name = "#{@name}.lock"
 
       @commit_lock = Mutex.new
+      @state_lock = Mutex.new
       @broken = false
-      @sd_lock = Mutex.new
       @shutdown = false
 
       init_options(options)
@@ -116,7 +116,20 @@ module Higgs
       @jlog = JournalLogger.open(@jlog_name, @jlog_sync) unless @read_only
     end
 
+    def check_consistency
+      @state_lock.synchronize{
+        if (@shutdown) then
+          raise ShutdownException, 'storage shutdown'
+        end
+        if (@broken) then
+          raise BrokenError, 'broken storage'
+        end
+      }
+    end
+    private :check_consistency
+
     def recover
+      check_consistency
       if (@read_only) then
 	raise NotWritableError, 'need for recovery'
       end
@@ -146,27 +159,27 @@ module Higgs
 
     def shutdown
       @commit_lock.synchronize{
-	@sd_lock.synchronize{
+        @state_lock.synchronize{
 	  if (@shutdown) then
 	    raise ShutdownException, 'storage shutdown'
 	  end
 	  @shutdown = true
-	}
 
-	@jlog.close unless @read_only
-	@index.save(@idx_name) if (! @broken && ! @read_only)
-	@r_tar_pool.shutdown{|r_tar| r_tar.close }
-	unless (@read_only) then
-	  @w_tar.fsync
-	  @w_tar.close(true)
-	end
-        @flock.close
+          @jlog.close unless @read_only
+          @index.save(@idx_name) if (! @broken && ! @read_only)
+          @r_tar_pool.shutdown{|r_tar| r_tar.close }
+          unless (@read_only) then
+            @w_tar.fsync
+            @w_tar.close(true)
+          end
+          @flock.close
+        }
       }
       nil
     end
 
     def shutdown?
-      @sd_lock.synchronize{ @shutdown }
+      @state_lock.synchronize{ @shutdown }
     end
 
     def self.rotate_entries(name)
@@ -219,13 +232,11 @@ module Higgs
     private :internal_rotate_journal_log
 
     def rotate_journal_log(sync_index=false)
-      if (@read_only) then
-	raise NotWritableError, 'failed to write to read only storage'
-      end
-
       @commit_lock.synchronize{
-	shutdown? and raise ShutdownException, 'storage shutdown'
-	@broken and raise BrokenError, 'failed to rotate'
+        check_consistency
+        if (@read_only) then
+          raise NotWritableError, 'failed to write to read only storage'
+        end
 	@broken = true
 	internal_rotate_journal_log(sync_index)
 	@broken = false
@@ -235,13 +246,11 @@ module Higgs
     end
 
     def raw_write_and_commit(write_list, commit_time=Time.now)
-      if (@read_only) then
-        raise NotWritableError, 'failed to write to read only storage'
-      end
-
       @commit_lock.synchronize{
-	shutdown? and raise ShutdownException, 'storage shutdown'
-	@broken and raise BrokenError, 'failed to commit'
+        check_consistency
+        if (@read_only) then
+          raise NotWritableError, 'failed to write to read only storage'
+        end
         @broken = true
 
         commit_log = []
@@ -482,8 +491,7 @@ module Higgs
     end
 
     def write_and_commit(write_list, commit_time=Time.now)
-      shutdown? and raise ShutdownException, 'storage shutdown'
-
+      check_consistency
       if (@read_only) then
         raise NotWritableError, 'failed to write to read only storage'
       end
@@ -560,6 +568,7 @@ module Higgs
 	    head_and_body = r_tar.fetch
 	  }
 	  unless (head_and_body) then
+            @state_lock.synchronize{ @broken = true }
 	    raise BrokenError, "failed to read record: #{key.inspect}"
 	  end
 	end
@@ -584,11 +593,12 @@ module Higgs
     def decode_properties(key, value)
       head, body = value.split(/\n/, 2)
       cksum_type, cksum_value = head.sub(/^#\s+/, '').split(/\s+/, 2)
-      cksum_value = Integer(cksum_value)
       if (cksum_type != PROPERTIES_CKSUM_TYPE) then
+        @state_lock.synchronize{ @broken = true }
 	raise BrokenError, "unknown properties cksum type: #{cksum_type}"
       end
-      if (cksum_value != body.sum(PROPERTIES_CKSUM_BITS)) then
+      if (body.sum(PROPERTIES_CKSUM_BITS) != Integer(cksum_value)) then
+        @state_lock.synchronize{ @broken = true }
         raise BrokenError, "mismatch properties cksum at #{key.inspect}"
       end
       YAML.load(body)
@@ -601,31 +611,36 @@ module Higgs
     private :internal_fetch_properties
 
     def fetch_properties(key)
-      shutdown? and raise ShutdownException, 'storage shutdown'
+      check_consistency
       internal_fetch_properties(key)
     end
 
     def fetch(key)
-      shutdown? and raise ShutdownException, 'storage shutdown'
+      check_consistency
       value = read_record_body(key, :d) or return
-      properties = internal_fetch_properties(key) or raise BrokenError, "failed to read properties: #{key.inspect}"
+      unless (properties = internal_fetch_properties(key)) then
+        @state_lock.synchronize{ @broken = true }
+        raise BrokenError, "failed to read properties: #{key.inspect}"
+      end
       if (properties['system_properties']['hash_type'] != DATA_CKSUM_TYPE) then
+        @state_lock.synchronize{ @broken = true }
 	raise BrokenError, "unknown data cksum type: #{properties['system_properties']['hash_type']}"
       end
       hash_value = Digest::SHA512.hexdigest(value)
       if (hash_value != properties['system_properties']['hash_value']) then
+        @state_lock.synchronize{ @broken = true }
 	raise BrokenError, "mismatch hash value at #{key.inspect}"
       end
       value
     end
 
     def key?(key)
-      shutdown? and raise ShutdownException, 'storage shutdown'
+      check_consistency
       @index.key? key
     end
 
     def each_key
-      shutdown? and raise ShutdownException, 'storage shutdown'
+      check_consistency
       @index.each_key do |key|
 	yield(key)
       end
@@ -633,7 +648,7 @@ module Higgs
     end
 
     def verify
-      shutdown? and raise ShutdownException, 'storage shutdown'
+      check_consistency
       @index.each_key do |key|
 	fetch(key)
       end
