@@ -58,6 +58,8 @@ module Higgs
 
 	@jlog_rotate_size = options[:jlog_rotate_size] || 1024 * 256
 	@jlog_rotate_max = options[:jlog_rotate_max] || 1
+
+	@jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
       end
       private :init_options
 
@@ -66,6 +68,7 @@ module Higgs
       attr_reader :jlog_sync
       attr_reader :jlog_rotate_size
       attr_reader :jlog_rotate_max
+      attr_reader :jlog_rotate_service_uri
     end
     include InitOptions
 
@@ -114,6 +117,14 @@ module Higgs
       @index.load(@idx_name) if (File.exist? @idx_name)
       recover if (JournalLogger.need_for_recovery? @jlog_name)
       @jlog = JournalLogger.open(@jlog_name, @jlog_sync) unless @read_only
+
+      if (@jlog_rotate_service_uri) then
+	require 'druby'
+	@jlog_rotate_service_uri = DRb::DRbServer.new(@jlog_rotate_service_uri,
+						      proc{|*args| rotate_journal_log(*args) })
+      else
+	@jlog_rotate_service = nil
+      end
     end
 
     def check_consistency
@@ -175,6 +186,7 @@ module Higgs
           @flock.close
         }
       }
+      @jlog_rotate_service.stop_service if @jlog_rotate_service
       nil
     end
 
@@ -237,9 +249,16 @@ module Higgs
         if (@read_only) then
           raise NotWritableError, 'failed to write to read only storage'
         end
-	@broken = true
-	internal_rotate_journal_log(sync_index)
-	@broken = false
+
+	rotate_completed = false
+	begin
+	  internal_rotate_journal_log(sync_index)
+	  rotate_completed = true
+	ensure
+	  unless (rotate_completed) then
+	    @state_lock.synchronize{ @broken = true }
+	  end
+	end
       }
 
       nil
@@ -251,164 +270,170 @@ module Higgs
         if (@read_only) then
           raise NotWritableError, 'failed to write to read only storage'
         end
-        @broken = true
 
         commit_log = []
+	commit_completed = false
         eoa = @index.eoa
 
-        for ope, key, type, value in write_list
-          case (ope)
-          when :write
-            unless (value.kind_of? String) then
-              raise TypeError, "can't convert #{value.class} (value) to String"
-            end
-            blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(value.length)
+	begin
+	  for ope, key, type, value in write_list
+	    case (ope)
+	    when :write
+	      unless (value.kind_of? String) then
+		raise TypeError, "can't convert #{value.class} (value) to String"
+	      end
+	      blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(value.length)
 
-            # recycle
-            if (pos = @index.free_fetch(blocked_size)) then
-              commit_log << {
-                :ope => :free_fetch,
-                :pos => pos,
-                :siz => blocked_size
-              }
-              commit_log << {
-                :ope => :write,
-                :key => key,
-                :pos => pos,
-                :typ => type,
-                :mod => commit_time,
-                :val => value
-              }
-              if (i = @index[key]) then
-                if (j = i[type]) then
-                  commit_log << {
-                    :ope => :free_store,
-                    :pos => j[:pos],
-                    :siz => j[:siz],
-		    :mod => commit_time
-                  }
-                  @index.free_store(j[:pos], j[:siz])
-                  j[:pos] = pos
-                  j[:siz] = blocked_size
-                else
-                  i[type] = { :pos => pos, :siz => blocked_size }
-                end
-              else
-                @index[key] = { type => { :pos => pos, :siz => blocked_size } }
-              end
-            end
-
-            # overwrite
-            if (i = @index[key]) then
-              if (j = i[type]) then
-                if (j[:siz] >= blocked_size) then
-                  commit_log << {
-                    :ope => :write,
-                    :key => key,
-                    :pos => j[:pos],
-                    :typ => type,
-                    :mod => commit_time,
-                    :val => value
-                  }
-                  if (j[:siz] > blocked_size) then
-                    commit_log << {
-                      :ope => :free_store,
-                      :pos => j[:pos] + blocked_size,
-                      :siz => j[:siz] - blocked_size,
+	      # recycle
+	      if (pos = @index.free_fetch(blocked_size)) then
+		commit_log << {
+		  :ope => :free_fetch,
+		  :pos => pos,
+		  :siz => blocked_size
+		}
+		commit_log << {
+		  :ope => :write,
+		  :key => key,
+		  :pos => pos,
+		  :typ => type,
+		  :mod => commit_time,
+		  :val => value
+		}
+		if (i = @index[key]) then
+		  if (j = i[type]) then
+		    commit_log << {
+		      :ope => :free_store,
+		      :pos => j[:pos],
+		      :siz => j[:siz],
 		      :mod => commit_time
-                    }
-                    @index.free_store(commit_log.last[:pos], commit_log.last[:siz])
-                    j[:siz] = blocked_size
-                  end
-                  next
-                end
-              end
-            end
+		    }
+		    @index.free_store(j[:pos], j[:siz])
+		    j[:pos] = pos
+		    j[:siz] = blocked_size
+		  else
+		    i[type] = { :pos => pos, :siz => blocked_size }
+		  end
+		else
+		  @index[key] = { type => { :pos => pos, :siz => blocked_size } }
+		end
+	      end
 
-            # append
-            commit_log << {
-              :ope => :write,
-              :key => key,
-              :pos => eoa,
-              :typ => type,
-              :mod => commit_time,
-              :val => value
-            }
-            if (i = @index[key]) then
-              if (j = i[type]) then
-                commit_log << {
-                  :ope => :free_store,
-                  :pos => j[:pos],
-                  :siz => j[:siz],
-		  :mod => commit_time
-                }
-                @index.free_store(j[:pos], j[:siz])
-                j[:pos] = eoa
-                j[:siz] = blocked_size
-              else
-                i[type] = { :pos => eoa, :siz => blocked_size }
-              end
-            else
-              @index[key] = { type => { :pos => eoa, :siz => blocked_size } }
-            end
-            eoa += blocked_size
-            commit_log << {
-              :ope => :eoa,
-              :pos => eoa
-            }
-          when :delete
-            if (i = @index.delete(key)) then
-              commit_log << {
-                :ope => :delete,
-                :key => key
-              }
-              i.each_value{|j|
-                commit_log << {
-                  :ope => :free_store,
-                  :pos => j[:pos],
-                  :siz => j[:siz],
-		  :mod => commit_time
-                }
-                @index.free_store(j[:pos], j[:siz])
-              }
-            end
-          else
-            raise ArgumentError, "unknown operation: #{cmd[:ope]}"
-          end
-        end
+	      # overwrite
+	      if (i = @index[key]) then
+		if (j = i[type]) then
+		  if (j[:siz] >= blocked_size) then
+		    commit_log << {
+		      :ope => :write,
+		      :key => key,
+		      :pos => j[:pos],
+		      :typ => type,
+		      :mod => commit_time,
+		      :val => value
+		    }
+		    if (j[:siz] > blocked_size) then
+		      commit_log << {
+			:ope => :free_store,
+			:pos => j[:pos] + blocked_size,
+			:siz => j[:siz] - blocked_size,
+			:mod => commit_time
+		      }
+		      @index.free_store(commit_log.last[:pos], commit_log.last[:siz])
+		      j[:siz] = blocked_size
+		    end
+		    next
+		  end
+		end
+	      end
 
-        @index.succ!
-	commit_log << { :ope => :succ }
+	      # append
+	      commit_log << {
+		:ope => :write,
+		:key => key,
+		:pos => eoa,
+		:typ => type,
+		:mod => commit_time,
+		:val => value
+	      }
+	      if (i = @index[key]) then
+		if (j = i[type]) then
+		  commit_log << {
+		    :ope => :free_store,
+		    :pos => j[:pos],
+		    :siz => j[:siz],
+		    :mod => commit_time
+		  }
+		  @index.free_store(j[:pos], j[:siz])
+		  j[:pos] = eoa
+		  j[:siz] = blocked_size
+		else
+		  i[type] = { :pos => eoa, :siz => blocked_size }
+		end
+	      else
+		@index[key] = { type => { :pos => eoa, :siz => blocked_size } }
+	      end
+	      eoa += blocked_size
+	      commit_log << {
+		:ope => :eoa,
+		:pos => eoa
+	      }
+	    when :delete
+	      if (i = @index.delete(key)) then
+		commit_log << {
+		  :ope => :delete,
+		  :key => key
+		}
+		i.each_value{|j|
+		  commit_log << {
+		    :ope => :free_store,
+		    :pos => j[:pos],
+		    :siz => j[:siz],
+		    :mod => commit_time
+		  }
+		  @index.free_store(j[:pos], j[:siz])
+		}
+	      end
+	    else
+	      raise ArgumentError, "unknown operation: #{cmd[:ope]}"
+	    end
+	  end
 
-        @jlog.write([ @index.change_number, commit_log ])
+	  @index.succ!
+	  commit_log << { :ope => :succ }
 
-        for cmd in commit_log
-          case (cmd[:ope])
-          when :write
-            name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
-            @w_tar.seek(cmd[:pos])
-            @w_tar.add(name, cmd[:val], :mtime => cmd[:mod])
-          when :free_store
-            @w_tar.seek(cmd[:pos])
-            @w_tar.write_header(:name => '.free', :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
-          when :delete, :eoa, :free_fetch, :succ
-            # nothing to do.
-	  else
-	    raise "unknown operation: #{cmd[:ope]}"
-          end
-        end
-        if (@index.eoa != eoa) then
-          @index.eoa = eoa
-          @w_tar.seek(eoa)
-          @w_tar.write_EOA
-        end
-        @w_tar.flush
+	  @jlog.write([ @index.change_number, commit_log ])
 
-	if (@jlog_rotate_size > 0 && @jlog.size >= @jlog_rotate_size) then
-	  internal_rotate_journal_log(true)
+	  for cmd in commit_log
+	    case (cmd[:ope])
+	    when :write
+	      name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
+	      @w_tar.seek(cmd[:pos])
+	      @w_tar.add(name, cmd[:val], :mtime => cmd[:mod])
+	    when :free_store
+	      @w_tar.seek(cmd[:pos])
+	      @w_tar.write_header(:name => '.free', :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
+	    when :delete, :eoa, :free_fetch, :succ
+	      # nothing to do.
+	    else
+	      raise "unknown operation: #{cmd[:ope]}"
+	    end
+	  end
+	  if (@index.eoa != eoa) then
+	    @index.eoa = eoa
+	    @w_tar.seek(eoa)
+	    @w_tar.write_EOA
+	  end
+	  @w_tar.flush
+
+	  if (@jlog_rotate_size > 0 && @jlog.size >= @jlog_rotate_size) then
+	    internal_rotate_journal_log(true)
+	  end
+
+	  commit_completed = true
+	ensure
+	  unless (commit_completed) then
+	    @state_lock.synchronize{ @broken = true }
+	  end
 	end
-
-        @broken = false
       }
 
       nil
