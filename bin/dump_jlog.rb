@@ -11,3 +11,8 @@ CVS_ID = '$Id$'
 Higgs::JournalLogger.each_log(ARGV[0]) {|log|
   pp log
 }
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:
