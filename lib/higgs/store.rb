@@ -37,11 +37,16 @@ module Higgs
     def self.open(*args)
       store = new(*args)
       begin
-	r = yield(store)
+        r = yield(store)
       ensure
-	store.shutdown
+        store.shutdown
       end
       r
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

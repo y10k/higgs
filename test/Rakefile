@@ -1,5 +1,3 @@
-# -*- Ruby -*-
-
 # for idnet(1)
 CVS_ID = '$Id$'
 
@@ -40,3 +38,8 @@ end
 rule '.test' => [ '.rb' ] do |t|
   ruby '-I', LIB_DIR, 'run.rb', '^' + Regexp.quote(t.source) + '$'
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

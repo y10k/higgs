@@ -52,7 +52,7 @@ module Higgs
 
     def each_key
       @index.each_key do |key|
-	yield(key)
+        yield(key)
       end
       self
     end
@@ -60,16 +60,16 @@ module Higgs
     def save(path)
       tmp_path = "#{path}.tmp.#{$$}"
       File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
-	f.binmode
-	index_data = {
-	  :version => [ MAJOR_VERSION, MINOR_VERSION ],
-	  :change_number => @change_number,
+        f.binmode
+        index_data = {
+          :version => [ MAJOR_VERSION, MINOR_VERSION ],
+          :change_number => @change_number,
           :eoa => @eoa,
-	  :free_lists => @free_lists,
-	  :index => @index
-	}
-	block_write(f, MAGIC_SYMBOL, Marshal.dump(index_data))
-	f.fsync
+          :free_lists => @free_lists,
+          :index => @index
+        }
+        block_write(f, MAGIC_SYMBOL, Marshal.dump(index_data))
+        f.fsync
       }
       File.rename(tmp_path, path)
       self
@@ -77,17 +77,22 @@ module Higgs
 
     def load(path)
       File.open(path, 'r') {|f|
-	f.binmode
-	index_data = Marshal.load(block_read(f, MAGIC_SYMBOL))
-	if ((index_data[:version] <=> [ MAJOR_VERSION, MINOR_VERSION ]) > 0) then
-	  raise "unsupported version: #{index_data[:version].join('.')}"
-	end
-	@change_number = index_data[:change_number]
+        f.binmode
+        index_data = Marshal.load(block_read(f, MAGIC_SYMBOL))
+        if ((index_data[:version] <=> [ MAJOR_VERSION, MINOR_VERSION ]) > 0) then
+          raise "unsupported version: #{index_data[:version].join('.')}"
+        end
+        @change_number = index_data[:change_number]
         @eoa = index_data[:eoa]
-	@free_lists = index_data[:free_lists]
-	@index = index_data[:index]
+        @free_lists = index_data[:free_lists]
+        @index = index_data[:index]
       }
       self
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

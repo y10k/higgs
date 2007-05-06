@@ -16,3 +16,8 @@ module Higgs
   end
   include Exceptions
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

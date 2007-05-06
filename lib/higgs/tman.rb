@@ -25,21 +25,21 @@ module Higgs
           @read_only = false
         end
 
-	@decode = options[:decode] || proc{|r| r }
-	@encode = options[:encode] || proc{|w| w }
+        @decode = options[:decode] || proc{|r| r }
+        @encode = options[:encode] || proc{|w| w }
 
-	if (options.include? :lock_manager) then
-	  @lock_manager = lock_manager
-	else
-	  require 'higgs/lock'
-	  @lock_manager = GiantLockManager.new
-	end
+        if (options.include? :lock_manager) then
+          @lock_manager = lock_manager
+        else
+          require 'higgs/lock'
+          @lock_manager = GiantLockManager.new
+        end
 
-	if (options.include? :master_cache) then
-	  @master_cache = options[:master_cache]
-	else
-	  @master_cache = LRUCache.new
-	end
+        if (options.include? :master_cache) then
+          @master_cache = options[:master_cache]
+        else
+          @master_cache = LRUCache.new
+        end
       end
 
       attr_reader :read_only
@@ -51,23 +51,23 @@ module Higgs
       init_options(options)
 
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
-	value = @storage.fetch(key) and @decode.call(value)
+        value = @storage.fetch(key) and @decode.call(value)
       }
     end
 
     def transaction(read_only=@read_only)
       r = nil
       @lock_manager.transaction(read_only) {|lock_handler|
-	if (read_only) then
-	  tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @decode, @encode)
-	else
-	  if (@read_only) then
-	    raise NotWritableError, 'not writable'
-	  end
-	  tx = ReadWriteTransactionContext.new(lock_handler, @storage, @master_cache, @decode, @encode)
-	end
-	r = yield(tx)
-	tx.commit unless read_only
+        if (read_only) then
+          tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @decode, @encode)
+        else
+          if (@read_only) then
+            raise NotWritableError, 'not writable'
+          end
+          tx = ReadWriteTransactionContext.new(lock_handler, @storage, @master_cache, @decode, @encode)
+        end
+        r = yield(tx)
+        tx.commit unless read_only
       }
       r
     end
@@ -90,11 +90,11 @@ module Higgs
         hash[key] = @master_cache[key] if (@storage.key? key)
       }
       @local_properties_cache = Hash.new{|hash, key|
-	if (properties = @storage.fetch_properties(key)) then
-	  hash[key] = Marshal.load(Marshal.dump(properties)) # deep copy
-	else
-	  hash[key] = { 'system_properties' => {}, 'custom_properties' => {} }
-	end
+        if (properties = @storage.fetch_properties(key)) then
+          hash[key] = Marshal.load(Marshal.dump(properties)) # deep copy
+        else
+          hash[key] = { 'system_properties' => {}, 'custom_properties' => {} }
+        end
       }
 
       @locked_map = {}
@@ -109,16 +109,16 @@ module Higgs
 
     def lock(key)
       unless (@locked_map[key]) then
-	@lock_handler.lock(key)
-	@locked_map[key] = true
+        @lock_handler.lock(key)
+        @locked_map[key] = true
       end
       nil
     end
 
     def unlock(key)
       if (@locked_map[key]) then
-	@lock_handler.unlock(key)
-	@locked_map[key] = false
+        @lock_handler.unlock(key)
+        @locked_map[key] = false
       end
       nil
     end
@@ -137,23 +137,23 @@ module Higgs
     def delete(key)
       lock(key)
       if (@ope_map[key] != :delete) then
-	@ope_map[key] = :delete
-	@update_properties.delete(key)
-	@local_properties_cache.delete(key)
-	@local_data_cache[key]	# data load from storage
-	@local_data_cache.delete(key)
+        @ope_map[key] = :delete
+        @update_properties.delete(key)
+        @local_properties_cache.delete(key)
+        @local_data_cache[key]  # data load from storage
+        @local_data_cache.delete(key)
       end
     end
 
     def key?(key)
       lock(key)
       if (@ope_map[key] != :delete) then
-	if (@local_data_cache.key? key) then
-	  return true
-	end
-	if (@storage.key? key) then
-	  return true
-	end
+        if (@local_data_cache.key? key) then
+          return true
+        end
+        if (@storage.key? key) then
+          return true
+        end
       end
       false
     end
@@ -164,20 +164,20 @@ module Higgs
 
     def each_key
       @local_data_cache.each_key do |key|
-	lock(key)
-	if (@ope_map[key] != :delete) then
-	  if (@local_data_cache[key] != nil) then
-	    yield(key)
-	  end
-	end
+        lock(key)
+        if (@ope_map[key] != :delete) then
+          if (@local_data_cache[key] != nil) then
+            yield(key)
+          end
+        end
       end
       @storage.each_key do |key|
-	lock(key)
-	if (@ope_map[key] != :delete) then
-	  if (! (@local_data_cache.key? key)) then
-	    yield(key)
-	  end
-	end
+        lock(key)
+        if (@ope_map[key] != :delete) then
+          if (! (@local_data_cache.key? key)) then
+            yield(key)
+          end
+        end
       end
       self
     end
@@ -361,8 +361,8 @@ module Higgs
       unless (write_list.empty?) then
         @storage.write_and_commit(write_list)
         for ope, key, value in write_list
-	  case (ope)
-	  when :write, :delete
+          case (ope)
+          when :write, :delete
             @master_cache.delete(key)
           end
         end
@@ -394,3 +394,8 @@ module Higgs
   class ReadWriteTransactionContext < TransactionContext
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

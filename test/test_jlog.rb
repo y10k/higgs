@@ -24,7 +24,7 @@ module Higgs::Test
       log.close
 
       JournalLogger.each_log(@path) do |log|
-	assert_fail('not to reach')
+        assert_fail('not to reach')
       end
 
       log = JournalLogger.open(@path)
@@ -34,9 +34,9 @@ module Higgs::Test
       count = 0
       expected_values = [ 'foo' ]
       JournalLogger.each_log(@path) do |log|
-	nth = "loop: #{count}"
-	assert(! expected_values.empty?, nth)
-	assert_equal(expected_values.shift, log, nth)
+        nth = "loop: #{count}"
+        assert(! expected_values.empty?, nth)
+        assert_equal(expected_values.shift, log, nth)
       end
       assert(expected_values.empty?)
 
@@ -47,9 +47,9 @@ module Higgs::Test
       count = 0
       expected_values = [ 'foo', :bar ]
       JournalLogger.each_log(@path) do |log|
-	nth = "loop: #{count}"
-	assert(! expected_values.empty?, nth)
-	assert_equal(expected_values.shift, log, nth)
+        nth = "loop: #{count}"
+        assert(! expected_values.empty?, nth)
+        assert_equal(expected_values.shift, log, nth)
       end
       assert(expected_values.empty?)
 
@@ -60,9 +60,9 @@ module Higgs::Test
       count = 0
       expected_values = [ 'foo', :bar, 777 ]
       JournalLogger.each_log(@path) do |log|
-	nth = "loop: #{count}"
-	assert(! expected_values.empty?, nth)
-	assert_equal(expected_values.shift, log, nth)
+        nth = "loop: #{count}"
+        assert(! expected_values.empty?, nth)
+        assert_equal(expected_values.shift, log, nth)
       end
       assert(expected_values.empty?)
 
@@ -74,11 +74,16 @@ module Higgs::Test
       count = 0
       expected_values = [ 'foo', :bar, 777, 'X' * 512, 'Y' * 513  ]
       JournalLogger.each_log(@path) do |log|
-	nth = "loop: #{count}"
-	assert(! expected_values.empty?, nth)
-	assert_equal(expected_values.shift, log, nth)
+        nth = "loop: #{count}"
+        assert(! expected_values.empty?, nth)
+        assert_equal(expected_values.shift, log, nth)
       end
       assert(expected_values.empty?)
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

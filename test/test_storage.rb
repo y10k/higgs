@@ -12,7 +12,7 @@ module Higgs::Test
     CVS_ID = '$Id$'
 
     def setup
-      srand(0)			# preset for rand 
+      srand(0)                  # preset for rand 
       @test_dir = 'st_test'
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
@@ -47,35 +47,35 @@ module Higgs::Test
       data_count = 10
 
       loop_count.times do
-	write_list = []
-	ope = [ :write, :delete ][rand(2)]
-	key = rand(data_count)
-	case (ope)
-	when :write
-	  type = [ :a, :b ][rand(2)]
-	  value = rand(256).chr * rand(5120)
-	  write_list << [ ope, key, type, value ]
-	when :delete
-	  write_list << [ ope, key ]
-	else
-	  raise "unknown operation: #{ope}"
-	end
-	@st.raw_write_and_commit(write_list)
+        write_list = []
+        ope = [ :write, :delete ][rand(2)]
+        key = rand(data_count)
+        case (ope)
+        when :write
+          type = [ :a, :b ][rand(2)]
+          value = rand(256).chr * rand(5120)
+          write_list << [ ope, key, type, value ]
+        when :delete
+          write_list << [ ope, key ]
+        else
+          raise "unknown operation: #{ope}"
+        end
+        @st.raw_write_and_commit(write_list)
       end
 
       3.times do
-	@st.rotate_journal_log(false)
+        @st.rotate_journal_log(false)
       end
       3.times do
-	@st.rotate_journal_log(true)
+        @st.rotate_journal_log(true)
       end
 
       @st.shutdown
 
       other_name = File.join(@test_dir, 'bar')
       for name in Storage.rotate_entries("#{@name}.jlog")
-	name =~ /\.jlog.*$/ or raise 'mismatch'
-	FileUtils.cp(name, other_name + $&)
+        name =~ /\.jlog.*$/ or raise 'mismatch'
+        FileUtils.cp(name, other_name + $&)
       end
       Storage.recover(other_name)
 
@@ -85,10 +85,10 @@ module Higgs::Test
 
     def test_write_and_commit
       write_list = [
-	[ :write, :foo, '' ],
-	[ :delete, :foo ],
-	[ :write, :foo, "Hello world.\n" ],
-	[ :update_properties, :foo, { 'TestDate' => '2007-04-29' } ]
+        [ :write, :foo, '' ],
+        [ :delete, :foo ],
+        [ :write, :foo, "Hello world.\n" ],
+        [ :update_properties, :foo, { 'TestDate' => '2007-04-29' } ]
       ]
       @st.write_and_commit(write_list)
     end
@@ -167,11 +167,11 @@ module Higgs::Test
       assert_nil(@st.fetch_properties('foo'))
 
       assert_raise(IndexError) {
-	write_list = [
-	  [ :write, 'foo', "Hello world.\n" ],
-	  [ :delete, 'foo' ],
-	  [ :update_properties, 'foo', {} ]
-	]
+        write_list = [
+          [ :write, 'foo', "Hello world.\n" ],
+          [ :delete, 'foo' ],
+          [ :update_properties, 'foo', {} ]
+        ]
         @st.write_and_commit(write_list)
       }
       assert_nil(@st.fetch('foo'))
@@ -214,13 +214,13 @@ module Higgs::Test
       end
 
       @st.write_and_commit([ [ :write, 'foo', 'one' ],
-			     [ :write, 'bar', 'two' ],
-			     [ :write, 'baz', 'three' ]
-			   ])
+                             [ :write, 'bar', 'two' ],
+                             [ :write, 'baz', 'three' ]
+                           ])
 
       expected_keys = %w[ foo bar baz ]
       @st.each_key do |key|
-	assert(expected_keys.delete(key), "each_key do |#{key}|")
+        assert(expected_keys.delete(key), "each_key do |#{key}|")
       end
       assert(expected_keys.empty?)
 
@@ -235,9 +235,9 @@ module Higgs::Test
 
     def test_each_key_read_only
       @st.write_and_commit([ [ :write, 'foo', 'one' ],
-			     [ :write, 'bar', 'two' ],
-			     [ :write, 'baz', 'three' ]
-			   ])
+                             [ :write, 'bar', 'two' ],
+                             [ :write, 'baz', 'three' ]
+                           ])
       @st.shutdown
       @st = nil
       @st = Storage.new(@name, :read_only => true)
@@ -259,12 +259,12 @@ module Higgs::Test
       File.open(@name + '.tar', File::WRONLY) {|w|
         size = w.stat.size
 
-	data_body_offset = size - Tar::Block::BLKSIZ * 5
-	# EOA -> 2 blocks
-	# properties body -> 1 block
-	# properties head -> 1 block
-	# data body -> 1 block
-	# total 5 blocks skip from the end of file
+        data_body_offset = size - Tar::Block::BLKSIZ * 5
+        # EOA -> 2 blocks
+        # properties body -> 1 block
+        # properties head -> 1 block
+        # data body -> 1 block
+        # total 5 blocks skip from the end of file
 
         w.seek(data_body_offset)
         w.write(0xFF.chr * Tar::Block::BLKSIZ)
@@ -279,18 +279,18 @@ module Higgs::Test
       File.open(@name + '.tar', File::WRONLY) {|w|
         size = w.stat.size
 
-	data_head_offset = size - Tar::Block::BLKSIZ * 6
-	# EOA -> 2 blocks
-	# properties body -> 1 block
-	# properties head -> 1 block
-	# data body -> 1 block
-	# data head -> 1 block
-	# total 6 blocks skip from the end of file 
+        data_head_offset = size - Tar::Block::BLKSIZ * 6
+        # EOA -> 2 blocks
+        # properties body -> 1 block
+        # properties head -> 1 block
+        # data body -> 1 block
+        # data head -> 1 block
+        # total 6 blocks skip from the end of file 
 
         w.truncate(data_head_offset)
-	t = Tar::ArchiveWriter.new(w)
-	t.write_EOA
-	t.close(false)
+        t = Tar::ArchiveWriter.new(w)
+        t.write_EOA
+        t.close(false)
       }
       assert_raise(Storage::BrokenError) {
         @st.verify
@@ -302,16 +302,16 @@ module Higgs::Test
       File.open(@name + '.tar', File::WRONLY) {|w|
         size = w.stat.size
 
-	props_head_offset = size - Tar::Block::BLKSIZ * 4
-	# EOA -> 2 blocks
-	# properties body -> 1 block
-	# properties head -> 1 block
-	# total 4 blocks skip from the end of file 
+        props_head_offset = size - Tar::Block::BLKSIZ * 4
+        # EOA -> 2 blocks
+        # properties body -> 1 block
+        # properties head -> 1 block
+        # total 4 blocks skip from the end of file 
 
         w.truncate(props_head_offset)
-	t = Tar::ArchiveWriter.new(w)
-	t.write_EOA
-	t.close(false)
+        t = Tar::ArchiveWriter.new(w)
+        t.write_EOA
+        t.close(false)
       }
       assert_raise(Storage::BrokenError) {
         @st.verify
@@ -325,12 +325,17 @@ module Higgs::Test
       assert_raise(Storage::ShutdownException) { @st.fetch_properties('foo') }
       assert_raise(Storage::ShutdownException) { @st.key? 'foo' }
       assert_raise(Storage::ShutdownException) {
-	@st.each_key do
-	  flunk('not to reach')
-	end
+        @st.each_key do
+          flunk('not to reach')
+        end
       }
       assert_raise(Storage::ShutdownException) { @st.write_and_commit([]) }
       assert_raise(Storage::ShutdownException) { @st.verify }
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

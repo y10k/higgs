@@ -1,5 +1,7 @@
 2007-05-06  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* indentation tab -> white spaces.
+
 	* lib/higgs/jlog.rb (Higgs::JournalLogger): optional eof flag to
 	close method.
 

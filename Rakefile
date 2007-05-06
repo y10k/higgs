@@ -1,5 +1,3 @@
-# -*- Ruby -*-
-
 # ident for core dump
 CVS_ID = '$Id$'
 
@@ -31,3 +29,8 @@ end
 task :clean do
   rm_rf RDOC_DIR
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

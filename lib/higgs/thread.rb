@@ -17,17 +17,17 @@ module Higgs
 
     def start
       @lock.synchronize{
-	@start = true
-	@cond.broadcast
+        @start = true
+        @cond.broadcast
       }
       nil
     end
 
     def wait
       @lock.synchronize{
-	until (@start)
-	  @cond.wait(@lock)
-	end
+        until (@start)
+          @cond.wait(@lock)
+        end
       }
       nil
     end
@@ -45,19 +45,19 @@ module Higgs
 
     def count_down
       @lock.synchronize{
-	if (@count > 0) then
-	  @count -= 1
-	  @cond.broadcast 
-	end
+        if (@count > 0) then
+          @count -= 1
+          @cond.broadcast 
+        end
       }
       nil
     end
 
     def wait
       @lock.synchronize{
-	while (@count > 0)
-	  @cond.wait(@lock)
-	end
+        while (@count > 0)
+          @cond.wait(@lock)
+        end
       }
       nil
     end
@@ -75,18 +75,18 @@ module Higgs
 
     def wait
       @lock.synchronize{
-	if (@count > 0) then
-	  @count -= 1
-	  if (@count > 0) then
-	    while (@count > 0)
-	      @cond.wait(@lock)
-	    end
-	  else
-	    @cond.broadcast
-	  end
-	else
-	  raise 'not recycle'
-	end
+        if (@count > 0) then
+          @count -= 1
+          if (@count > 0) then
+            while (@count > 0)
+              @cond.wait(@lock)
+            end
+          else
+            @cond.broadcast
+          end
+        else
+          raise 'not recycle'
+        end
       }
       nil
     end
@@ -98,7 +98,7 @@ module Higgs
 
     def initialize(&work)
       unless (work) then
-	raise 'required work block'
+        raise 'required work block'
       end
       @work = work
       @lock = Mutex.new
@@ -109,25 +109,25 @@ module Higgs
 
     def result
       @lock.synchronize{
-	case (@state)
-	when :done
-	  return @result
-	when :working
-	  until (@state == :done)
-	    @cond.wait(@lock)
-	  end
-	  return @result
-	when :init
-	  @state = :working
-	  # fall through
-	else
-	  raise 'internal error'
-	end
+        case (@state)
+        when :done
+          return @result
+        when :working
+          until (@state == :done)
+            @cond.wait(@lock)
+          end
+          return @result
+        when :init
+          @state = :working
+          # fall through
+        else
+          raise 'internal error'
+        end
       }
       @result = @work.call
       @lock.synchronize{
-	@state = :done
-	@cond.broadcast
+        @state = :done
+        @cond.broadcast
       }
       @result
     end
@@ -148,88 +148,88 @@ module Higgs
 
     def __read_lock__
       @lock.synchronize{
-	while (@writing || (@priority_to_writer && @count_of_standby_writers > 0))
-	  @cond.wait(@lock)
-	end
-	@count_of_working_readers += 1
+        while (@writing || (@priority_to_writer && @count_of_standby_writers > 0))
+          @cond.wait(@lock)
+        end
+        @count_of_working_readers += 1
       }
       nil
     end
 
     def __read_try_lock__
       @lock.synchronize{
-	if (@writing || (@priority_to_writer && @count_of_standby_writers > 0)) then
-	  return false
-	else
-	  @count_of_working_readers += 1
-	  return true
-	end
+        if (@writing || (@priority_to_writer && @count_of_standby_writers > 0)) then
+          return false
+        else
+          @count_of_working_readers += 1
+          return true
+        end
       }
     end
 
     def __read_unlock__
       @lock.synchronize{
-	@count_of_working_readers -= 1
-	@priority_to_writer = true
-	@cond.broadcast
+        @count_of_working_readers -= 1
+        @priority_to_writer = true
+        @cond.broadcast
       }
       nil
     end
 
     def __write_lock__
       @lock.synchronize{
-	@count_of_standby_writers += 1
-	begin
-	  while (@writing || @count_of_working_readers > 0)
-	    @cond.wait(@lock)
-	  end
-	  @writing = true
-	ensure
-	  @count_of_standby_writers -= 1
-	end
+        @count_of_standby_writers += 1
+        begin
+          while (@writing || @count_of_working_readers > 0)
+            @cond.wait(@lock)
+          end
+          @writing = true
+        ensure
+          @count_of_standby_writers -= 1
+        end
       }
       nil
     end
 
     def __write_try_lock__
       @lock.synchronize{
-	@count_of_standby_writers += 1
-	begin
-	  if (@writing || @count_of_working_readers > 0) then
-	    return false
-	  else
-	    @writing = true
-	    return true
-	  end
-	ensure
-	  @count_of_standby_writers -= 1
-	end
+        @count_of_standby_writers += 1
+        begin
+          if (@writing || @count_of_working_readers > 0) then
+            return false
+          else
+            @writing = true
+            return true
+          end
+        ensure
+          @count_of_standby_writers -= 1
+        end
       }
       nil
     end
 
     def __write_unlock__
       @lock.synchronize{
-	@writing = false
-	@priority_to_writer = false
-	@cond.broadcast
+        @writing = false
+        @priority_to_writer = false
+        @cond.broadcast
       }
       nil
     end
 
     class ChildLock
       def initialize(rw_lock)
-	@rw_lock = rw_lock
+        @rw_lock = rw_lock
       end
 
       def synchronize
-	lock
-	begin
-	  r = yield
-	ensure
-	  unlock
-	end
-	r
+        lock
+        begin
+          r = yield
+        ensure
+          unlock
+        end
+        r
       end
     end
 
@@ -276,7 +276,7 @@ module Higgs
       @q_lock = Mutex.new
       @q_cond = ConditionVariable.new
       @size.times do
-	@queue << yield
+        @queue << yield
       end
     end
 
@@ -284,25 +284,25 @@ module Higgs
 
     def fetch
       @q_lock.synchronize{
-	loop do
-	  unless (@running) then
-	    @q_cond.signal    # for shutdown
-	    raise ShutdownException, 'pool shutdown'
-	  end
-	  if (@queue.empty?) then
-	    @q_cond.wait(@q_lock)
-	  else
-	    break
-	  end
-	end
-	@queue.shift
+        loop do
+          unless (@running) then
+            @q_cond.signal    # for shutdown
+            raise ShutdownException, 'pool shutdown'
+          end
+          if (@queue.empty?) then
+            @q_cond.wait(@q_lock)
+          else
+            break
+          end
+        end
+        @queue.shift
       }
     end
 
     def restore(obj)
       @q_lock.synchronize{
-	@queue.push(obj)
-	@q_cond.signal
+        @queue.push(obj)
+        @q_cond.signal
       }
       nil
     end
@@ -310,25 +310,30 @@ module Higgs
     def transaction
       obj = fetch
       begin
-	r = yield(obj)
+        r = yield(obj)
       ensure
-	restore(obj)
+        restore(obj)
       end
       r
     end
 
     def shutdown
       @size.times do
-	obj = @q_lock.synchronize{
-	  @running = false
-	  while (@queue.empty?)
-	    @q_cond.wait(@q_lock)
-	  end
-	  @queue.shift
-	}
-	yield(obj) if block_given?
+        obj = @q_lock.synchronize{
+          @running = false
+          while (@queue.empty?)
+            @q_cond.wait(@q_lock)
+          end
+          @queue.shift
+        }
+        yield(obj) if block_given?
       end
       nil
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

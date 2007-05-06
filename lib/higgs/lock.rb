@@ -27,8 +27,8 @@ module Higgs
       n = seed
       cycle = 0xFFFF
       proc{
-	n = (n * 37549 + 12345) % cycle
-	n.to_f / cycle
+        n = (n * 37549 + 12345) % cycle
+        n.to_f / cycle
       }
     }
 
@@ -51,17 +51,17 @@ module Higgs
       t0 = Time.now
       c = attrs.spin_lock_count
       while (c > 0)
-	if (lock.try_lock) then
-	  return
-	end
-	c -= 1
+        if (lock.try_lock) then
+          return
+        end
+        c -= 1
       end
       rand = attrs.new_rand(::Thread.current.object_id ^ t0.to_i)
       while (Time.now - t0 < attrs.try_lock_limit)
-	if (lock.try_lock) then
-	  return
-	end
-	sleep(attrs.try_lock_interval * rand.call)
+        if (lock.try_lock) then
+          return
+        end
+        sleep(attrs.try_lock_interval * rand.call)
       end
       raise TryLockTimeoutError, 'expired'
     end
@@ -80,25 +80,25 @@ module Higgs
       include Singleton
 
       def lock(key)
-	self
+        self
       end
 
       def unlock(key)
-	self
+        self
       end
     end
 
     def transaction(read_only=false)
       if (read_only) then
-	lock = @rw_lock.read_lock
+        lock = @rw_lock.read_lock
       else
-	lock = @rw_lock.write_lock
+        lock = @rw_lock.write_lock
       end
       LockManager.try_lock(lock, self)
       begin
-	yield(NoWorkLockHandler.instance)
+        yield(NoWorkLockHandler.instance)
       ensure
-	lock.unlock
+        lock.unlock
       end
     end
   end
@@ -114,57 +114,62 @@ module Higgs
 
     class LockHandler
       def initialize(attrs, cache)
-	@attrs = attrs
-	@cache = cache
-	@lock_map = {}
+        @attrs = attrs
+        @cache = cache
+        @lock_map = {}
       end
 
       def lock_list
-	@lock_map.values
+        @lock_map.values
       end
 
       def unlock(key)
-	if (lock = @lock_map.delete(key)) then
-	  lock.unlock
-	else
-	  raise "not locked key: #{key}"
-	end
-	self
+        if (lock = @lock_map.delete(key)) then
+          lock.unlock
+        else
+          raise "not locked key: #{key}"
+        end
+        self
       end
     end
 
     class ReadOnlyLockHandler < LockHandler
       def lock(key)
-	r_lock = @cache[key].read_lock
-	LockManager.try_lock(r_lock, @attrs)
-	@lock_map[key] = r_lock
-	self
+        r_lock = @cache[key].read_lock
+        LockManager.try_lock(r_lock, @attrs)
+        @lock_map[key] = r_lock
+        self
       end
     end
 
     class ReadWriteLockHandler < LockHandler
       def lock(key)
-	w_lock = @cache[key].write_lock
-	LockManager.try_lock(w_lock, @attrs)
-	@lock_map[key] = w_lock
-	self
+        w_lock = @cache[key].write_lock
+        LockManager.try_lock(w_lock, @attrs)
+        @lock_map[key] = w_lock
+        self
       end
     end
 
     def transaction(read_only=false)
       if (read_only) then
-	lock_handler = ReadOnlyLockHandler.new(self, @cache)
+        lock_handler = ReadOnlyLockHandler.new(self, @cache)
       else
-	lock_handler = ReadWriteLockHandler.new(self, @cache)
+        lock_handler = ReadWriteLockHandler.new(self, @cache)
       end
       begin
-	r = yield(lock_handler)
+        r = yield(lock_handler)
       ensure
-	for lock in lock_handler.lock_list
-	  lock.unlock
-	end
+        for lock in lock_handler.lock_list
+          lock.unlock
+        end
       end
       r
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

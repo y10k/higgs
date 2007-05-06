@@ -217,28 +217,28 @@ module Higgs::Test
     def test_each
       count = 0
       @tar.each do |head_and_body|
-	case (count)
-	when 0
-	  assert('foo/' == head_and_body[:name] || 'foo' == head_and_body[:name])
-	  assert_equal(0,                      head_and_body[:size])
-	  assert_equal(File.stat('foo').mtime, head_and_body[:mtime])
-	  assert_equal(DIRTYPE,                head_and_body[:typeflag])
-	  assert_equal(MAGIC,                  head_and_body[:magic])
-	  assert_equal(nil,                    head_and_body[:body])
-	when 1
-	  assert_equal('foo/bar',                  head_and_body[:name])
-	  assert_equal(5,                          head_and_body[:size])
-	  assert_equal(File.stat('foo/bar').mtime, head_and_body[:mtime])
-	  assert_equal(REGTYPE,                    head_and_body[:typeflag])
-	  assert_equal(MAGIC,                      head_and_body[:magic])
-	  assert_equal("HALO\n",                   head_and_body[:body])
-	when 2
-	  assert_equal('baz',                  head_and_body[:name])
-	  assert_equal(13,                     head_and_body[:size])
-	  assert_equal(File.stat('baz').mtime, head_and_body[:mtime])
-	  assert_equal(REGTYPE,                head_and_body[:typeflag])
-	  assert_equal(MAGIC,                  head_and_body[:magic])
-	  assert_equal("Hello world.\n",       head_and_body[:body])
+        case (count)
+        when 0
+          assert('foo/' == head_and_body[:name] || 'foo' == head_and_body[:name])
+          assert_equal(0,                      head_and_body[:size])
+          assert_equal(File.stat('foo').mtime, head_and_body[:mtime])
+          assert_equal(DIRTYPE,                head_and_body[:typeflag])
+          assert_equal(MAGIC,                  head_and_body[:magic])
+          assert_equal(nil,                    head_and_body[:body])
+        when 1
+          assert_equal('foo/bar',                  head_and_body[:name])
+          assert_equal(5,                          head_and_body[:size])
+          assert_equal(File.stat('foo/bar').mtime, head_and_body[:mtime])
+          assert_equal(REGTYPE,                    head_and_body[:typeflag])
+          assert_equal(MAGIC,                      head_and_body[:magic])
+          assert_equal("HALO\n",                   head_and_body[:body])
+        when 2
+          assert_equal('baz',                  head_and_body[:name])
+          assert_equal(13,                     head_and_body[:size])
+          assert_equal(File.stat('baz').mtime, head_and_body[:mtime])
+          assert_equal(REGTYPE,                head_and_body[:typeflag])
+          assert_equal(MAGIC,                  head_and_body[:magic])
+          assert_equal("Hello world.\n",       head_and_body[:body])
         when 3
           assert_equal('zero',                  head_and_body[:name])
           assert_equal(0,                       head_and_body[:size])
@@ -246,10 +246,10 @@ module Higgs::Test
           assert_equal(REGTYPE,                 head_and_body[:typeflag])
           assert_equal(MAGIC,                   head_and_body[:magic])
           assert_equal('',                      head_and_body[:body])
-	else
-	  raise "unknown data: #{head_and_body.inspect}"
-	end
-	count += 1
+        else
+          raise "unknown data: #{head_and_body.inspect}"
+        end
+        count += 1
       end
       assert_equal(4, count)
     end
@@ -306,38 +306,38 @@ module Higgs::Test
       assert(@output.closed?)
       File.open('foo.tar') {|r|
         tar = ArchiveReader.new(r)
-	count = 0
-	for head_and_body in tar
-	  case (count)
-	  when 0
-	    assert_equal('foo',                  head_and_body[:name])
-	    assert_equal(0,                      head_and_body[:size])
-	    assert_equal(File.stat('foo').mtime, head_and_body[:mtime])
-	    assert_equal(DIRTYPE,                head_and_body[:typeflag])
-	    assert_equal(MAGIC,                  head_and_body[:magic])
-	    assert_equal(nil,                    head_and_body[:body])
-	  when 1
-	    assert_equal('foo/bar',                  head_and_body[:name])
-	    assert_equal(5,                          head_and_body[:size])
-	    assert_equal(File.stat('foo/bar').mtime, head_and_body[:mtime])
-	    assert_equal(REGTYPE,                    head_and_body[:typeflag])
-	    assert_equal(MAGIC,                      head_and_body[:magic])
-	    assert_equal("HALO\n",                   head_and_body[:body])
-	  when 2
-	    assert_equal('baz',            head_and_body[:name])
-	    assert_equal(13,               head_and_body[:size])
-	    assert_equal(timestamp.to_i,   head_and_body[:mtime].to_i)
-	    assert_equal(REGTYPE,          head_and_body[:typeflag])
-	    assert_equal(MAGIC,            head_and_body[:magic])
-	    assert_equal(Process.euid,     head_and_body[:uid])
-	    assert_equal(Process.egid,     head_and_body[:gid])
-	    assert_equal("Hello world.\n", head_and_body[:body])
-	  else
-	    raise "unknown data: #{head_and_body.inspect}"
-	  end
-	  count += 1
-	end
-	assert_equal(3, count)
+        count = 0
+        for head_and_body in tar
+          case (count)
+          when 0
+            assert_equal('foo',                  head_and_body[:name])
+            assert_equal(0,                      head_and_body[:size])
+            assert_equal(File.stat('foo').mtime, head_and_body[:mtime])
+            assert_equal(DIRTYPE,                head_and_body[:typeflag])
+            assert_equal(MAGIC,                  head_and_body[:magic])
+            assert_equal(nil,                    head_and_body[:body])
+          when 1
+            assert_equal('foo/bar',                  head_and_body[:name])
+            assert_equal(5,                          head_and_body[:size])
+            assert_equal(File.stat('foo/bar').mtime, head_and_body[:mtime])
+            assert_equal(REGTYPE,                    head_and_body[:typeflag])
+            assert_equal(MAGIC,                      head_and_body[:magic])
+            assert_equal("HALO\n",                   head_and_body[:body])
+          when 2
+            assert_equal('baz',            head_and_body[:name])
+            assert_equal(13,               head_and_body[:size])
+            assert_equal(timestamp.to_i,   head_and_body[:mtime].to_i)
+            assert_equal(REGTYPE,          head_and_body[:typeflag])
+            assert_equal(MAGIC,            head_and_body[:magic])
+            assert_equal(Process.euid,     head_and_body[:uid])
+            assert_equal(Process.egid,     head_and_body[:gid])
+            assert_equal("Hello world.\n", head_and_body[:body])
+          else
+            raise "unknown data: #{head_and_body.inspect}"
+          end
+          count += 1
+        end
+        assert_equal(3, count)
       }
     end
   end
@@ -425,3 +425,8 @@ module Higgs::Test
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

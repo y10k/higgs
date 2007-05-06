@@ -25,3 +25,8 @@ for test_rb in Dir.entries(test_dir).sort
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

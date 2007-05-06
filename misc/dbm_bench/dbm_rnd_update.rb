@@ -21,14 +21,19 @@ Higgs::DBM.open(name) {|dbm|
   Benchmark.bm do |x|
     x.report('dbm rnd update:') {
       loop_count.times do
-	dbm.transaction{|tx|
-	  data_count.times do
-	    k = key_list[rand(key_list.length)]
-	    tx[k] = 0xFF.chr * (rand(max_dat_len))
-	  end
-	}
+        dbm.transaction{|tx|
+          data_count.times do
+            k = key_list[rand(key_list.length)]
+            tx[k] = 0xFF.chr * (rand(max_dat_len))
+          end
+        }
       end
     }
   end
   print "\n"
 }
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

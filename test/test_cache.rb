@@ -45,10 +45,10 @@ module Higgs::Test
 
     def test_LRU_read
       CACHE_LIMIT_SIZE.times do |i|
-	@cache[i] = i.to_s
+        @cache[i] = i.to_s
       end
       CACHE_LIMIT_SIZE.times do |i|
-	assert_equal(i.to_s, @cache[i], "#{i}")
+        assert_equal(i.to_s, @cache[i], "#{i}")
       end
 
       old_key = 0
@@ -63,10 +63,10 @@ module Higgs::Test
 
     def test_LRU_write
       CACHE_LIMIT_SIZE.times do |i|
-	@cache[i] = i.to_s
+        @cache[i] = i.to_s
       end
       (0...CACHE_LIMIT_SIZE).to_a.reverse_each do |i|
-	@cache[i] = i.to_s
+        @cache[i] = i.to_s
       end
 
       old_key = CACHE_LIMIT_SIZE - 1
@@ -146,16 +146,16 @@ module Higgs::Test
       th_grp = ThreadGroup.new
 
       result_list = [ nil ] * NUM_OF_THREADS
-      NUM_OF_THREADS.times{|i|	# `i' should be local scope of thread block
-	th_grp.add Thread.new{
-	  barrier.wait
-	  result_list[i] = calc(WORK_COUNT)
-	}
+      NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
+        th_grp.add Thread.new{
+          barrier.wait
+          result_list[i] = calc(WORK_COUNT)
+        }
       }
 
       barrier.wait
       for t in th_grp.list
-	t.join
+        t.join
       end
 
       expected_value = calc(WORK_COUNT)
@@ -166,9 +166,9 @@ module Higgs::Test
     def test_multi_thread_fetch
       count = 0
       timeout(10) {
-	begin
-	  count += 1
-	end until (calc_race_condition)
+        begin
+          count += 1
+        end until (calc_race_condition)
       }
 
       @calc_calls = 0
@@ -176,20 +176,20 @@ module Higgs::Test
       assert_equal(1, @calc_calls)
 
       count.times do |n|
-	barrier = Higgs::Barrier.new(NUM_OF_THREADS + 1)
-	th_grp = ThreadGroup.new
-	NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
-	  th_grp.add Thread.new{
-	    barrier.wait
-	    assert_equal(expected_result, @cache[WORK_COUNT], "#{n}th: th#{i}")
-	  }
-	}
+        barrier = Higgs::Barrier.new(NUM_OF_THREADS + 1)
+        th_grp = ThreadGroup.new
+        NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
+          th_grp.add Thread.new{
+            barrier.wait
+            assert_equal(expected_result, @cache[WORK_COUNT], "#{n}th: th#{i}")
+          }
+        }
 
-	barrier.wait
-	for t in th_grp.list
-	  t.join
-	end
-	assert_equal(2, @calc_calls, "#{n}th")
+        barrier.wait
+        for t in th_grp.list
+          t.join
+        end
+        assert_equal(2, @calc_calls, "#{n}th")
       end
     end
   end
@@ -207,3 +207,8 @@ module Higgs::Test
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

@@ -37,11 +37,16 @@ module Higgs
     def self.open(*args)
       dbm = new(*args)
       begin
-	r = yield(dbm)
+        r = yield(dbm)
       ensure
-	dbm.shutdown
+        dbm.shutdown
       end
       r
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

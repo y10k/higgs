@@ -20,14 +20,19 @@ Higgs::DBM.open(name) {|dbm|
   Benchmark.bm do |x|
     x.report('dbm rnd delete:') {
       loop_count.times do
-	dbm.transaction{|tx|
-	  data_count.times do
-	    k = key_list[rand(key_list.length)]
-	    tx.delete(k)
-	  end
-	}
+        dbm.transaction{|tx|
+          data_count.times do
+            k = key_list[rand(key_list.length)]
+            tx.delete(k)
+          end
+        }
       end
     }
   end
   print "\n"
 }
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

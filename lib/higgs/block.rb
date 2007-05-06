@@ -36,17 +36,17 @@ module Higgs
     BODY_CKSUM_TYPE = 'SHA512'
 
     HEAD_FMT = [
-      'Z16',			# magic symbol
-      'V',			# body length
-      'x12',			# (reserved)
-      'v',			# format version
-      'x2',			# (reserved)
-      HEAD_CKSUM_FMT,		# head cksum
-      'x2',			# (reserved)
-      'Z16',			# body cksum type
-      'v',			# body cksum length
-      'x14',			# (reserved)
-      'a440'			# body cksum binary
+      'Z16',                    # magic symbol
+      'V',                      # body length
+      'x12',                    # (reserved)
+      'v',                      # format version
+      'x2',                     # (reserved)
+      HEAD_CKSUM_FMT,           # head cksum
+      'x2',                     # (reserved)
+      'Z16',                    # body cksum type
+      'v',                      # body cksum length
+      'x14',                    # (reserved)
+      'a440'                    # body cksum binary
     ].join('')
 
     def padding_size(bytes)
@@ -58,23 +58,23 @@ module Higgs
     def head_read(io, magic_symbol)
       head_block = io.read(BLOCK_SIZE) or return
       if (head_block.size != BLOCK_SIZE) then
-	raise BrokenError, 'short read'
+        raise BrokenError, 'short read'
       end
 
       _magic_symbol, body_len, fmt_version, head_cksum,
-	body_cksum_type, body_cksum_len, body_cksum_bucket = head_block.unpack(HEAD_FMT)
+        body_cksum_type, body_cksum_len, body_cksum_bucket = head_block.unpack(HEAD_FMT)
 
       head_block[HEAD_CKSUM_POS] = "\000\000"
       if (head_block.sum(HEAD_CKSUM_BITS) != head_cksum) then
-	raise BrokenError, 'broken head block'
+        raise BrokenError, 'broken head block'
       end
 
       if (_magic_symbol != magic_symbol) then
-	raise BrokenError, "unknown magic symbol: #{_magic_symbol}"
+        raise BrokenError, "unknown magic symbol: #{_magic_symbol}"
       end
 
       if (fmt_version != FMT_VERSION) then
-	raise BrokenError, format('unknown format version: 0x%04F', fmt_version)
+        raise BrokenError, format('unknown format version: 0x%04F', fmt_version)
       end
 
       body_cksum_bin = body_cksum_bucket[0, body_cksum_len]
@@ -85,13 +85,13 @@ module Higgs
 
     def head_write(io, magic_symbol, body_len, body_cksum_type, body_cksum_bin)
       head_block = [
-	magic_symbol,
-	body_len,
-	FMT_VERSION,
-	0,
-	body_cksum_type,
-	body_cksum_bin.length,
-	body_cksum_bin
+        magic_symbol,
+        body_len,
+        FMT_VERSION,
+        0,
+        body_cksum_type,
+        body_cksum_bin.length,
+        body_cksum_bin
       ].pack(HEAD_FMT)
 
       head_cksum = head_block.sum(HEAD_CKSUM_BITS)
@@ -99,7 +99,7 @@ module Higgs
 
       bytes = io.write(head_block)
       if (bytes != head_block.size) then
-	raise BrokenError, 'short write'
+        raise BrokenError, 'short write'
       end
       bytes
     end
@@ -108,26 +108,26 @@ module Higgs
     def block_read(io, magic_symbol)
       body_len, body_cksum_type, body_cksum_bin = head_read(io, magic_symbol)
       unless (body_len) then
-	return
+        return
       end
 
       body = io.read(body_len) or raise BrokenError, 'unexpected EOF'
       if (body.length != body_len) then
-	raise BrokenError, 'short read'
+        raise BrokenError, 'short read'
       end
 
       if (body_cksum_type != BODY_CKSUM_TYPE) then
-	raise BrokenError, "unknown body cksum type: #{body_cksum_type}"
+        raise BrokenError, "unknown body cksum type: #{body_cksum_type}"
       end
 
       if (Digest::SHA512.digest(body) != body_cksum_bin) then
-	raise BrokenError, 'body cksum error'
+        raise BrokenError, 'body cksum error'
       end
 
       padding_size = padding_size(body_len)
       padding = io.read(padding_size) or raise BrokenError, 'unexpected EOF'
       if (padding.size != padding_size) then
-	raise BrokenError, 'short read'
+        raise BrokenError, 'short read'
       end
 
       body
@@ -140,13 +140,13 @@ module Higgs
 
       bytes = io.write(body)
       if (bytes != body.size) then
-	raise BrokenError, 'short write'
+        raise BrokenError, 'short write'
       end
 
       padding_size = padding_size(body.length)
       bytes = io.write("\0" * padding_size)
       if (bytes != padding_size) then
-	raise BrokenError, 'short write'
+        raise BrokenError, 'short write'
       end
 
       body.size + padding_size
@@ -154,3 +154,8 @@ module Higgs
     module_function :block_write
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

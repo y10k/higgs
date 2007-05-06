@@ -23,10 +23,10 @@ module Higgs
 
     def [](key)
       if (cached_pair = @cache[key]) then
-	c = @count
-	@count = @count.succ
-	cached_pair[1] = c
-	return cached_pair[0]
+        c = @count
+        @count = @count.succ
+        cached_pair[1] = c
+        return cached_pair[0]
       end
       nil
     end
@@ -35,12 +35,12 @@ module Higgs
       c = @count
       @count = @count.succ
       if (cached_pair = @cache[key]) then
-	cached_pair[1] = c
+        cached_pair[1] = c
       else
-	@cache[key] = [ value, c ]
+        @cache[key] = [ value, c ]
       end
       if (@cache.size > @limit_size) then
-	purge_old_cache
+        purge_old_cache
       end
       value
     end
@@ -55,7 +55,7 @@ module Higgs
 
     def delete(key)
       if (cached_pair = @cache.delete(key)) then
-	return cached_pair[0]
+        return cached_pair[0]
       end
       nil
     end
@@ -67,7 +67,7 @@ module Higgs
 
     def initialize(cache={}, &work)
       unless (work) then
-	raise 'required work block'
+        raise 'required work block'
       end
       @work = work
       @lock = Mutex.new
@@ -77,10 +77,10 @@ module Higgs
     def [](key)
       work = nil
       @lock.synchronize{
-	unless (@cache.include? key) then
-	  @cache[key] = SharedWork.new{ @work.call(key) } 
-	end
-	work = @cache[key]
+        unless (@cache.include? key) then
+          @cache[key] = SharedWork.new{ @work.call(key) } 
+        end
+        work = @cache[key]
       }
       work.result
     end
@@ -91,3 +91,8 @@ module Higgs
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

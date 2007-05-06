@@ -20,15 +20,20 @@ Higgs::DBM.open(name) {|dbm|
   Benchmark.bm do |x|
     x.report('dbm seq write:') {
       loop_count.times do |i|
-	dbm.transaction{|tx|
-	  data_count.times do |j|
-	    k = (i * data_count + j).to_s
-	    d = 0xFF.chr * (rand(max_dat_len))
-	    tx[k] = d
-	  end
-	}
+        dbm.transaction{|tx|
+          data_count.times do |j|
+            k = (i * data_count + j).to_s
+            d = 0xFF.chr * (rand(max_dat_len))
+            tx[k] = d
+          end
+        }
       end
     }
   end
   print "\n"
 }
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

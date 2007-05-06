@@ -45,14 +45,14 @@ module Higgs::Test
     def test_many_block_write_read
       data_list = (0..12).map{|i| 'Z' * 2**i }.map{|s| [ s[0..-2], s, s + 'Z' ] }.flatten
       for s in data_list
-	block_write(@io, 'FOO', s)
+        block_write(@io, 'FOO', s)
       end
 
       i = 0
       @io.seek(0)
       while (s = block_read(@io, 'FOO'))
-	assert(! data_list.empty?, "nth:#{i}")
-	assert_equal(data_list.shift, s)
+        assert(! data_list.empty?, "nth:#{i}")
+        assert_equal(data_list.shift, s)
       end
       assert(data_list.empty?)
     end
@@ -66,7 +66,7 @@ module Higgs::Test
       @io.write("\x00")
       @io.seek(0)
       assert_raise(BrokenError) {
-	head_read(@io, 'FOO')
+        head_read(@io, 'FOO')
       }
     end
 
@@ -80,7 +80,7 @@ module Higgs::Test
       @io.seek(0)
 
       assert_raise(BrokenError) {
-	head_read(@io, 'FOO')
+        head_read(@io, 'FOO')
       }
     end
 
@@ -91,7 +91,7 @@ module Higgs::Test
       @io.seek(0)
 
       assert_raise(BrokenError) {
-	head_read(@io, 'FOO')
+        head_read(@io, 'FOO')
       }
     end
 
@@ -100,7 +100,7 @@ module Higgs::Test
       @io.truncate(512)
       @io.seek(0)
       assert_raise(BrokenError) {
-	block_read(@io, 'FOO')
+        block_read(@io, 'FOO')
       }
     end
 
@@ -109,7 +109,7 @@ module Higgs::Test
       @io.truncate(513)
       @io.seek(0)
       assert_raise(BrokenError) {
-	block_read(@io, 'FOO')
+        block_read(@io, 'FOO')
       }
     end
 
@@ -118,7 +118,7 @@ module Higgs::Test
       @io.truncate(515)
       @io.seek(0)
       assert_raise(BrokenError) {
-	block_read(@io, 'FOO')
+        block_read(@io, 'FOO')
       }
     end
 
@@ -127,7 +127,7 @@ module Higgs::Test
       @io.truncate(1023)
       @io.seek(0)
       assert_raise(BrokenError) {
-	block_read(@io, 'FOO')
+        block_read(@io, 'FOO')
       }
     end
 
@@ -139,7 +139,7 @@ module Higgs::Test
       @io.seek(0)
 
       assert_raise(BrokenError) {
-	block_read(@io, 'FOO')
+        block_read(@io, 'FOO')
       }
     end
 
@@ -151,8 +151,13 @@ module Higgs::Test
       @io.seek(0)
 
       assert_raise(BrokenError) {
-	block_read(@io, 'FOO')
+        block_read(@io, 'FOO')
       }
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

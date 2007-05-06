@@ -133,21 +133,21 @@ module Higgs::Test
       @idx['foo'] = 0
       expected_keys = %w[ foo ]
       @idx.each_key do |key|
-	assert(expected_keys.delete(key), "key: #{key}")
+        assert(expected_keys.delete(key), "key: #{key}")
       end
       assert_equal([], expected_keys)
 
       @idx['bar'] = 512
       expected_keys = %w[ foo bar ]
       @idx.each_key do |key|
-	assert(expected_keys.delete(key), "key: #{key}")
+        assert(expected_keys.delete(key), "key: #{key}")
       end
       assert_equal([], expected_keys)
 
       @idx['baz'] = 1024
       expected_keys = %w[ foo bar baz ]
       @idx.each_key do |key|
-	assert(expected_keys.delete(key), "key: #{key}")
+        assert(expected_keys.delete(key), "key: #{key}")
       end
       assert_equal([], expected_keys)
     end
@@ -190,3 +190,8 @@ module Higgs::Test
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:
