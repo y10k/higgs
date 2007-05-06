@@ -2,6 +2,7 @@
 
 require 'drb'
 require 'fileutils'
+require 'higgs/index'
 require 'higgs/storage'
 require 'test/unit'
 
@@ -13,7 +14,9 @@ module Higgs::Test
     CVS_ID = '$Id$'
 
     STORAGE_ITEMS = 100
+    COMMIT_ITEMS = 10
     MAX_ITEM_BYTES = 1024 * 5
+    LEAST_COMMITS_PER_ROTATION = 8
     UPTIME_SECONDS = 1
 
     def setup
@@ -45,6 +48,7 @@ module Higgs::Test
     def run_backup_storage
       st = Storage.new(@backup_name,
                        :jlog_rotate_max => 0,
+                       :jlog_rotate_size => COMMIT_ITEMS * MAX_ITEM_BYTES * LEAST_COMMITS_PER_ROTATION,
                        :jlog_rotate_service_uri => @jlog_rotate_service_uri)
       begin
         FileUtils.touch(@start_latch)
@@ -103,7 +107,8 @@ module Higgs::Test
 
         Storage.recover(@restore_name)
         assert(FileUtils.cmp("#{@backup_name}.tar", "#{@restore_name}.tar"), 'tar')
-        assert(FileUtils.cmp("#{@backup_name}.idx", "#{@restore_name}.idx"), 'idx')
+        assert_equal(Index.new.load("#{@backup_name}.idx").to_h,
+                     Index.new.load("#{@restore_name}.idx").to_h, 'idx')
       ensure
         FileUtils.touch(@stop_latch)
         FileUtils.touch(@end_latch)
