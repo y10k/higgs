@@ -26,6 +26,7 @@ module Higgs
     def_delegator :@storage, :jlog_sync
     def_delegator :@storage, :jlog_rotate_size
     def_delegator :@storage, :jlog_rotate_max
+    def_delegator :@storage, :jlog_rotate_service_uri
     def_delegator :@storage, :shutdown
     def_delegator :@storage, :shutdown?
     def_delegator :@storage, :rotate_journal_log

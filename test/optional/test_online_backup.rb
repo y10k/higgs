@@ -89,11 +89,11 @@ module Higgs::Test
         until (File.exist? @start_latch)
           sleep(0.001)
         end
+        jlog_rotate_service = DRbObject.new_with_uri(@jlog_rotate_service_uri)
         sleep(UPTIME_SECONDS)
-        rot_jlog = DRbObject.new_with_uri(@jlog_rotate_service_uri)
 
         # step 1: backup index
-        rot_jlog.call("#{@restore_name}.idx")
+        jlog_rotate_service.call("#{@restore_name}.idx")
 
         # step 2: backup data
         FileUtils.cp("#{@backup_name}.tar", "#{@restore_name}.tar")
@@ -107,7 +107,7 @@ module Higgs::Test
         end
 
         # step 3: rotate journal log
-        rot_jlog.call(true)
+        jlog_rotate_service.call(true)
 
         # step 4: backup old journal logs
         for path in Storage.rotate_entries("#{@backup_name}.jlog")
