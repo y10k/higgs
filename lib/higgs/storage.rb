@@ -58,7 +58,6 @@ module Higgs
 
 	@jlog_rotate_size = options[:jlog_rotate_size] || 1024 * 256
 	@jlog_rotate_max = options[:jlog_rotate_max] || 1
-
 	@jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
       end
       private :init_options
@@ -176,7 +175,7 @@ module Higgs
 	  end
 	  @shutdown = true
 
-          @jlog.close unless @read_only
+	  @jlog.close(! @broken) unless @read_only
           @index.save(@idx_name) if (! @broken && ! @read_only)
           @r_tar_pool.shutdown{|r_tar| r_tar.close }
           unless (@read_only) then

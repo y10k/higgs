@@ -50,8 +50,8 @@ module Higgs
       self
     end
 
-    def close
-      write_EOF
+    def close(eof=true)
+      write_EOF if eof
       @out.fsync
       @out.close
       @out = nil

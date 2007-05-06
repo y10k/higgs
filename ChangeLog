@@ -1,5 +1,8 @@
 2007-05-06  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/jlog.rb (Higgs::JournalLogger): optional eof flag to
+	close method.
+
 	* lib/higgs/tar.rb (Higgs::Tar::ArchiveWriter): reverse optional
 	flag of close method.
 
