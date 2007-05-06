@@ -179,7 +179,7 @@ module Higgs
 	  end
 	end
       end
-      nil
+      self
     end
 
     def each_value
@@ -309,7 +309,7 @@ module Higgs
       @local_properties_cache[key]['custom_properties'].each_pair do |name, value|
         yield(name, value)
       end
-      nil
+      self
     end
 
     def delete_if(*keys)
