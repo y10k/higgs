@@ -15,9 +15,9 @@ module Higgs::Test
 
     STORAGE_ITEMS = 100
     COMMIT_ITEMS = 10
-    MAX_ITEM_BYTES = 1024 * 5
+    MAX_ITEM_BYTES = 1024 * 16
     LEAST_COMMITS_PER_ROTATION = 8
-    UPTIME_SECONDS = 1
+    UPTIME_SECONDS = 3
 
     def setup
       srand(0)
@@ -76,6 +76,7 @@ module Higgs::Test
         until (File.exist? @end_latch)
           sleep(0.001)
         end
+        st.verify
       ensure
         st.shutdown
       end
@@ -115,6 +116,13 @@ module Higgs::Test
         Process.waitpid(pid)
       end
       assert_equal(0, $?.exitstatus)
+
+      st = Storage.new(@restore_name, :read_only => true)
+      begin
+        st.verify
+      ensure
+        st.shutdown
+      end
     end
   end
 end
