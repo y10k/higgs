@@ -1,5 +1,8 @@
 2007-05-06  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/tar.rb (Higgs::Tar::ArchiveWriter): reverse optional
+	flag of close method.
+
 	* lib/higgs/tman.rb (Higgs::TransactionContext): allow to store
 	nil value to local data cache.
 

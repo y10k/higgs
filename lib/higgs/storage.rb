@@ -181,7 +181,7 @@ module Higgs
           @r_tar_pool.shutdown{|r_tar| r_tar.close }
           unless (@read_only) then
             @w_tar.fsync
-            @w_tar.close(true)
+            @w_tar.close(false)
           end
           @flock.close
         }
@@ -508,7 +508,7 @@ module Higgs
 
         index.save(idx_name)
         w_tar.fsync
-        w_tar.close(true)
+        w_tar.close(false)
       }
       flock.close
 
