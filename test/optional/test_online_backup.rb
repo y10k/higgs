@@ -46,10 +46,13 @@ module Higgs::Test
     end
 
     def run_backup_storage
+      # step 0: storage starts with jlog_rotate_service_uri option
+      # (jlog_rotate_service_uri option is disabled by default)
       st = Storage.new(@backup_name,
                        :jlog_rotate_max => 0,
                        :jlog_rotate_size => COMMIT_ITEMS * MAX_ITEM_BYTES * LEAST_COMMITS_PER_ROTATION,
                        :jlog_rotate_service_uri => @jlog_rotate_service_uri)
+
       begin
         FileUtils.touch(@start_latch)
         until (File.exist? @stop_latch)
