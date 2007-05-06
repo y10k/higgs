@@ -32,7 +32,7 @@ module Higgs::Test
       FileUtils.rm_rf(@restore_dir) # for debug
       FileUtils.mkdir_p(@restore_dir)
 
-      @jlog_rotate_service_uri = 'druby://localhost:31415'
+      @jlog_rotate_service_uri = 'druby://localhost:14142'
 
       @start_latch = File.join(@backup_dir, '.start')
       @stop_latch = File.join(@backup_dir, '.stop')
