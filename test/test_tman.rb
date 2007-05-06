@@ -5,12 +5,12 @@ require 'higgs/storage'
 require 'higgs/tman'
 require 'test/unit'
 
-module Higgs::TransactionTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   class TransactionManagerTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @test_dir = 'st_test'

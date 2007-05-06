@@ -6,13 +6,13 @@ require 'timeout'
 
 Thread.abort_on_exception = true if $DEBUG
 
-module Higgs::ThreadTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   class LatchTest < Test::Unit::TestCase
     include Higgs
     include Timeout
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     NUM_OF_THREADS = 10
     DELTA_T = 0.1
@@ -46,6 +46,9 @@ module Higgs::ThreadTest
   class CountDownLatchTest < Test::Unit::TestCase
     include Higgs
     include Timeout
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     NUM_OF_THREADS = 10
     DELTA_T = 0.1
@@ -87,6 +90,9 @@ module Higgs::ThreadTest
   class BarrierTest < Test::Unit::TestCase
     include Higgs
     include Timeout
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     NUM_OF_THREADS = 10
     DELTA_T = 0.1
@@ -130,6 +136,9 @@ module Higgs::ThreadTest
   class SharedWorkTest < Test::Unit::TestCase
     include Higgs
     include Timeout
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     NUM_OF_THREADS = 10
     WORK_COUNT = 1000
@@ -212,6 +221,9 @@ module Higgs::ThreadTest
 
   class ReadWriteLockTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     WORK_COUNT = 100
     THREAD_COUNT = 10
@@ -358,6 +370,9 @@ module Higgs::ThreadTest
 
   class PoolTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     class Counter
       def initialize

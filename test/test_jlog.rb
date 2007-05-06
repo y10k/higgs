@@ -4,12 +4,12 @@ require 'fileutils'
 require 'higgs/jlog'
 require 'test/unit'
 
-module Higgs::JournalTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   class JournalLoggerTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @path = 't.jlog'

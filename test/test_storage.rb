@@ -4,12 +4,12 @@ require 'fileutils'
 require 'higgs/storage'
 require 'test/unit'
 
-module Higgs::StorageTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   class StorageTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       srand(0)			# preset for rand 

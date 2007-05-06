@@ -4,12 +4,12 @@ require 'fileutils'
 require 'higgs/store'
 require 'test/unit'
 
-module Higgs::StoreTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   class StoreTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @test_dir = 'store_test'

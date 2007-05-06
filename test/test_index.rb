@@ -4,12 +4,12 @@ require 'fileutils'
 require 'higgs/index'
 require 'test/unit'
 
-module Higgs::IndexTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
-  class ChangeNumberTest < Test::Unit::TestCase
+module Higgs::Test
+  class IndexChangeNumberTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @idx = Index.new
@@ -40,8 +40,11 @@ module Higgs::IndexTest
     end
   end
 
-  class FreeListTest < Test::Unit::TestCase
+  class IndexFreeListTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @idx = Index.new
@@ -85,6 +88,9 @@ module Higgs::IndexTest
 
   class IndexTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @idx = Index.new
@@ -153,8 +159,11 @@ module Higgs::IndexTest
     end
   end
 
-  class TestFile < Test::Unit::TestCase
+  class IndexLoadSaveTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @path = 'test.idx'

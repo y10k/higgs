@@ -4,12 +4,12 @@ require 'fileutils'
 require 'higgs/tar'
 require 'test/unit'
 
-module Higgs::TarTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
-  class BlockTest < Test::Unit::TestCase
+module Higgs::Test
+  class TarBlockTest < Test::Unit::TestCase
     include Higgs::Tar
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def test_padding_size
       assert_equal(0,   Block.padding_size(0))
@@ -66,7 +66,10 @@ module Higgs::TarTest
     end
   end
 
-  class IOReadTest < Test::Unit::TestCase
+  class TarIOReadTest < Test::Unit::TestCase
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def open_for_read(filename)
       File.open(filename, 'rb')
     end
@@ -132,17 +135,23 @@ module Higgs::TarTest
     end
   end
 
-  class IOSysreadTest < IOReadTest
+  class TarIOSysreadTest < TarIOReadTest
     include Higgs::Tar
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def open_for_read(filename)
       RawIO.new(File.open(filename, 'rb'))
     end
   end
 
-  class ArchiveReaderTest < Test::Unit::TestCase
+  class TarArchiveReaderTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def open_for_read(filename)
       File.open(filename, 'rb')
@@ -251,15 +260,21 @@ module Higgs::TarTest
     end
   end
 
-  class ArchiveReaderSyscallTest < ArchiveReaderTest
+  class TarArchiveReaderSyscallTest < TarArchiveReaderTest
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def open_for_read(filename)
       RawIO.new(File.open(filename, 'rb'))
     end
   end
 
-  class ArchiveWriterTest < Test::Unit::TestCase
+  class TarArchiveWriterTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def open_for_write(filename)
       File.open(filename, 'wb')
@@ -327,15 +342,21 @@ module Higgs::TarTest
     end
   end
 
-  class ArchiveWriterSyscallTest < ArchiveWriterTest
+  class TarArchiveWriterSyscallTest < TarArchiveWriterTest
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def open_for_write(filename)
       RawIO.new(File.open(filename, 'wb'))
     end
   end
 
-  class ArchiveHeaderTest < Test::Unit::TestCase
+  class TarArchiveHeaderTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @output = File.open('foo.tar', 'wb')

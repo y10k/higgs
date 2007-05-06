@@ -5,12 +5,12 @@ require 'higgs/thread'
 require 'test/unit'
 require 'timeout'
 
-module Higgs::CacheTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   class LRUCacheTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     CACHE_LIMIT_SIZE = 10
 
@@ -82,6 +82,9 @@ module Higgs::CacheTest
 
   class SharedWorkCacheTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @calc_calls = 0
@@ -193,6 +196,9 @@ module Higgs::CacheTest
 
   class SharedWorkCacheNoWorkBlockTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def test_no_work_block
       assert_raise(RuntimeError) {

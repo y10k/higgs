@@ -5,12 +5,12 @@ require 'higgs/thread'
 require 'test/unit'
 require 'thwait'
 
-module Higgs::LockTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   module LockManagerTest
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     WORK_COUNT = 100
     THREAD_COUNT = 10
@@ -124,6 +124,9 @@ module Higgs::LockTest
     include Higgs
     include LockManagerTest
 
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def setup
       @lock_manager = GiantLockManager.new
     end
@@ -166,6 +169,9 @@ module Higgs::LockTest
     include Higgs
     include LockManagerTest
 
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     def setup
       @lock_manager = FineGrainLockManager.new
     end
@@ -207,6 +213,9 @@ module Higgs::LockTest
   class GiantLockManagerNoDeadLockTest < Test::Unit::TestCase
     include Higgs
 
+    # for ident(1)
+    CVS_ID = '$Id$'
+
     WORK_COUNT = 1000
 
     def setup
@@ -244,6 +253,9 @@ module Higgs::LockTest
 
   class FineGrainLockManagerDeadLockTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @lock_manager = FineGrainLockManager.new(:spin_lock_count   => 10,

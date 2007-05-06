@@ -4,12 +4,12 @@ require 'fileutils'
 require 'higgs/flock'
 require 'test/unit'
 
-module Higgs::FileLockTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   class FileLockTest < Test::Unit::TestCase
     include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @test_dir = 'flock_test'

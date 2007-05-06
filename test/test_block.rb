@@ -5,12 +5,12 @@ require 'fileutils'
 require 'higgs/block'
 require 'test/unit'
 
-module Higgs::BlockTest
-  # for ident(1)
-  CVS_ID = '$Id$'
-
+module Higgs::Test
   class BlockTest < Test::Unit::TestCase
     include Higgs::Block
+
+    # for ident(1)
+    CVS_ID = '$Id$'
 
     def setup
       @io = File.open('block.test_io', 'w+')
