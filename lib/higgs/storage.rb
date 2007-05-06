@@ -202,11 +202,6 @@ module Higgs
       }.map{|nm, n|
         nm
       }
-
-      if (File.exist? name) then
-        rotate_list << name
-      end
-
       rotate_list
     end
 
