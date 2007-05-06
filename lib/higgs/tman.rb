@@ -158,6 +158,10 @@ module Higgs
       false
     end
 
+    alias has_key? key?
+    alias include? key?
+    alias root? key?
+
     def each_key
       @local_data_cache.each_key do |key|
 	lock(key)
@@ -199,6 +203,8 @@ module Higgs
       end
       key_list
     end
+
+    alias roots keys
 
     def values
       value_list = []
