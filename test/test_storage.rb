@@ -56,6 +56,7 @@ module Higgs::Test
           value = rand(256).chr * rand(5120)
           write_list << [ ope, key, type, value ]
         when :delete
+          next unless (@st.key? key)
           write_list << [ ope, key ]
         else
           raise "unknown operation: #{ope}"
@@ -79,8 +80,8 @@ module Higgs::Test
       end
       Storage.recover(other_name)
 
-      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"))
-      assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"))
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'tar')
+      assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"), 'idx')
     end
 
     def test_write_and_commit
