@@ -118,9 +118,9 @@ module Higgs
       @jlog = JournalLogger.open(@jlog_name, @jlog_sync) unless @read_only
 
       if (@jlog_rotate_service_uri) then
-        require 'druby'
-        @jlog_rotate_service_uri = DRb::DRbServer.new(@jlog_rotate_service_uri,
-                                                      proc{|*args| rotate_journal_log(*args) })
+        require 'drb'
+        @jlog_rotate_service = DRb::DRbServer.new(@jlog_rotate_service_uri,
+                                                  proc{|*args| rotate_journal_log(*args) })
       else
         @jlog_rotate_service = nil
       end
