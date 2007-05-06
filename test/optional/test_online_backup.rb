@@ -74,7 +74,7 @@ module Higgs::Test
         end
         FileUtils.touch(@stopped_latch)
         until (File.exist? @end_latch)
-          # busy loop
+          sleep(0.001)
         end
       ensure
         st.shutdown
@@ -86,7 +86,7 @@ module Higgs::Test
       pid = fork{ run_backup_storage }
       begin
         until (File.exist? @start_latch)
-          # busy loop
+          sleep(0.001)
         end
         sleep(UPTIME_SECONDS)
 
@@ -96,7 +96,7 @@ module Higgs::Test
 
         FileUtils.touch(@stop_latch)
         until (File.exist? @stopped_latch)
-          # busy loop
+          sleep(0.001)
         end
 
         rot_jlog.call(true)

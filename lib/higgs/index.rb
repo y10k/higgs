@@ -57,17 +57,20 @@ module Higgs
       self
     end
 
+    def to_h
+      { :version => [ MAJOR_VERSION, MINOR_VERSION ],
+        :change_number => @change_number,
+        :eoa => @eoa,
+        :free_lists => @free_lists,
+        :index => @index
+      }
+    end
+
     def save(path)
       tmp_path = "#{path}.tmp.#{$$}"
       File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
         f.binmode
-        index_data = {
-          :version => [ MAJOR_VERSION, MINOR_VERSION ],
-          :change_number => @change_number,
-          :eoa => @eoa,
-          :free_lists => @free_lists,
-          :index => @index
-        }
+        index_data = self.to_h
         block_write(f, MAGIC_SYMBOL, Marshal.dump(index_data))
         f.fsync
       }
