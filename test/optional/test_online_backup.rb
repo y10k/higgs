@@ -90,23 +90,35 @@ module Higgs::Test
           sleep(0.001)
         end
         sleep(UPTIME_SECONDS)
-
         rot_jlog = DRbObject.new_with_uri(@jlog_rotate_service_uri)
+
+        # step 1: backup index
         rot_jlog.call("#{@restore_name}.idx")
+
+        # step 2: backup data
         FileUtils.cp("#{@backup_name}.tar", "#{@restore_name}.tar")
 
+        # transactions are stopped for comparison between original
+        # files and restored files. on real operation, transactions
+        # are not stopped.
         FileUtils.touch(@stop_latch)
         until (File.exist? @stopped_latch)
           sleep(0.001)
         end
 
+        # step 3: rotate journal log
         rot_jlog.call(true)
+
+        # step 4: backup old journal logs
         for path in Storage.rotate_entries("#{@backup_name}.jlog")
           FileUtils.cp(path, File.join(@restore_dir, File.basename(path)))
           FileUtils.rm(path)
         end
 
+        # step 4: recover from backup
         Storage.recover(@restore_name)
+
+        # recovered files are same as original files.
         assert(FileUtils.cmp("#{@backup_name}.tar", "#{@restore_name}.tar"), 'tar')
         assert_equal(Index.new.load("#{@backup_name}.idx").to_h,
                      Index.new.load("#{@restore_name}.idx").to_h, 'idx')
