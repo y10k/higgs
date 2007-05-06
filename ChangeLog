@@ -1,3 +1,8 @@
+2007-05-07  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage): check index change number
+	in journal log.
+
 2007-05-06  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* test/optional/test_online_backup.rb: online backup test.

@@ -144,24 +144,32 @@ module Higgs
         raise NotWritableError, 'need for recovery'
       end
 
-      safe_pos = 0
-      File.open(@jlog_name, 'r') {|f|
-        f.binmode
-        begin
-          JournalLogger.scan_log(f) {|log|
-            Storage.apply_journal(@w_tar, @index, log)
-          }
-        rescue Block::BrokenError
-          # nothing to do.
-        end
-        safe_pos = f.tell
-      }
+      recover_completed = false
+      begin
+        safe_pos = 0
+        File.open(@jlog_name, 'r') {|f|
+          f.binmode
+          begin
+            JournalLogger.scan_log(f) {|log|
+              Storage.apply_journal(@w_tar, @index, log)
+            }
+          rescue Block::BrokenError
+            # nothing to do.
+          end
+          safe_pos = f.tell
+        }
 
-      File.open(@jlog_name, 'w') {|f|
-        f.truncate(safe_pos)
-        f.seek(safe_pos)
-        JournalLogger.eof_mark(f)
-      }
+        File.open(@jlog_name, 'w') {|f|
+          f.truncate(safe_pos)
+          f.seek(safe_pos)
+          JournalLogger.eof_mark(f)
+        }
+        recover_completed = true
+      ensure
+        unless (recover_completed) then
+          @state_lock.synchronize{ @broken = true }
+        end
+      end
     end
     private :recover
 
@@ -209,7 +217,7 @@ module Higgs
       commit_log = []
       while (File.exist? "#{@jlog_name}.#{@index.change_number}")
         @index.succ!
-        commit_log << { :ope => :succ }
+        commit_log << { :ope => :succ, :cnum => @index.change_number }
       end
       unless (commit_log.empty?) then
         @jlog.write([ @index.change_number, commit_log ])
@@ -392,7 +400,7 @@ module Higgs
           end
 
           @index.succ!
-          commit_log << { :ope => :succ }
+          commit_log << { :ope => :succ, :cnum => @index.change_number }
 
           @jlog.write([ @index.change_number, commit_log ])
 
@@ -465,6 +473,9 @@ module Higgs
             index.eoa = cmd[:pos]
           when :succ
             index.succ!
+            if (index.change_number != cmd[:cnum]) then
+              raise BrokenError, 'lost journal log'
+            end
           else
             raise "unknown operation from #{curr_jlog_name}: #{cmd[:ope]}"
           end
