@@ -15,7 +15,7 @@ module Higgs
 
     def initialize(out, sync=false)
       @out = out
-      @sync = false
+      @sync = sync
     end
 
     def sync?
