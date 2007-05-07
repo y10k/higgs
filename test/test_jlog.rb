@@ -23,6 +23,7 @@ module Higgs::Test
     def test_jlog
       log = JournalLogger.open(@path)
       assert_equal(false, log.sync?)
+      assert_equal(0, log.size)
       log.close
 
       JournalLogger.each_log(@path) do |log|
@@ -32,6 +33,7 @@ module Higgs::Test
       log = JournalLogger.open(@path, false)
       assert_equal(false, log.sync?)
       log.write('foo')
+      assert_equal(1024, log.size)
       log.close
 
       count = 0
@@ -47,6 +49,7 @@ module Higgs::Test
       log = JournalLogger.open(@path, true)
       assert_equal(true, log.sync?)
       log.write(:bar)
+      assert_equal(2048, log.size)
       log.close
 
       count = 0
@@ -62,6 +65,7 @@ module Higgs::Test
       log = JournalLogger.open(@path, false)
       assert_equal(false, log.sync?)
       log.write(777)
+      assert_equal(3072, log.size)
       log.close
 
       count = 0
