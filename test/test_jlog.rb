@@ -80,6 +80,23 @@ module Higgs::Test
       end
       assert(expected_values.empty?)
     end
+
+    def test_eof_mark
+      assert_equal(true, (JournalLogger.has_eof_mark? @path))
+
+      FileUtils.touch(@path)
+      assert_equal(false, (JournalLogger.has_eof_mark? @path))
+
+      File.open(@path, 'w') {|w|
+        w.binmode
+        w << 'x' * 512
+        JournalLogger.eof_mark(w)
+      }
+      assert_equal(true, (JournalLogger.has_eof_mark? @path))
+
+      File.truncate(@path, File.stat(@path).size - 1)
+      assert_equal(false, (JournalLogger.has_eof_mark? @path))
+    end
   end
 end
 
