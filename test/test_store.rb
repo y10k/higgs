@@ -58,7 +58,7 @@ module Higgs::Test
       }
     end
 
-    def test_aliasing_problem
+    def test_replica_problem
       @st.transaction{|tx|
         tx[:foo] = 'a'
         tx[:bar] = tx[:foo]
