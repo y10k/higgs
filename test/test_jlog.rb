@@ -97,6 +97,19 @@ module Higgs::Test
       File.truncate(@path, File.stat(@path).size - 1)
       assert_equal(false, (JournalLogger.has_eof_mark? @path))
     end
+
+    def test_open_error
+      File.open(@path, 'w') {|w|
+        w.binmode
+        w << 'x' * 512
+        JournalLogger.eof_mark(w)
+        w.truncate(w.stat.size - 1)
+      }
+
+      assert_raise(RuntimeError) {
+        JournalLogger.open(@path)
+      }
+    end
   end
 end
 
