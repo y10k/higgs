@@ -120,7 +120,7 @@ module Higgs
       if (@jlog_rotate_service_uri) then
         require 'drb'
         @jlog_rotate_service = DRb::DRbServer.new(@jlog_rotate_service_uri,
-                                                  proc{|*args| rotate_journal_log(*args) })
+                                                  method(:rotate_journal_log))
       else
         @jlog_rotate_service = nil
       end
@@ -245,7 +245,7 @@ module Higgs
     end
     private :internal_rotate_journal_log
 
-    def rotate_journal_log(sync_index=false)
+    def rotate_journal_log(sync_index=true)
       @commit_lock.synchronize{
         check_consistency
         if (@read_only) then
