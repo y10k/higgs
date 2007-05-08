@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'higgs/storage'
+require 'higgs/thread'
 require 'higgs/tman'
 require 'test/unit'
 
@@ -688,6 +689,90 @@ module Higgs::Test
         @tman.transaction(false) {|tx|
           flunk('not to reach')
         }
+      }
+    end
+
+    def test_giant_lock_manager
+      @tman = TransactionManager.new(@st, :lock_manager => GiantLockManager.new)
+      @tman.transaction{|tx|
+        tx[:foo] = '0'
+        tx[:bar] = '0'
+        tx[:baz] = '0'
+      }
+
+      count = 100
+      barrier = Barrier.new(3)
+
+      a = Thread.new{
+        barrier.wait
+        count.times do
+          @tman.transaction{|tx|
+            tx[:foo] = tx[:foo].succ
+            tx[:bar] = tx[:bar].succ
+          }
+        end
+      }
+
+      b = Thread.new{
+        barrier.wait
+        count.times do
+          @tman.transaction{|tx|
+            tx[:bar] = tx[:bar].succ
+            tx[:baz] = tx[:baz].succ
+          }
+        end
+      }
+
+      barrier.wait
+      a.join
+      b.join
+
+      @tman.transaction(true) {|tx|
+        assert_equal(count.to_s,       tx[:foo])
+        assert_equal((count * 2).to_s, tx[:bar])
+        assert_equal(count.to_s,       tx[:baz])
+      }
+    end
+
+    def test_fine_grain_lock_manager
+      @tman = TransactionManager.new(@st, :lock_manager => FineGrainLockManager.new)
+      @tman.transaction{|tx|
+        tx[:foo] = '0'
+        tx[:bar] = '0'
+        tx[:baz] = '0'
+      }
+
+      count = 100
+      barrier = Barrier.new(3)
+
+      a = Thread.new{
+        barrier.wait
+        count.times do
+          @tman.transaction{|tx|
+            tx[:foo] = tx[:foo].succ
+            tx[:bar] = tx[:bar].succ
+          }
+        end
+      }
+
+      b = Thread.new{
+        barrier.wait
+        count.times do
+          @tman.transaction{|tx|
+            tx[:bar] = tx[:bar].succ
+            tx[:baz] = tx[:baz].succ
+          }
+        end
+      }
+
+      barrier.wait
+      a.join
+      b.join
+
+      @tman.transaction(true) {|tx|
+        assert_equal(count.to_s,       tx[:foo])
+        assert_equal((count * 2).to_s, tx[:bar])
+        assert_equal(count.to_s,       tx[:baz])
       }
     end
   end

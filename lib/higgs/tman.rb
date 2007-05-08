@@ -29,7 +29,7 @@ module Higgs
         @encode = options[:encode] || proc{|w| w }
 
         if (options.include? :lock_manager) then
-          @lock_manager = lock_manager
+          @lock_manager = options[:lock_manager]
         else
           require 'higgs/lock'
           @lock_manager = GiantLockManager.new
