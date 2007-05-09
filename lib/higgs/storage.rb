@@ -51,9 +51,9 @@ module Higgs
         end
 
         if (options.include? :jlog_sync) then
-          @jlog_sync = false
-        else
           @jlog_sync = options[:jlog_sync]
+        else
+          @jlog_sync = false
         end
 
         @jlog_rotate_size = options[:jlog_rotate_size] || 1024 * 256
