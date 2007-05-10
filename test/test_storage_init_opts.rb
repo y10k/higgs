@@ -61,5 +61,23 @@ module Higgs::StorageTest
       assert_equal(false, @jlog_sync)
       assert_equal(false, self.jlog_sync)
     end
+
+    def test_init_options_jlog_rotate_size
+      init_options(:jlog_rotate_size => 1024**2)
+      assert_equal(1024**2, @jlog_rotate_size)
+      assert_equal(1024**2, self.jlog_rotate_size)
+    end
+
+    def test_init_options_jlog_rotate_max
+      init_options(:jlog_rotate_max => 100)
+      assert_equal(100, @jlog_rotate_max)
+      assert_equal(100, self.jlog_rotate_max)
+    end
+
+    def test_init_options_jlog_rotate_service_uri
+      init_options(:jlog_rotate_service_uri => 'druby://localhost:14142')
+      assert_equal('druby://localhost:14142', @jlog_rotate_service_uri)
+      assert_equal('druby://localhost:14142', self.jlog_rotate_service_uri)
+    end
   end
 end
