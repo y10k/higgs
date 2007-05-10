@@ -3,7 +3,7 @@
 require 'higgs/storage'
 require 'rubyunit'
 
-module Higgs::StorageTest
+module Higgs::Test
   class InitOptionsTest < RUNIT::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
