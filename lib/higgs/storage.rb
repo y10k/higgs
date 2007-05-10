@@ -64,7 +64,7 @@ module Higgs
           @Logger = options[:logger]
         else
           require 'logger'
-          @Logger = proc{|path| Logger.new(path) }
+          @Logger = proc{|path| Logger.new(path, 1) }
         end
       end
       private :init_options
