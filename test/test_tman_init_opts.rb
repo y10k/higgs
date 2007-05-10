@@ -42,5 +42,15 @@ module Higgs::Test
       init_options(:encode => proc{|w| w.to_yaml })
       assert_equal([ 1, 2, 3 ].to_yaml, @encode.call([ 1, 2, 3 ]))
     end
+
+    def test_lock_manager
+      init_options(:lock_manager => :dummy_lock_manager)
+      assert_equal(:dummy_lock_manager, @lock_manager)
+    end
+
+    def test_master_cache
+      init_options(:master_cache => :dummy_master_cache)
+      assert_equal(:dummy_master_cache, @master_cache)
+    end
   end
 end
