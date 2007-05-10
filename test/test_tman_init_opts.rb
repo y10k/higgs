@@ -11,7 +11,7 @@ module Higgs::Test
 
     include Higgs::TransactionManager::InitOptions
 
-    def test_init_options_default
+    def test_default
       init_options({})
       assert_equal(false, @read_only)
       assert_equal(false, self.read_only)
