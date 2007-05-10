@@ -59,6 +59,13 @@ module Higgs
         @jlog_rotate_size = options[:jlog_rotate_size] || 1024 * 256
         @jlog_rotate_max = options[:jlog_rotate_max] || 1
         @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
+
+        if (options.include? :logger) then
+          @Logger = options[:logger]
+        else
+          require 'logger'
+          @Logger = proc{|path| Logger.new(path) }
+        end
       end
       private :init_options
 
@@ -73,6 +80,7 @@ module Higgs
 
     def initialize(name, options={})
       @name = name
+      @log_name = "#{@name}.log"
       @tar_name = "#{@name}.tar"
       @idx_name = "#{@name}.idx"
       @jlog_name = "#{@name}.jlog"
@@ -85,22 +93,30 @@ module Higgs
 
       init_options(options)
 
+      @logger = @Logger.call(@log_name)
+      @logger.info("storage open start...")
+
       @properties_cache = SharedWorkCache.new(@properties_cache) {|key|
         value = read_record_body(key, :p) and decode_properties(key, value)
       }
 
       @flock = FileLock.new(@lock_name, @read_only)
       if (@read_only) then
+        @logger.info("try to lock for read: #{@lock_name}")
         @flock.read_lock
       else
+        @logger.info("try to lock for write: #{@lock_name}")
         @flock.write_lock
       end
+      @logger.info('get flock.')
 
       unless (@read_only) then
         begin
           w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
+          @logger.info("create and get I/O handle for write: #{@tar_name}")
         rescue Errno::EEXIST
           w_io = File.open(@tar_name, File::WRONLY, 0660)
+          @logger.info("get I/O handle for write: #{@tar_name}")
         end
         w_io.binmode
         @w_tar = Tar::ArchiveWriter.new(w_io)
@@ -109,21 +125,33 @@ module Higgs
       @r_tar_pool = Pool.new(@number_of_read_io) {
         r_io = File.open(@tar_name, File::RDONLY)
         r_io.binmode
+        @logger.info("get I/O handle for read: #{@tar_name}")
         Tar::ArchiveReader.new(Tar::RawIO.new(r_io))
       }
 
       @index = Index.new
-      @index.load(@idx_name) if (File.exist? @idx_name)
-      recover if (JournalLogger.need_for_recovery? @jlog_name)
-      @jlog = JournalLogger.open(@jlog_name, @jlog_sync) unless @read_only
+      if (File.exist? @idx_name) then
+        @logger.info("load index: #{@idx_name}")
+        @index.load(@idx_name)
+      end
+      if (JournalLogger.need_for_recovery? @jlog_name) then
+        recover
+      end
+      unless (@read_only) then
+        @logger.info("open journal log for write: #{@jlog_name}")
+        @jlog = JournalLogger.open(@jlog_name, @jlog_sync)
+      end
 
       if (@jlog_rotate_service_uri) then
+        @logger.info("start journal log rotation service: #{@jlog_rotate_service_uri}")
         require 'drb'
         @jlog_rotate_service = DRb::DRbServer.new(@jlog_rotate_service_uri,
                                                   method(:rotate_journal_log))
       else
         @jlog_rotate_service = nil
       end
+
+      @logger.info("completed storage open.")
     end
 
     def check_consistency
@@ -139,6 +167,8 @@ module Higgs
     private :check_consistency
 
     def recover
+      @logger.warn('incompleted storage and recover from journal log...')
+
       check_consistency
       if (@read_only) then
         raise NotWritableError, 'need for recovery'
@@ -147,10 +177,13 @@ module Higgs
       recover_completed = false
       begin
         safe_pos = 0
+        @logger.info("open journal log for read: #{@jlog_name}")
         File.open(@jlog_name, 'r') {|f|
           f.binmode
           begin
             JournalLogger.scan_log(f) {|log|
+              change_number = log[0]
+              @logger.info("apply journal log: #{change_number}")
               Storage.apply_journal(@w_tar, @index, log)
             }
           rescue Block::BrokenError
@@ -160,16 +193,21 @@ module Higgs
         }
 
         File.open(@jlog_name, 'w') {|f|
+          @logger.info("shrink journal log to erase last broken segment: #{f.stat.size} -> #{safe_pos}")
           f.truncate(safe_pos)
           f.seek(safe_pos)
+          @logger.info("write eof mark to journal log.")
           JournalLogger.eof_mark(f)
         }
         recover_completed = true
       ensure
         unless (recover_completed) then
+          @logger.info("failed to recover and storage is broken.")
           @state_lock.synchronize{ @broken = true }
         end
       end
+
+      @logger.info('completed recovery from journal log.')
     end
     private :recover
 
@@ -181,19 +219,46 @@ module Higgs
           if (@shutdown) then
             raise ShutdownException, 'storage shutdown'
           end
+          @logger.info("shutdown start...")
           @shutdown = true
 
-          @jlog.close(! @broken) unless @read_only
-          @index.save(@idx_name) if (! @broken && ! @read_only)
-          @r_tar_pool.shutdown{|r_tar| r_tar.close }
+          if (@jlog_rotate_service) then
+            @logger.info("stop journal log rotation service: #{@jlog_rotate_service}")
+            @jlog_rotate_service.stop_service
+          end
+
           unless (@read_only) then
+            if (@broken) then
+              @logger.warn("abort journal log: #{@jlog_name}")
+              @jlog.close(false)
+            else
+              @logger.info("close journal log: #{@jlog_name}")
+              @jlog.close
+            end
+          end
+
+          if (! @broken && ! @read_only) then
+            @logger.info("save index: #{@idx_name}")
+            @index.save(@idx_name)
+          end
+
+          @r_tar_pool.shutdown{|r_tar|
+            @logger.info("close I/O handle for read: #{@tar_name}")
+            r_tar.close
+          }
+          unless (@read_only) then
+            @logger.info("sync write data: #{@tar_name}")
             @w_tar.fsync
+            @logger.info("close I/O handle for write: #{@tar_name}")
             @w_tar.close(false)
           end
+
+          @logger.info("unlock: #{@lock_name}")
           @flock.close
+
+          @logger.info("completed shutdown.")
         }
       }
-      @jlog_rotate_service.stop_service if @jlog_rotate_service
       nil
     end
 
