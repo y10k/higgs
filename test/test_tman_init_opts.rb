@@ -26,7 +26,7 @@ module Higgs::Test
       assert_equal(true, self.read_only)
     end
 
-    def test_raed_only_false
+    def test_read_only_false
       init_options(:read_only => false)
       assert_equal(false, @read_only)
       assert_equal(false, self.read_only)
