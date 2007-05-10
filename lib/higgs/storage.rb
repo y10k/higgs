@@ -96,6 +96,7 @@ module Higgs
       @logger = @Logger.call(@log_name)
       @logger.info("storage open start...")
 
+      @logger.info("properties cache type: #{@properties_cache.class}")
       @properties_cache = SharedWorkCache.new(@properties_cache) {|key|
         value = read_record_body(key, :p) and decode_properties(key, value)
       }
@@ -115,8 +116,8 @@ module Higgs
           w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
           @logger.info("create and get I/O handle for write: #{@tar_name}")
         rescue Errno::EEXIST
+          @logger.info("open I/O handle for write: #{@tar_name}")
           w_io = File.open(@tar_name, File::WRONLY, 0660)
-          @logger.info("get I/O handle for write: #{@tar_name}")
         end
         w_io.binmode
         @w_tar = Tar::ArchiveWriter.new(w_io)
@@ -125,7 +126,7 @@ module Higgs
       @r_tar_pool = Pool.new(@number_of_read_io) {
         r_io = File.open(@tar_name, File::RDONLY)
         r_io.binmode
-        @logger.info("get I/O handle for read: #{@tar_name}")
+        @logger.info("open I/O handle for read: #{@tar_name}")
         Tar::ArchiveReader.new(Tar::RawIO.new(r_io))
       }
 
@@ -171,6 +172,8 @@ module Higgs
 
       check_consistency
       if (@read_only) then
+        @logger.warn('failed to recover.')
+        @logger.warn('read only storage is not recoverable.')
         raise NotWritableError, 'need for recovery'
       end
 
@@ -191,9 +194,10 @@ module Higgs
           end
           safe_pos = f.tell
         }
+        @logger.info("last safe point of journal log: #{safe_pos}")
 
         File.open(@jlog_name, 'w') {|f|
-          @logger.info("shrink journal log to erase last broken segment: #{f.stat.size} -> #{safe_pos}")
+          @logger.info("shrink journal log to erase last broken segment.")
           f.truncate(safe_pos)
           f.seek(safe_pos)
           @logger.info("write eof mark to journal log.")
