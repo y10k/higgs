@@ -1,10 +1,10 @@
 #!/usr/local/bin/ruby
 
 require 'higgs/storage'
-require 'rubyunit'
+require 'test/unit'
 
 module Higgs::Test
-  class InitOptionsTest < RUNIT::TestCase
+  class StorageInitOptionsTest < Test::Unit::TestCase
     # for ident(1)
     CVS_ID = '$Id$'
 
