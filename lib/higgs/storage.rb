@@ -257,6 +257,7 @@ module Higgs
           @flock.close
 
           @logger.info("completed shutdown.")
+          @logger.close
         }
       }
       nil
