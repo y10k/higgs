@@ -16,7 +16,7 @@ module Higgs::Test
       assert_equal(false, self.read_only)
       assert_equal(2, @number_of_read_io)
       assert_equal(2, self.number_of_read_io)
-      assert_instance_of(Higgs::LRUCache, @properties_cache)
+      assert_instance_of(Higgs::LRUCache, @properties_cache) # auto: require 'higgs/cache'
       assert_equal(false, @jlog_sync)
       assert_equal(false, self.jlog_sync)
       assert_equal(1024 * 256, @jlog_rotate_size)

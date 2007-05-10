@@ -19,5 +19,17 @@ module Higgs::Test
       assert_instance_of(Higgs::GiantLockManager, @lock_manager) # auto: require 'higgs/lock'
       assert_instance_of(Higgs::LRUCache, @master_cache) # auto: require 'higgs/cache'
     end
+
+    def test_read_only_true
+      init_options(:read_only => true)
+      assert_equal(true, @read_only)
+      assert_equal(true, self.read_only)
+    end
+
+    def test_raed_only_false
+      init_options(:read_only => false)
+      assert_equal(false, @read_only)
+      assert_equal(false, self.read_only)
+    end
   end
 end
