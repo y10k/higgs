@@ -102,13 +102,13 @@ module Higgs
 
       @flock = FileLock.new(@lock_name, @read_only)
       if (@read_only) then
-        @logger.info("try to lock for read: #{@lock_name}")
+        @logger.info("try to file lock for read: #{@lock_name}")
         @flock.read_lock
       else
-        @logger.info("try to lock for write: #{@lock_name}")
+        @logger.info("try to file lock for write: #{@lock_name}")
         @flock.write_lock
       end
-      @logger.info('get flock.')
+      @logger.info('get file lock.')
 
       unless (@read_only) then
         begin
