@@ -117,4 +117,11 @@ Benchmark.bm(30) do |x|
       }
     end
   }
+
+  x.report('Sync (read:M/write:1)') {
+    barrier.wait
+    for t in th_grp.list
+      t.join
+    end
+  }
 end
