@@ -8,6 +8,7 @@ $: << File.join(File.dirname($0), '..', '..', 'lib')
 require 'benchmark'
 require 'higgs/thread'
 require 'monitor'
+require 'sync'
 require 'thread'
 
 loop_count = (ARGV.shift || '1000').to_i
@@ -67,6 +68,53 @@ Benchmark.bm(30) do |x|
     barrier.wait
     for t in th_grp.list
       t.join
+    end
+  }
+
+  [ [ Sync::SH, 'Sync (read:M)' ],
+    [ Sync::EX, 'Sync (write:M)' ]
+  ].each do |mode, name|
+    s = Sync.new
+    barrier = Higgs::Barrier.new(thread_count + 1)
+    th_grp = ThreadGroup.new
+    thread_count.times do
+      th_grp.add Thread.new{
+        barrier.wait
+        loop_count.times do
+          s.synchronize(mode) {
+            # nothing to do.
+          }
+        end
+      }
+    end
+
+    x.report(name) {
+      barrier.wait
+      for t in th_grp.list
+        t.join
+      end
+    }
+  end
+
+  s = Sync.new
+  barrier = Higgs::Barrier.new(thread_count + 1)
+  th_grp = ThreadGroup.new
+  (thread_count - 1).times do
+    th_grp.add Thread.new{
+      barrier.wait
+      loop_count.times do
+        s.synchronize(Sync::SH) {
+          # nothing to do.
+        }
+      end
+    }
+  end
+  th_grp.add Thread.new{
+    barrier.wait
+    loop_count.times do
+      s.synchronize(Sync::EX) {
+        # nothing to do.
+      }
     end
   }
 end
