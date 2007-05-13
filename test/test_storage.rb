@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'higgs/storage'
+require 'logger'
 require 'test/unit'
 
 module Higgs::Test
@@ -17,7 +18,12 @@ module Higgs::Test
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
       @name = File.join(@test_dir, 'foo')
-      @st = Storage.new(@name)
+      @logger = proc{|path|
+        logger = Logger.new(path, 1)
+        logger.level = Logger::DEBUG
+        logger
+      }
+      @st = Storage.new(@name, :logger => @logger)
     end
 
     def teardown
@@ -41,7 +47,9 @@ module Higgs::Test
 
     def test_recover
       @st.shutdown
-      @st = Storage.new(@name, :jlog_rotate_max => 0) # unlimited rotation
+      @st = Storage.new(@name,
+                        :jlog_rotate_max => 0, # unlimited rotation
+                        :logger => @logger)
 
       loop_count = 100
       data_count = 10
@@ -154,7 +162,7 @@ module Higgs::Test
     def test_write_and_commit_read_only_NotWritableError
       @st.shutdown
       @st = nil
-      @st = Storage.new(@name, :read_only => true)
+      @st = Storage.new(@name, :read_only => true, :logger => @logger)
       assert_raise(Storage::NotWritableError) {
         @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
       }
@@ -203,7 +211,7 @@ module Higgs::Test
       @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
       @st.shutdown
       @st = nil
-      @st = Storage.new(@name, :read_only => true)
+      @st = Storage.new(@name, :read_only => true, :logger => @logger)
 
       assert_equal(true, (@st.key? 'foo'))
       assert_equal(false, (@st.key? 'bar'))
@@ -241,7 +249,7 @@ module Higgs::Test
                            ])
       @st.shutdown
       @st = nil
-      @st = Storage.new(@name, :read_only => true)
+      @st = Storage.new(@name, :read_only => true, :logger => @logger)
 
       expected_keys = %w[ foo bar baz ]
       @st.each_key do |key|

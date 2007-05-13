@@ -25,6 +25,7 @@ module Higgs::Test
       assert_equal(1, self.jlog_rotate_max)
       assert_equal(nil, @jlog_rotate_service_uri)
       assert_equal(nil, self.jlog_rotate_service_uri)
+      assert_instance_of(Proc, @Logger)
     end
 
     def test_read_only_true
@@ -78,6 +79,11 @@ module Higgs::Test
       init_options(:jlog_rotate_service_uri => 'druby://localhost:14142')
       assert_equal('druby://localhost:14142', @jlog_rotate_service_uri)
       assert_equal('druby://localhost:14142', self.jlog_rotate_service_uri)
+    end
+
+    def test_logger
+      init_options(:logger => proc{|path| :dummy_logger })
+      assert_equal(:dummy_logger, @Logger.call('foo'))
     end
   end
 end
