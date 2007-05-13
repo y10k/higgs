@@ -11,6 +11,14 @@ module Higgs::Test
     COUNT_OF_THREADS = (ENV['THREADS'] || '10').to_i
     WORK_COUNT = (ENV['WORK'] || '100').to_i
     DELTA_T = (ENV['DELTA_T'] || '0.1').to_f
+
+    if ($DEBUG) then
+      puts 'thread test parameters'
+      for name in constants
+        puts "#{name} = #{const_get(name)}"
+      end
+      puts ''
+    end
   end
 
   class LatchTest < Test::Unit::TestCase

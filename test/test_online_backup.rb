@@ -7,17 +7,28 @@ require 'higgs/storage'
 require 'test/unit'
 
 module Higgs::Test
+  module OnlineBackupParams
+    STORAGE_ITEMS = (ENV['STORAGE_ITEMS'] || '100').to_i
+    COMMIT_ITEMS = (ENV['COMMIT_ITEMS'] || '10').to_i
+    MAX_ITEM_BYTES = (ENV['MAX_ITEM_BYTES'] || '16384').to_i
+    LEAST_COMMITS_PER_ROTATION = (ENV['LEAST_COMMITS_PER_ROTATION'] || '8').to_i
+    UPTIME_SECONDS = (ENV['UPTIME_SECONDS'] || '3').to_i
+
+    if ($DEBUG) then
+      puts 'online backup test parameters...'
+      for name in constants
+        puts "#{name} = #{const_get(name)}"
+      end
+      puts ''
+    end
+  end
+
   class OnlineBackupTest < Test::Unit::TestCase
     include Higgs
+    include OnlineBackupParams
 
     # for ident(1)
     CVS_ID = '$Id$'
-
-    STORAGE_ITEMS = 100
-    COMMIT_ITEMS = 10
-    MAX_ITEM_BYTES = 1024 * 16
-    LEAST_COMMITS_PER_ROTATION = 8
-    UPTIME_SECONDS = 3
 
     def setup
       srand(0)
