@@ -7,15 +7,19 @@ require 'timeout'
 Thread.abort_on_exception = true if $DEBUG
 
 module Higgs::Test
+  module ThreadParams
+    COUNT_OF_THREADS = (ENV['THREADS'] || '10').to_i
+    WORK_COUNT = (ENV['WORK'] || '100').to_i
+    DELTA_T = (ENV['DELTA_T'] || '0.1').to_f
+  end
+
   class LatchTest < Test::Unit::TestCase
     include Higgs
+    include ThreadParams
     include Timeout
 
     # for ident(1)
     CVS_ID = '$Id$'
-
-    NUM_OF_THREADS = 10
-    DELTA_T = 0.1
 
     def test_start_wait
       latch = Latch.new
@@ -23,7 +27,7 @@ module Higgs::Test
       lock = Mutex.new
       count = 0
       th_grp = ThreadGroup.new
-      NUM_OF_THREADS.times do
+      COUNT_OF_THREADS.times do
         th_grp.add Thread.new{
           latch.wait
           lock.synchronize{ count += 1 }
@@ -39,19 +43,17 @@ module Higgs::Test
           t.join
         end
       }
-      assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
+      assert_equal(COUNT_OF_THREADS, lock.synchronize{ count })
     end
   end
 
   class CountDownLatchTest < Test::Unit::TestCase
     include Higgs
+    include ThreadParams
     include Timeout
 
     # for ident(1)
     CVS_ID = '$Id$'
-
-    NUM_OF_THREADS = 10
-    DELTA_T = 0.1
 
     def test_count_down_wait
       latch = CountDownLatch.new(3)
@@ -59,7 +61,7 @@ module Higgs::Test
       lock = Mutex.new
       count = 0
       th_grp = ThreadGroup.new
-      NUM_OF_THREADS.times do
+      COUNT_OF_THREADS.times do
         th_grp.add Thread.new{
           latch.wait
           lock.synchronize{ count += 1 }
@@ -83,22 +85,20 @@ module Higgs::Test
           t.join
         end
       }
-      assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
+      assert_equal(COUNT_OF_THREADS, lock.synchronize{ count })
     end
   end
 
   class BarrierTest < Test::Unit::TestCase
     include Higgs
+    include ThreadParams
     include Timeout
 
     # for ident(1)
     CVS_ID = '$Id$'
 
-    NUM_OF_THREADS = 10
-    DELTA_T = 0.1
-
     def test_wait
-      barrier = Barrier.new(NUM_OF_THREADS)
+      barrier = Barrier.new(COUNT_OF_THREADS)
 
       lock = Mutex.new
       count = 0
@@ -110,7 +110,7 @@ module Higgs::Test
       }
 
       th_grp = ThreadGroup.new
-      (NUM_OF_THREADS - 1).times do
+      (COUNT_OF_THREADS - 1).times do
         th_grp.add(th_new.call)
       end
 
@@ -123,7 +123,7 @@ module Higgs::Test
           t.join
         end
       }
-      assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
+      assert_equal(COUNT_OF_THREADS, lock.synchronize{ count })
     end
 
     def test_not_recycle
@@ -135,13 +135,11 @@ module Higgs::Test
 
   class SharedWorkTest < Test::Unit::TestCase
     include Higgs
+    include ThreadParams
     include Timeout
 
     # for ident(1)
     CVS_ID = '$Id$'
-
-    NUM_OF_THREADS = 10
-    WORK_COUNT = 1000
 
     def calc
       @s = 0                    # @s's scope is over multi-threading
@@ -188,12 +186,12 @@ module Higgs::Test
         calc
       }
 
-      barrier = Barrier.new(NUM_OF_THREADS + 1)
+      barrier = Barrier.new(COUNT_OF_THREADS + 1)
       lock = Mutex.new
       count = 0
 
       th_grp = ThreadGroup.new
-      NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
+      COUNT_OF_THREADS.times{|i|  # `i' should be local scope of thread block
         th_grp.add Thread.new{
           barrier.wait
           assert_equal(expected_result, work.result, "th#{i}")
@@ -210,7 +208,7 @@ module Higgs::Test
           t.join
         end
       }
-      assert_equal(NUM_OF_THREADS, lock.synchronize{ count })
+      assert_equal(COUNT_OF_THREADS, lock.synchronize{ count })
       assert_equal(expected_result, work.result)
     end
 
@@ -221,12 +219,10 @@ module Higgs::Test
 
   class ReadWriteLockTest < Test::Unit::TestCase
     include Higgs
+    include ThreadParams
 
     # for ident(1)
     CVS_ID = '$Id$'
-
-    WORK_COUNT = 100
-    THREAD_COUNT = 10
 
     def setup
       @rw_lock = ReadWriteLock.new
@@ -254,9 +250,9 @@ module Higgs::Test
     def test_read_lock_multithread
       v = "foo"
       th_grp = ThreadGroup.new
-      barrier = Barrier.new(THREAD_COUNT + 1)
+      barrier = Barrier.new(COUNT_OF_THREADS + 1)
 
-      THREAD_COUNT.times{|i| # `i' should be local scope of thread block
+      COUNT_OF_THREADS.times{|i| # `i' should be local scope of thread block
         th_grp.add Thread.new{
           r_lock = @rw_lock.read_lock
           r_lock.synchronize{
@@ -277,9 +273,9 @@ module Higgs::Test
     def test_write_lock_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Barrier.new(THREAD_COUNT + 1)
+      barrier = Barrier.new(COUNT_OF_THREADS + 1)
 
-      THREAD_COUNT.times do
+      COUNT_OF_THREADS.times do
         th_grp.add Thread.new{
           w_lock = @rw_lock.write_lock
           barrier.wait
@@ -295,15 +291,15 @@ module Higgs::Test
       for t in th_grp.list
         t.join
       end
-      assert_equal(THREAD_COUNT * WORK_COUNT, count)
+      assert_equal(COUNT_OF_THREADS * WORK_COUNT, count)
     end
 
     def test_read_write_lock_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Barrier.new(THREAD_COUNT * 2 + 1)
+      barrier = Barrier.new(COUNT_OF_THREADS * 2 + 1)
 
-      THREAD_COUNT.times{|i| # `i' should be local scope of thread block
+      COUNT_OF_THREADS.times{|i| # `i' should be local scope of thread block
         th_grp.add Thread.new{
           r_lock = @rw_lock.read_lock
           r_lock.synchronize{
@@ -315,7 +311,7 @@ module Higgs::Test
         }
       }
 
-      THREAD_COUNT.times do
+      COUNT_OF_THREADS.times do
         th_grp.add Thread.new{
           w_lock = @rw_lock.write_lock
           barrier.wait
@@ -331,19 +327,19 @@ module Higgs::Test
       for t in th_grp.list
         t.join
       end
-      assert_equal(THREAD_COUNT * WORK_COUNT, count)
+      assert_equal(COUNT_OF_THREADS * WORK_COUNT, count)
     end
 
     def test_write_read_lock_multithread
       count = 0
       th_grp = ThreadGroup.new
-      barrier = Barrier.new(THREAD_COUNT + 2)
+      barrier = Barrier.new(COUNT_OF_THREADS + 2)
 
       th_grp.add Thread.new{
         w_lock = @rw_lock.write_lock
         w_lock.synchronize{
           barrier.wait
-          THREAD_COUNT.times do
+          COUNT_OF_THREADS.times do
             WORK_COUNT.times do
               count += 1
             end
@@ -351,12 +347,12 @@ module Higgs::Test
         }
       }
 
-      THREAD_COUNT.times{|i| # `i' should be local scope of thread block
+      COUNT_OF_THREADS.times{|i| # `i' should be local scope of thread block
         th_grp.add Thread.new{
           r_lock = @rw_lock.read_lock
           barrier.wait
           r_lock.synchronize{
-            assert_equal(THREAD_COUNT * WORK_COUNT, count, "read_lock: #{i}")
+            assert_equal(COUNT_OF_THREADS * WORK_COUNT, count, "read_lock: #{i}")
           }
         }
       }
@@ -370,6 +366,7 @@ module Higgs::Test
 
   class PoolTest < Test::Unit::TestCase
     include Higgs
+    include ThreadParams
 
     # for ident(1)
     CVS_ID = '$Id$'
@@ -386,18 +383,15 @@ module Higgs::Test
       end
     end
 
-    WORK_COUNT = 100
-    THREAD_COUNT = 10
-
     def setup
       @pool = Pool.new(2) { Counter.new }
     end
 
     def test_transaction
       th_grp = ThreadGroup.new
-      barrier = Barrier.new(THREAD_COUNT + 1)
+      barrier = Barrier.new(COUNT_OF_THREADS + 1)
 
-      THREAD_COUNT.times{|i| # `i' should be local scope of thread block
+      COUNT_OF_THREADS.times{|i| # `i' should be local scope of thread block
         th_grp.add Thread.new{
           barrier.wait
           WORK_COUNT.times do |j|
@@ -422,15 +416,15 @@ module Higgs::Test
         s += c.value
       }
       assert_equal(@pool.size, n)
-      assert_equal(WORK_COUNT * THREAD_COUNT, s)
+      assert_equal(WORK_COUNT * COUNT_OF_THREADS, s)
     end
 
     def test_shutdown
       th_grp = ThreadGroup.new
-      barrier = Barrier.new(THREAD_COUNT + 1)
-      latch = CountDownLatch.new(THREAD_COUNT)
+      barrier = Barrier.new(COUNT_OF_THREADS + 1)
+      latch = CountDownLatch.new(COUNT_OF_THREADS)
 
-      THREAD_COUNT.times{|i| # `i' should be local scope of thread block
+      COUNT_OF_THREADS.times{|i| # `i' should be local scope of thread block
         th_grp.add Thread.new{
           barrier.wait
           assert_raise(Pool::ShutdownException) {
