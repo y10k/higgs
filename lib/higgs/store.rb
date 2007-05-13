@@ -15,9 +15,9 @@ module Higgs
     ENCODE = proc{|w| Marshal.dump(w) }
 
     def initialize(name, options={})
-      @storage = Storage.new(name, options)
       options[:decode] = DECODE
       options[:encode] = ENCODE
+      @storage = Storage.new(name, options)
       @tman = TransactionManager.new(@storage, options)
     end
 
