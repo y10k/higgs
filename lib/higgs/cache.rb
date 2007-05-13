@@ -17,6 +17,7 @@ module Higgs
       @cache = {}
     end
 
+    def_delegator :@cache, :keys
     def_delegator :@cache, :key?
     alias has_key? key?
     alias include? key?

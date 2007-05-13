@@ -22,16 +22,17 @@ end
 
 def test_fetch(cache, count, entries)
   srand(1)
+  key_list = cache.keys
   count.times do
-    cache[rand(entries)]
+    cache[key_list[rand(key_list.size)]]
   end
 end
 
-Benchmark.bm do |x|
+Benchmark.bm(25) do |x|
   [ Hash.new,
     Higgs::LRUCache.new(cache_limit)
   ].each do |cache|
-    x.report("#{cache.class}:store") { test_store(cache, loop_count, cache_entries) }
-    x.report("#{cache.class}:fetch") { test_fetch(cache, loop_count, cache_entries) }
+    x.report("[store] #{cache.class}") { test_store(cache, loop_count, cache_entries) }
+    x.report("[fetch] #{cache.class}") { test_fetch(cache, loop_count, cache_entries) }
   end
 end
