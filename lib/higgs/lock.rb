@@ -100,12 +100,11 @@ module Higgs
       else
         lock = @rw_lock.write_lock
       end
-      LockManager.try_lock(lock, self)
-      begin
-        yield(NoWorkLockHandler.instance)
-      ensure
-        lock.unlock
-      end
+      r = nil
+      lock.synchronize{
+        r = yield(NoWorkLockHandler.instance)
+      }
+      r
     end
   end
 
