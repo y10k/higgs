@@ -370,6 +370,43 @@ module Higgs::Test
         t.join
       end
     end
+
+    def test_read_write_race
+      count = 0
+      value = true
+      th_grp = ThreadGroup.new
+      barrier = Barrier.new(COUNT_OF_THREADS + 2)
+
+      COUNT_OF_THREADS.times{|i| # `i' should be local scope of thread block
+        th_grp.add Thread.new{
+          r_lock = @rw_lock.read_lock
+          barrier.wait
+          WORK_COUNT.times do
+            r_lock.synchronize{
+              p "#{i}: #{count}" if $DEBUG
+              assert_equal(true, value, "read_lock: #{i}")
+            }
+          end
+        }
+      }
+
+      th_grp.add Thread.new{
+        w_lock = @rw_lock.write_lock
+        barrier.wait
+        WORK_COUNT.times do
+          w_lock.synchronize{
+            count += 1
+            value = false
+            value = true
+          }
+        end
+      }
+
+      barrier.wait
+      for t in th_grp.list
+        t.join
+      end
+    end
   end
 
   class PoolTest < Test::Unit::TestCase
