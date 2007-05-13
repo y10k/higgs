@@ -2,6 +2,7 @@
 
 require 'fileutils'
 require 'higgs/store'
+require 'logger'
 require 'test/unit'
 
 module Higgs::Test
@@ -16,7 +17,12 @@ module Higgs::Test
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
       @name = File.join(@test_dir, 'foo')
-      @st = Store.new(@name)
+      @st = Store.new(@name,
+                      :logger => proc{|path|
+                        logger = Logger.new(path, 1)
+                        logger.level = Logger::DEBUG
+                        logger
+                      })
     end
 
     def teardown
