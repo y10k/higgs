@@ -13,7 +13,7 @@ module Higgs::Test
     DELTA_T = (ENV['DELTA_T'] || '0.1').to_f
 
     if ($DEBUG) then
-      puts 'thread test parameters'
+      puts 'thread test parameters...'
       for name in constants
         puts "#{name} = #{const_get(name)}"
       end
