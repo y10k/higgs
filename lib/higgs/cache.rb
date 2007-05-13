@@ -23,22 +23,20 @@ module Higgs
 
     def [](key)
       if (cached_pair = @cache[key]) then
-        c = @count
+        cached_pair[1] = @count
         @count = @count.succ
-        cached_pair[1] = c
         return cached_pair[0]
       end
       nil
     end
 
     def []=(key, value)
-      c = @count
-      @count = @count.succ
       if (cached_pair = @cache[key]) then
-        cached_pair[1] = c
+        cached_pair[1] = @count
       else
-        @cache[key] = [ value, c ]
+        @cache[key] = [ value, @count ]
       end
+      @count = @count.succ
       if (@cache.size > @limit_size) then
         purge_old_cache
       end
