@@ -56,14 +56,20 @@ module Higgs
         end
         c -= 1
       end
-      rand = attrs.new_rand(::Thread.current.object_id ^ t0.to_i)
-      while (Time.now - t0 < attrs.try_lock_limit)
-        if (lock.try_lock) then
-          return
+
+      if (attrs.try_lock_limit > 0) then
+        rand = attrs.new_rand(::Thread.current.object_id ^ t0.to_i)
+        while (Time.now - t0 < attrs.try_lock_limit)
+          if (lock.try_lock) then
+            return
+          end
+          sleep(attrs.try_lock_interval * rand.call)
         end
-        sleep(attrs.try_lock_interval * rand.call)
+        raise TryLockTimeoutError, 'expired'
+      else
+        # brave man who doesn't fear deadlock.
+        lock.lock
       end
-      raise TryLockTimeoutError, 'expired'
     end
   end
 
