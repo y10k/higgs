@@ -220,8 +220,9 @@ module Higgs
         recover_completed = true
       ensure
         unless (recover_completed) then
-          @logger.info("failed to recover and storage is broken.")
           @state_lock.synchronize{ @broken = true }
+          @logger.error("BROKEN: failed to recover.")
+          @logger.error($!) if $!
         end
       end
 
@@ -356,6 +357,8 @@ module Higgs
         ensure
           unless (rotate_completed) then
             @state_lock.synchronize{ @broken = true }
+            @logger.error("BROKEN: failed to rotate journal log.")
+            @logger.error($!) if $!
           end
         end
       }
@@ -531,6 +534,8 @@ module Higgs
         ensure
           unless (commit_completed) then
             @state_lock.synchronize{ @broken = true }
+            @logger.error("BROKEN: failed to commit.")
+            @logger.error($!) if $!
           end
         end
       }
@@ -696,6 +701,7 @@ module Higgs
           }
           unless (head_and_body) then
             @state_lock.synchronize{ @broken = true }
+            @logger.error("BROKEN: failed to read record: #{key.inspect}")
             raise BrokenError, "failed to read record: #{key.inspect}"
           end
         end
@@ -722,10 +728,12 @@ module Higgs
       cksum_type, cksum_value = head.sub(/^#\s+/, '').split(/\s+/, 2)
       if (cksum_type != PROPERTIES_CKSUM_TYPE) then
         @state_lock.synchronize{ @broken = true }
+        @logger.error("BROKEN: unknown properties cksum type: #{cksum_type}")
         raise BrokenError, "unknown properties cksum type: #{cksum_type}"
       end
       if (body.sum(PROPERTIES_CKSUM_BITS) != Integer(cksum_value)) then
         @state_lock.synchronize{ @broken = true }
+        @logger.error("BROKEN: mismatch properties cksum at #{key.inspect}")
         raise BrokenError, "mismatch properties cksum at #{key.inspect}"
       end
       YAML.load(body)
@@ -747,15 +755,18 @@ module Higgs
       value = read_record_body(key, :d) or return
       unless (properties = internal_fetch_properties(key)) then
         @state_lock.synchronize{ @broken = true }
+        @logger.error("BROKEN: failed to read properties: #{key.inspect}")
         raise BrokenError, "failed to read properties: #{key.inspect}"
       end
       if (properties['system_properties']['hash_type'] != DATA_CKSUM_TYPE) then
         @state_lock.synchronize{ @broken = true }
+        @logger.error("BROKEN: unknown data cksum type: #{properties['system_properties']['hash_type']}")
         raise BrokenError, "unknown data cksum type: #{properties['system_properties']['hash_type']}"
       end
       hash_value = Digest::SHA512.hexdigest(value)
       if (hash_value != properties['system_properties']['hash_value']) then
         @state_lock.synchronize{ @broken = true }
+        @logger.error("BROKEN: mismatch hash value at #{key.inspect}")
         raise BrokenError, "mismatch hash value at #{key.inspect}"
       end
       value
