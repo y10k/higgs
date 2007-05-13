@@ -100,6 +100,15 @@ module Higgs
       @logger = @Logger.call(@log_name)
       @logger.info("storage open start...")
 
+      if (@logger.info?) then
+        @logger.info format('block format version: %04x', Block::FMT_VERSION)
+        @logger.info("block body cksum type: #{Block::BODY_CKSUM_TYPE}")
+        @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
+        @logger.info("storage data cksum type: #{DATA_CKSUM_TYPE}")
+        @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_BITS}")
+        @logger.info("storage properties cksum bits: #{PROPERTIES_CKSUM_BITS} ")
+      end
+
       @logger.info("properties cache type: #{@properties_cache.class}")
       @properties_cache = SharedWorkCache.new(@properties_cache) {|key|
         value = read_record_body(key, :p) and decode_properties(key, value)
@@ -143,6 +152,7 @@ module Higgs
         recover
       end
       unless (@read_only) then
+        @logger.info("journal log sync mode: #{@jlog_sync}")
         @logger.info("open journal log for write: #{@jlog_name}")
         @jlog = JournalLogger.open(@jlog_name, @jlog_sync)
       end
@@ -287,7 +297,9 @@ module Higgs
       rotate_list
     end
 
-    def internal_rotate_journal_log(sync_index)
+    def internal_rotate_journal_log(save_index)
+      @logger.info("start journal log rotation...")
+
       commit_log = []
       while (File.exist? "#{@jlog_name}.#{@index.change_number}")
         @index.succ!
@@ -298,28 +310,39 @@ module Higgs
       end
       rot_jlog_name = "#{@jlog_name}.#{@index.change_number}"
 
-      if (sync_index) then
-        case (sync_index)
+      if (save_index) then
+        case (save_index)
         when String
-          @index.save(sync_index)
+          @logger.info("save index: #{save_index}")
+          @index.save(save_index)
         else
+          @logger.info("save index: #{@idx_name}")
           @index.save(@idx_name)
         end
+      else
+        @logger.info("no save index.")
       end
 
+      @logger.info("close journal log.")
       @jlog.close
+      @logger.info("rename journal log: #{@jlog_name} -> #{rot_jlog_name}")
       File.rename(@jlog_name, rot_jlog_name)
       if (@jlog_rotate_max > 0) then
         rotate_list = Storage.rotate_entries(@jlog_name)
         while (rotate_list.length > @jlog_rotate_max)
-          File.unlink(rotate_list.shift)
+          unlink_jlog_name = rotate_list.shift
+          @logger.info("unlink old journal log: #{unlink_jlog_name}")
+          File.unlink(unlink_jlog_name)
         end
       end
+      @logger.info("open journal log: #{@jlog_name}")
       @jlog = JournalLogger.open(@jlog_name, @jlog_sync)
+
+      @logger.info("completed journal log rotation.")
     end
     private :internal_rotate_journal_log
 
-    def rotate_journal_log(sync_index=true)
+    def rotate_journal_log(save_index=true)
       @commit_lock.synchronize{
         check_consistency
         if (@read_only) then
@@ -328,7 +351,7 @@ module Higgs
 
         rotate_completed = false
         begin
-          internal_rotate_journal_log(sync_index)
+          internal_rotate_journal_log(save_index)
           rotate_completed = true
         ensure
           unless (rotate_completed) then
