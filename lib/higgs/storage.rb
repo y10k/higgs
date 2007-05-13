@@ -385,6 +385,7 @@ module Higgs
           for ope, key, type, value in write_list
             case (ope)
             when :write
+              @logger.debug("journal log for write: (key,type)=(#{key},#{type})") if @logger.debug?
               unless (value.kind_of? String) then
                 raise TypeError, "can't convert #{value.class} (value) to String"
               end
@@ -392,6 +393,7 @@ module Higgs
 
               # recycle
               if (pos = @index.free_fetch(blocked_size)) then
+                @logger.debug("write type of recycle free segment: (pos,size)=(#{pos},#{blocked_size})") if @logger.debug?
                 commit_log << {
                   :ope => :free_fetch,
                   :pos => pos,
@@ -429,6 +431,7 @@ module Higgs
               if (i = @index[key]) then
                 if (j = i[type]) then
                   if (j[:siz] >= blocked_size) then
+                    @logger.debug("write type of overwrite: (pos,size)=(#{j[:pos]},#{blocked_size})") if @logger.debug?
                     commit_log << {
                       :ope => :write,
                       :key => key,
@@ -444,6 +447,7 @@ module Higgs
                         :siz => j[:siz] - blocked_size,
                         :mod => commit_time
                       }
+                      @logger.debug("tail free segment: (pos,size)=(#{commit_log[-1][:pos]},#{commit_log[-1][:siz]})") if @logger.debug?
                       @index.free_store(commit_log.last[:pos], commit_log.last[:siz])
                       j[:siz] = blocked_size
                     end
@@ -453,6 +457,7 @@ module Higgs
               end
 
               # append
+              @logger.debug("write type of append: (pos,size)=(#{eoa},#{blocked_size})")
               commit_log << {
                 :ope => :write,
                 :key => key,
@@ -484,6 +489,7 @@ module Higgs
                 :pos => eoa
               }
             when :delete
+              @logger.debug("journal log for delete: #{key}") if @logger.debug?
               if (i = @index.delete(key)) then
                 commit_log << {
                   :ope => :delete,
@@ -505,17 +511,21 @@ module Higgs
           end
 
           @index.succ!
+          @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
           commit_log << { :ope => :succ, :cnum => @index.change_number }
 
+          @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
           @jlog.write([ @index.change_number, commit_log ])
 
           for cmd in commit_log
             case (cmd[:ope])
             when :write
               name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
+              @logger.debug("write data to storage: (name,pos,size)=(#{name},#{cmd[:pos]},#{cmd[:val].size})") if @logger.debug?
               @w_tar.seek(cmd[:pos])
               @w_tar.add(name, cmd[:val], :mtime => cmd[:mod])
             when :free_store
+              @logger.debug("write free segment to storage: (pos,size)=(#{cmd[:pos]},#{cmd[:siz]})") if @logger.debug?
               @w_tar.seek(cmd[:pos])
               @w_tar.write_header(:name => '.free', :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
             when :delete, :eoa, :free_fetch, :succ
@@ -525,10 +535,12 @@ module Higgs
             end
           end
           if (@index.eoa != eoa) then
+            @logger.debug("write EOA to storage: #{eoa}")
             @index.eoa = eoa
             @w_tar.seek(eoa)
             @w_tar.write_EOA
           end
+          @logger.debug("flush storage.")
           @w_tar.flush
 
           if (@jlog_rotate_size > 0 && @jlog.size >= @jlog_rotate_size) then
@@ -672,14 +684,14 @@ module Higgs
           @properties_cache.delete(key)
         when :update_properties
           if (deleted_entries[key]) then
-            raise IndexError, "not exist properties at key: #{key.inspect}"
+            raise IndexError, "not exist properties at key: #{key}"
           end
           if (properties = update_properties[key]) then
             # nothing to do.
           elsif (properties = internal_fetch_properties(key)) then
             update_properties[key] = properties
           else
-            raise IndexError, "not exist properties at key: #{key.inspect}"
+            raise IndexError, "not exist properties at key: #{key}"
           end
           properties['system_properties']['changed_time'] = commit_time
           properties['custom_properties'] = value
@@ -708,8 +720,8 @@ module Higgs
           }
           unless (head_and_body) then
             @state_lock.synchronize{ @broken = true }
-            @logger.error("BROKEN: failed to read record: #{key.inspect}")
-            raise BrokenError, "failed to read record: #{key.inspect}"
+            @logger.error("BROKEN: failed to read record: #{key}")
+            raise BrokenError, "failed to read record: #{key}"
           end
         end
       end
@@ -740,8 +752,8 @@ module Higgs
       end
       if (body.sum(PROPERTIES_CKSUM_BITS) != Integer(cksum_value)) then
         @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: mismatch properties cksum at #{key.inspect}")
-        raise BrokenError, "mismatch properties cksum at #{key.inspect}"
+        @logger.error("BROKEN: mismatch properties cksum at #{key}")
+        raise BrokenError, "mismatch properties cksum at #{key}"
       end
       YAML.load(body)
     end
@@ -762,8 +774,8 @@ module Higgs
       value = read_record_body(key, :d) or return
       unless (properties = internal_fetch_properties(key)) then
         @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: failed to read properties: #{key.inspect}")
-        raise BrokenError, "failed to read properties: #{key.inspect}"
+        @logger.error("BROKEN: failed to read properties: #{key}")
+        raise BrokenError, "failed to read properties: #{key}"
       end
       if (properties['system_properties']['hash_type'] != DATA_CKSUM_TYPE) then
         @state_lock.synchronize{ @broken = true }
@@ -773,8 +785,8 @@ module Higgs
       hash_value = Digest::SHA512.hexdigest(value)
       if (hash_value != properties['system_properties']['hash_value']) then
         @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: mismatch hash value at #{key.inspect}")
-        raise BrokenError, "mismatch hash value at #{key.inspect}"
+        @logger.error("BROKEN: mismatch hash value at #{key}")
+        raise BrokenError, "mismatch hash value at #{key}"
       end
       value
     end
