@@ -139,9 +139,10 @@ module Higgs
 
     def initialize
       @lock = Mutex.new
-      @cond = ConditionVariable.new
-      @count_of_standby_writers = 0
+      @read_cond = ConditionVariable.new
+      @write_cond = ConditionVariable.new
       @count_of_working_readers = 0
+      @count_of_standby_writers = 0
       @priority_to_writer = true
       @writing = false
     end
@@ -149,7 +150,7 @@ module Higgs
     def __read_lock__
       @lock.synchronize{
         while (@writing || (@priority_to_writer && @count_of_standby_writers > 0))
-          @cond.wait(@lock)
+          @read_cond.wait(@lock)
         end
         @count_of_working_readers += 1
       }
@@ -171,7 +172,11 @@ module Higgs
       @lock.synchronize{
         @count_of_working_readers -= 1
         @priority_to_writer = true
-        @cond.broadcast
+        if (@count_of_standby_writers > 0) then
+          @write_cond.signal
+        else
+          @read_cond.broadcast
+        end
       }
       nil
     end
@@ -181,7 +186,7 @@ module Higgs
         @count_of_standby_writers += 1
         begin
           while (@writing || @count_of_working_readers > 0)
-            @cond.wait(@lock)
+            @write_cond.wait(@lock)
           end
           @writing = true
         ensure
@@ -212,7 +217,10 @@ module Higgs
       @lock.synchronize{
         @writing = false
         @priority_to_writer = false
-        @cond.broadcast
+        @read_cond.broadcast
+        if (@count_of_standby_writers > 0) then
+          @write_cond.signal
+        end
       }
       nil
     end
