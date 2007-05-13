@@ -4,6 +4,7 @@ require 'drb'
 require 'fileutils'
 require 'higgs/index'
 require 'higgs/storage'
+require 'logger'
 require 'test/unit'
 
 module Higgs::Test
@@ -62,7 +63,12 @@ module Higgs::Test
       st = Storage.new(@backup_name,
                        :jlog_rotate_max => 0,
                        :jlog_rotate_size => COMMIT_ITEMS * MAX_ITEM_BYTES * LEAST_COMMITS_PER_ROTATION,
-                       :jlog_rotate_service_uri => @jlog_rotate_service_uri)
+                       :jlog_rotate_service_uri => @jlog_rotate_service_uri,
+                       :logger => proc{|path|
+                         logger = Logger.new(path, 1)
+                         logger.level = Logger::DEBUG
+                         logger
+                       })
 
       begin
         FileUtils.touch(@start_latch)
