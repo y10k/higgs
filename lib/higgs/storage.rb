@@ -422,6 +422,7 @@ module Higgs
                 else
                   @index[key] = { type => { :pos => pos, :siz => blocked_size } }
                 end
+                next
               end
 
               # overwrite

@@ -1,3 +1,8 @@
+2007-05-14  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage): fix a bug of
+	raw_write_and_commit.
+
 2007-05-07  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/storage.rb (Higgs::Storage): check index change number
