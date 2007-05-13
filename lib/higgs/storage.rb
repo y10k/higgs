@@ -304,9 +304,11 @@ module Higgs
       commit_log = []
       while (File.exist? "#{@jlog_name}.#{@index.change_number}")
         @index.succ!
+        @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
         commit_log << { :ope => :succ, :cnum => @index.change_number }
       end
       unless (commit_log.empty?) then
+        @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
         @jlog.write([ @index.change_number, commit_log ])
       end
       rot_jlog_name = "#{@jlog_name}.#{@index.change_number}"
@@ -368,6 +370,8 @@ module Higgs
 
     def raw_write_and_commit(write_list, commit_time=Time.now)
       @commit_lock.synchronize{
+        @logger.debug("start raw_write_and_commit.") if @logger.debug?
+
         check_consistency
         if (@read_only) then
           raise NotWritableError, 'failed to write to read only storage'
@@ -538,6 +542,8 @@ module Higgs
             @logger.error($!) if $!
           end
         end
+
+        @logger.debug("completed raw_write_and_commit.") if @logger.debug?
       }
 
       nil
