@@ -1,3 +1,7 @@
+2007-05-16  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage): cancel of initialization on fail.
+
 2007-05-14  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/storage.rb (Higgs::Storage): fix a bug of

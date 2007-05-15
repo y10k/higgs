@@ -97,76 +97,142 @@ module Higgs
 
       init_options(options)
 
-      @logger = @Logger.call(@log_name)
-      @logger.info("storage open start...")
-
-      if (@logger.info?) then
-        @logger.info format('block format version: %04x', Block::FMT_VERSION)
-        @logger.info("block body cksum type: #{Block::BODY_CKSUM_TYPE}")
-        @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
-        @logger.info("storage data cksum type: #{DATA_CKSUM_TYPE}")
-        @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_BITS}")
-        @logger.info("storage properties cksum bits: #{PROPERTIES_CKSUM_BITS} ")
-      end
-
-      @logger.info("properties cache type: #{@properties_cache.class}")
-      @properties_cache = SharedWorkCache.new(@properties_cache) {|key|
-        value = read_record_body(key, :p) and decode_properties(key, value)
-      }
-
-      @flock = FileLock.new(@lock_name, @read_only)
-      if (@read_only) then
-        @logger.info("try to file lock for read: #{@lock_name}")
-        @flock.read_lock
-      else
-        @logger.info("try to file lock for write: #{@lock_name}")
-        @flock.write_lock
-      end
-      @logger.info('get file lock.')
-
-      unless (@read_only) then
-        begin
-          w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
-          @logger.info("create and get I/O handle for write: #{@tar_name}")
-        rescue Errno::EEXIST
-          @logger.info("open I/O handle for write: #{@tar_name}")
-          w_io = File.open(@tar_name, File::WRONLY, 0660)
+      init_completed = false
+      begin
+        @flock = FileLock.new(@lock_name, @read_only)
+        if (@read_only) then
+          @flock.read_lock
+        else
+          @flock.write_lock
         end
-        w_io.binmode
-        @w_tar = Tar::ArchiveWriter.new(w_io)
-      end
 
-      @r_tar_pool = Pool.new(@number_of_read_io) {
-        r_io = File.open(@tar_name, File::RDONLY)
-        r_io.binmode
-        @logger.info("open I/O handle for read: #{@tar_name}")
-        Tar::ArchiveReader.new(Tar::RawIO.new(r_io))
-      }
+        @logger = @Logger.call(@log_name)
+        @logger.info("storage open start...")
+        if (@read_only) then
+          @logger.info("get file lock for read")
+        else
+          @logger.info("get file lock for write")
+        end
 
-      @index = Index.new
-      if (File.exist? @idx_name) then
-        @logger.info("load index: #{@idx_name}")
-        @index.load(@idx_name)
-      end
-      if (JournalLogger.need_for_recovery? @jlog_name) then
-        recover
-      end
-      unless (@read_only) then
-        @logger.info("journal log sync mode: #{@jlog_sync}")
-        @logger.info("open journal log for write: #{@jlog_name}")
-        @jlog = JournalLogger.open(@jlog_name, @jlog_sync)
-      end
+        if (@logger.info?) then
+          @logger.info format('block format version: %04x', Block::FMT_VERSION)
+          @logger.info("block body cksum type: #{Block::BODY_CKSUM_TYPE}")
+          @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
+          @logger.info("storage data cksum type: #{DATA_CKSUM_TYPE}")
+          @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_BITS}")
+          @logger.info("storage properties cksum bits: #{PROPERTIES_CKSUM_BITS} ")
+        end
 
-      if (@jlog_rotate_service_uri) then
-        @logger.info("start journal log rotation service: #{@jlog_rotate_service_uri}")
-        require 'drb'
-        @jlog_rotate_service = DRb::DRbServer.new(@jlog_rotate_service_uri,
-                                                  method(:rotate_journal_log))
-      else
-        @jlog_rotate_service = nil
-      end
+        @logger.info("properties cache type: #{@properties_cache.class}")
+        @properties_cache = SharedWorkCache.new(@properties_cache) {|key|
+          value = read_record_body(key, :p) and decode_properties(key, value)
+        }
 
-      @logger.info("completed storage open.")
+        unless (@read_only) then
+          begin
+            w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
+            @logger.info("create and get I/O handle for write: #{@tar_name}")
+          rescue Errno::EEXIST
+            @logger.info("open I/O handle for write: #{@tar_name}")
+            w_io = File.open(@tar_name, File::WRONLY, 0660)
+          end
+          w_io.binmode
+          @w_tar = Tar::ArchiveWriter.new(w_io)
+        end
+
+        @r_tar_pool = Pool.new(@number_of_read_io) {
+          r_io = File.open(@tar_name, File::RDONLY)
+          r_io.binmode
+          @logger.info("open I/O handle for read: #{@tar_name}")
+          Tar::ArchiveReader.new(Tar::RawIO.new(r_io))
+        }
+
+        @index = Index.new
+        if (File.exist? @idx_name) then
+          @logger.info("load index: #{@idx_name}")
+          @index.load(@idx_name)
+        end
+        if (JournalLogger.need_for_recovery? @jlog_name) then
+          recover
+        end
+        unless (@read_only) then
+          @logger.info("journal log sync mode: #{@jlog_sync}")
+          @logger.info("open journal log for write: #{@jlog_name}")
+          @jlog = JournalLogger.open(@jlog_name, @jlog_sync)
+        end
+
+        if (@jlog_rotate_service_uri) then
+          @logger.info("start journal log rotation service: #{@jlog_rotate_service_uri}")
+          require 'drb'
+          @jlog_rotate_service = DRb::DRbServer.new(@jlog_rotate_service_uri,
+                                                    method(:rotate_journal_log))
+        else
+          @jlog_rotate_service = nil
+        end
+
+        init_completed = true
+      ensure
+        if (init_completed) then
+          @logger.info("completed storage open.")
+        else
+          @broken = true
+
+          if (@jlog_rotate_service) then
+            begin
+              @jlog_rotate_service.stop_service
+            rescue
+              # ignore error
+            end
+          end
+
+          unless (@read_only) then
+            if (@jlog) then
+              begin
+                @jlog.close(false)
+              rescue
+                # ignore error
+              end
+            end
+          end
+
+          if (@r_tar_pool) then
+            @r_tar_pool.shutdown{|r_tar|
+              begin
+                r_tar.close
+              rescue
+                # ignore errno
+              end
+            }
+          end
+
+          unless (@read_only) then
+            if (@w_tar) then
+              begin
+                @w_tar.close(false)
+              rescue
+                # ignore error
+              end
+            end
+          end
+
+          if (@logger) then
+            begin
+              @logger.fatal("abrot storage open.")
+              @logger.close
+            rescue
+              # ignore error
+            end
+          end
+
+          if (@flock) then
+            begin
+              @flock.close
+            rescue
+              # ignore error
+            end
+          end
+        end
+      end
     end
 
     def check_consistency
