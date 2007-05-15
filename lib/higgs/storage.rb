@@ -261,7 +261,6 @@ module Higgs
 
       check_consistency
       if (@read_only) then
-        @logger.warn('failed to recover.')
         @logger.warn('read only storage is not recoverable.')
         raise NotWritableError, 'need for recovery'
       end
