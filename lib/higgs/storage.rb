@@ -140,6 +140,7 @@ module Higgs
           @w_tar = Tar::ArchiveWriter.new(w_io)
         end
 
+        @logger.info("build I/O handle pool for read.")
         @r_tar_pool = Pool.new(@number_of_read_io) {
           r_io = File.open(@tar_name, File::RDONLY)
           r_io.binmode
@@ -176,6 +177,14 @@ module Higgs
           @logger.info("completed storage open.")
         else
           @broken = true
+
+          if ($! && @logger) then
+            begin
+              @logger.error($!)
+            rescue
+              # ignore error
+            end
+          end
 
           if (@jlog_rotate_service) then
             begin
