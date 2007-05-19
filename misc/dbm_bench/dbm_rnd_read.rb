@@ -22,7 +22,20 @@ if (File.exist? '.strc') then
 end
 options[:logger] = proc{|path|
   logger = Logger.new(path, 1)
-  logger.level = Logger::DEBUG
+  logger.level = case (options.delete(:log_level))
+		 when 'debug'
+		   Logger::DEBUG
+		 when 'info'
+		   Logger::INFO
+		 when 'warn'
+		   Logger::WARN
+		 when 'error'
+		   Logger::ERROR
+		 when 'fatal'
+		   Logger::FATAL
+		 else
+		   Logger::INFO
+		 end
   logger
 }
 options[:read_only] = true

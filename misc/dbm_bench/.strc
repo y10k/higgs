@@ -3,3 +3,4 @@ number_of_read_io: 2
 jlog_sync: false
 jlog_rotate_size: 262144
 jlog_rotate_max: 1
+log_level: info
