@@ -114,11 +114,11 @@ module Higgs
           @logger.info("get file lock for write")
         end
 
-        @logger.info format('block format version: %04x', Block::FMT_VERSION)
+        @logger.info format('block format version: 0x%04X', Block::FMT_VERSION)
         @logger.info("block body cksum type: #{Block::BODY_CKSUM_TYPE}")
         @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
         @logger.info("storage data cksum type: #{DATA_CKSUM_TYPE}")
-        @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_BITS}")
+        @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
         @logger.info("storage properties cksum bits: #{PROPERTIES_CKSUM_BITS} ")
 
         @logger.info("properties cache type: #{@properties_cache.class}")
