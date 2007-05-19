@@ -9,7 +9,9 @@ require 'benchmark'
 require 'higgs/dbm'
 require 'higgs/lock'
 require 'higgs/thread'
+require 'logger'
 require 'thread'
+require 'yaml'
 
 loop_count = (ARGV.shift || '100').to_i
 transaction_count = (ARGV.shift || '100').to_i
@@ -17,13 +19,26 @@ thread_count = (ARGV.shift || '10').to_i
 puts "#{$0}: LOOP:#{loop_count}, TRANSACTION:#{transaction_count}, THREAD:#{thread_count}"
 puts ''
 
+options = {}
+if (File.exist? '.strc') then
+  for name, value in YAML.load(IO.read('.strc'))
+    options[name.to_sym] = value
+  end
+end
+options[:logger] = proc{|path|
+  logger = Logger.new(path, 1)
+  logger.level = Logger::DEBUG
+  logger
+}
+
 name = File.join(File.dirname($0), 'foo')
 
 [ Higgs::GiantLockManager.new,
   Higgs::FineGrainLockManager.new
 ].each do |lock_manager|
   puts lock_manager.class
-  Higgs::DBM.open(name, :lock_manager => lock_manager) {|dbm|
+  options[:lock_manager] = lock_manager
+  Higgs::DBM.open(name, options) {|dbm|
     dbm.transaction{|tx|
       tx[:foo] = 'a'
       thread_count.times do |i|

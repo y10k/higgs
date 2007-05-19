@@ -7,13 +7,28 @@ CVS_ID = '$Id$'
 
 require 'benchmark'
 require 'higgs/dbm'
+require 'logger'
+require 'yaml'
 
 loop_count = (ARGV.shift || '100').to_i
 data_count = (ARGV.shift || '10').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}"
 
+options = {}
+if (File.exist? '.strc') then
+  for name, value in YAML.load(IO.read('.strc'))
+    options[name.to_sym] = value
+  end
+end
+options[:logger] = proc{|path|
+  logger = Logger.new(path, 1)
+  logger.level = Logger::DEBUG
+  logger
+}
+options[:read_only] = true
+
 name = File.join(File.dirname($0), 'foo')
-Higgs::DBM.open(name, :read_only => true) {|dbm|
+Higgs::DBM.open(name, options) {|dbm|
   key_list = dbm.transaction{|tx|
     tx.keys.map{|k| k.to_i }.sort.map{|i| i.to_s }
   }

@@ -7,13 +7,27 @@ $: << File.join(File.dirname($0), '..', '..', 'lib')
 
 require 'benchmark'
 require 'higgs/dbm'
+require 'logger'
+require 'yaml'
 
 loop_count = (ARGV.shift || '100').to_i
 data_count = (ARGV.shift || '10').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}"
 
+options = {}
+if (File.exist? '.strc') then
+  for name, value in YAML.load(IO.read('.strc'))
+    options[name.to_sym] = value
+  end
+end
+options[:logger] = proc{|path|
+  logger = Logger.new(path, 1)
+  logger.level = Logger::DEBUG
+  logger
+}
+
 name = File.join(File.dirname($0), 'foo')
-Higgs::DBM.open(name) {|dbm|
+Higgs::DBM.open(name, options) {|dbm|
   srand(0)
   key_list = dbm.transaction{|tx| tx.keys }
 
