@@ -68,44 +68,6 @@ module Higgs::Test
         @store = new_store(@session)
       }
     end
-
-    def test_counter
-      @store.close
-      num_of_procs = 2
-      count_by_proc = 100
-      pid_list = []
-      ready_latch = File.join(@tmpdir, '.ready_latch')
-      start_latch = File.join(@tmpdir, '.start_latch')
-
-      num_of_procs.times do |i|
-        pid_list << fork{
-          FileUtils.touch("#{ready_latch}.#{i}")
-          until (File.exist? start_latch)
-            # spin lock
-          end
-          count_by_proc.times do
-            @store = new_store(@session)
-            hash = @store.restore
-            hash['count'] = (hash['count'] || 0).succ
-            @store.close
-          end
-        }
-      end
-
-      num_of_procs.times do |i|
-        until (File.exist? "#{ready_latch}.#{i}")
-          # spin lock
-        end
-      end
-      FileUtils.touch(start_latch)
-
-      for pid in pid_list
-        Process.waitpid(pid)
-      end
-
-      @store = new_store(@session)
-      assert_equal(num_of_procs * count_by_proc, @store.restore['count'])
-    end
   end
 
   class CGISessionPstoreTest < Test::Unit::TestCase
@@ -127,6 +89,51 @@ module Higgs::Test
 
     def store_type
       CGI::Session::HiggsStore
+    end
+
+    def test_counter
+      @store.close
+      num_of_procs = 2
+      count_by_proc = 100
+      pid_list = []
+      ready_latch = File.join(@tmpdir, '.ready_latch')
+      start_latch = File.join(@tmpdir, '.start_latch')
+
+      begin
+        num_of_procs.times do |i|
+          pid_list << fork{
+            FileUtils.touch("#{ready_latch}.#{i}")
+            until (File.exist? start_latch)
+              # spin lock
+            end
+            count_by_proc.times do
+              @store = new_store(@session)
+              hash = @store.restore
+              hash['count'] = (hash['count'] || 0).succ
+              @store.close
+            end
+          }
+        end
+
+        num_of_procs.times do |i|
+          until (File.exist? "#{ready_latch}.#{i}")
+            # spin lock
+          end
+        end
+        FileUtils.touch(start_latch)
+
+        for pid in pid_list
+          Process.waitpid(pid)
+        end
+
+        @store = new_store(@session)
+        assert_equal(num_of_procs * count_by_proc, @store.restore['count'])
+      ensure
+        num_of_procs.times do |i|
+          FileUtils.rm_f("#{ready_latch}.#{i}")
+        end
+        FileUtils.rm_f(start_latch)
+      end
     end
   end
 end

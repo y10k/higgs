@@ -94,7 +94,7 @@ module Higgs::Test
         end
         FileUtils.touch(@stopped_latch)
         until (File.exist? @end_latch)
-          sleep(0.001)
+          # spin lock
         end
         st.verify
       ensure
@@ -107,7 +107,7 @@ module Higgs::Test
       pid = fork{ run_backup_storage }
       begin
         until (File.exist? @start_latch)
-          sleep(0.001)
+          # spin lock
         end
         jlog_rotate_service = DRbObject.new_with_uri(@jlog_rotate_service_uri)
         sleep(UPTIME_SECONDS)
@@ -123,7 +123,7 @@ module Higgs::Test
         # are not stopped.
         FileUtils.touch(@stop_latch)
         until (File.exist? @stopped_latch)
-          sleep(0.001)
+          # spin lock
         end
 
         # step 3: rotate journal log
