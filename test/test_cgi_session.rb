@@ -71,8 +71,8 @@ module Higgs::Test
 
     def test_multiproc_counter
       @store.close
-      num_of_procs = 5
-      count_by_proc = 100
+      num_of_procs = 2
+      count_by_proc = 1000
       pid_list = []
       ready_latch = File.join(@tmpdir, '.ready_latch')
       start_latch = File.join(@tmpdir, '.start_latch')
