@@ -91,7 +91,7 @@ module Higgs::Test
       CGI::Session::HiggsStore
     end
 
-    def test_counter
+    def test_multiproc_counter
       @store.close
       num_of_procs = 2
       count_by_proc = 100
