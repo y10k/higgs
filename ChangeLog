@@ -1,3 +1,7 @@
+2007-05-19  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/cgi/session/higgs.rb: for CGI session.
+
 2007-05-16  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/storage.rb (Higgs::Storage): cancel of initialization on fail.
