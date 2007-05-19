@@ -68,32 +68,10 @@ module Higgs::Test
         @store = new_store(@session)
       }
     end
-  end
-
-  class CGISessionPstoreTest < Test::Unit::TestCase
-    include CGISessionTest
-
-    # for ident(1)
-    CVS_ID = '$Id$'
-
-    def store_type
-      CGI::Session::PStore
-    end
-  end
-
-  class CGISessionHiggsStoreTest < Test::Unit::TestCase
-    include CGISessionTest
-
-    # for ident(1)
-    CVS_ID = '$Id$'
-
-    def store_type
-      CGI::Session::HiggsStore
-    end
 
     def test_multiproc_counter
       @store.close
-      num_of_procs = 2
+      num_of_procs = 5
       count_by_proc = 100
       pid_list = []
       ready_latch = File.join(@tmpdir, '.ready_latch')
@@ -134,6 +112,31 @@ module Higgs::Test
         end
         FileUtils.rm_f(start_latch)
       end
+    end
+  end
+
+  class CGISessionPstoreTest < Test::Unit::TestCase
+    include CGISessionTest
+
+    # for ident(1)
+    CVS_ID = '$Id$'
+
+    def store_type
+      CGI::Session::PStore
+    end
+
+    # race condition
+    undef test_multiproc_counter
+  end
+
+  class CGISessionHiggsStoreTest < Test::Unit::TestCase
+    include CGISessionTest
+
+    # for ident(1)
+    CVS_ID = '$Id$'
+
+    def store_type
+      CGI::Session::HiggsStore
     end
   end
 end
