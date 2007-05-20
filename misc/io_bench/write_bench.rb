@@ -65,9 +65,9 @@ end
 class RandomWriteTask < WriteTask
   def work
     open{|w|
-      @count.times do
-        i = rand(@count)
-        w.seek(@data.size * i)
+      @count.times do |i|
+        pos = rand(@count)
+        w.seek(@data.size * pos)
         w.write(@data)
         if (i % @chunk == 0) then
           io_sync(w)
