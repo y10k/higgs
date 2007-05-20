@@ -36,3 +36,8 @@ Benchmark.bm(25) do |x|
     x.report("[fetch] #{cache.class}") { test_fetch(cache, loop_count, cache_entries) }
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

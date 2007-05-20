@@ -28,19 +28,19 @@ end
 options[:logger] = proc{|path|
   logger = Logger.new(path, 1)
   logger.level = case (options.delete(:log_level))
-		 when 'debug'
-		   Logger::DEBUG
-		 when 'info'
-		   Logger::INFO
-		 when 'warn'
-		   Logger::WARN
-		 when 'error'
-		   Logger::ERROR
-		 when 'fatal'
-		   Logger::FATAL
-		 else
-		   Logger::INFO
-		 end
+                 when 'debug'
+                   Logger::DEBUG
+                 when 'info'
+                   Logger::INFO
+                 when 'warn'
+                   Logger::WARN
+                 when 'error'
+                   Logger::ERROR
+                 when 'fatal'
+                   Logger::FATAL
+                 else
+                   Logger::INFO
+                 end
   logger
 }
 
@@ -55,163 +55,168 @@ name = File.join(File.dirname($0), 'foo')
     dbm.transaction{|tx|
       tx[:foo] = 'a'
       thread_count.times do |i|
-	tx[i] = i.to_s
+        tx[i] = i.to_s
       end
     }
 
     Benchmark.bm(16) do |x|
       x.report('   read') {
-	(thread_count * transaction_count).times do
-	  dbm.transaction(true) {|tx|
-	    loop_count.times do
-	      tx[:foo]
-	    end
-	  }
-	end
+        (thread_count * transaction_count).times do
+          dbm.transaction(true) {|tx|
+            loop_count.times do
+              tx[:foo]
+            end
+          }
+        end
       }
 
       barrier = Higgs::Barrier.new(thread_count + 1)
       th_grp = ThreadGroup.new
       thread_count.times do
-	th_grp.add Thread.new{
-	  barrier.wait
-	  transaction_count.times do
-	    dbm.transaction(true) {|tx|
-	      loop_count.times do
-		tx[:foo]
-	      end
-	    }
-	  end
-	}
+        th_grp.add Thread.new{
+          barrier.wait
+          transaction_count.times do
+            dbm.transaction(true) {|tx|
+              loop_count.times do
+                tx[:foo]
+              end
+            }
+          end
+        }
       end
 
       x.report('MT read') {
-	barrier.wait
-	for th in th_grp.list
-	  th.join
-	end
+        barrier.wait
+        for th in th_grp.list
+          th.join
+        end
       }
 
       x.report('   write') {
-	(thread_count * transaction_count).times do
-	  dbm.transaction{|tx|
-	    loop_count.times do
-	      tx[:foo] = 'a'
-	    end
-	  }
-	end
+        (thread_count * transaction_count).times do
+          dbm.transaction{|tx|
+            loop_count.times do
+              tx[:foo] = 'a'
+            end
+          }
+        end
       }
 
       barrier = Higgs::Barrier.new(thread_count + 1)
       th_grp = ThreadGroup.new
       thread_count.times do
-	th_grp.add Thread.new{
-	  barrier.wait
-	  transaction_count.times do
-	    dbm.transaction{|tx|
-	      loop_count.times do
-		tx[:foo] = 'a'
-	      end
-	    }
-	  end
-	}
+        th_grp.add Thread.new{
+          barrier.wait
+          transaction_count.times do
+            dbm.transaction{|tx|
+              loop_count.times do
+                tx[:foo] = 'a'
+              end
+            }
+          end
+        }
       end
 
       x.report('MT write') {
-	barrier.wait
-	for th in th_grp.list
-	  th.join
-	end
+        barrier.wait
+        for th in th_grp.list
+          th.join
+        end
       }
 
       x.report('   sparse write') {
-	thread_count.times do |i|
-	  key = i
-	  value = i.to_s
-	  transaction_count.times do
-	    dbm.transaction{|tx|
-	      loop_count.times do
-		tx[key] = value
-	      end
-	    }
-	  end
-	end
+        thread_count.times do |i|
+          key = i
+          value = i.to_s
+          transaction_count.times do
+            dbm.transaction{|tx|
+              loop_count.times do
+                tx[key] = value
+              end
+            }
+          end
+        end
       }
 
       barrier = Higgs::Barrier.new(thread_count + 1)
       th_grp = ThreadGroup.new
       thread_count.times do |i|
-	key = i
-	value = i.to_s
-	th_grp.add Thread.new{
-	  barrier.wait
-	  transaction_count.times do
-	    dbm.transaction{|tx|
-	      loop_count.times do
-		tx[key] = value
-	      end
-	    }
-	  end
-	}
+        key = i
+        value = i.to_s
+        th_grp.add Thread.new{
+          barrier.wait
+          transaction_count.times do
+            dbm.transaction{|tx|
+              loop_count.times do
+                tx[key] = value
+              end
+            }
+          end
+        }
       end
 
       x.report('MT sparse write') {
-	barrier.wait
-	for th in th_grp.list
-	  th.join
-	end
+        barrier.wait
+        for th in th_grp.list
+          th.join
+        end
       }
 
       x.report('   read/write') {
-	((thread_count - 1) * transaction_count).times do
-	  dbm.transaction(true) {|tx|
-	    loop_count.times do
-	      tx[:foo]
-	    end
-	  }
-	end
-	transaction_count.times do
-	  dbm.transaction{|tx|
-	    loop_count.times do
-	      tx[:foo] = 'a'
-	    end
-	  }
-	end
+        ((thread_count - 1) * transaction_count).times do
+          dbm.transaction(true) {|tx|
+            loop_count.times do
+              tx[:foo]
+            end
+          }
+        end
+        transaction_count.times do
+          dbm.transaction{|tx|
+            loop_count.times do
+              tx[:foo] = 'a'
+            end
+          }
+        end
       }
 
       barrier = Higgs::Barrier.new(thread_count + 1)
       th_grp = ThreadGroup.new
       (thread_count - 1).times do
-	th_grp.add Thread.new{
-	  barrier.wait
-	  transaction_count.times do
-	    dbm.transaction(true) {|tx|
-	      loop_count.times do
-		tx[:foo]
-	      end
-	    }
-	  end
-	}
+        th_grp.add Thread.new{
+          barrier.wait
+          transaction_count.times do
+            dbm.transaction(true) {|tx|
+              loop_count.times do
+                tx[:foo]
+              end
+            }
+          end
+        }
       end
       th_grp.add Thread.new{
-	barrier.wait
-	transaction_count.times do
-	  dbm.transaction{|tx|
-	    loop_count.times do
-	      tx[:foo] = 'a'
-	    end
-	  }
-	end
+        barrier.wait
+        transaction_count.times do
+          dbm.transaction{|tx|
+            loop_count.times do
+              tx[:foo] = 'a'
+            end
+          }
+        end
       }
 
       x.report('MT read/write') {
-	barrier.wait
-	for th in th_grp.list
-	  th.join
-	end
+        barrier.wait
+        for th in th_grp.list
+          th.join
+        end
       }
     end
 
     puts ''
   }
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

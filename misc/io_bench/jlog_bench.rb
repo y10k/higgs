@@ -36,7 +36,7 @@ class JLogWriteTask
   def work
     open{|log|
       @count.times do
-	log.write(@log_dat)
+        log.write(@log_dat)
       end
     }
   end
@@ -52,3 +52,8 @@ Benchmark.bm(task_list.map{|n,t| n.length }.max) do |x|
     x.report(name) { work.work }
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

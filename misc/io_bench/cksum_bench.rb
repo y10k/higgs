@@ -19,7 +19,7 @@ task_list = [ 8, 16, 32, 64, 128 ].map{|n|
   [ "String\#sum(#{n}):",
     proc{
       count.times do
-	data.sum(n)
+        data.sum(n)
       end
     }
   ]
@@ -30,7 +30,7 @@ task_list = [ 8, 16, 32, 64, 128 ].map{|n|
   [ "#{d}:",
     proc{
       count.times do
-	d.digest(data)
+        d.digest(data)
       end
     }
   ]
@@ -41,3 +41,8 @@ Benchmark.bm(task_list.map{|n, t| n.length }.max) do |x|
     x.report(name) { task.call }
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

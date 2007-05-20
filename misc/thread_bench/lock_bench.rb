@@ -125,3 +125,8 @@ Benchmark.bm(30) do |x|
     end
   }
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:
