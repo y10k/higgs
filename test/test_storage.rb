@@ -342,6 +342,34 @@ module Higgs::Test
       assert_raise(Storage::ShutdownException) { @st.verify }
     end
   end
+
+  class ReadOnlyStorageFirstOpenTest < Test::Unit::TestCase
+    include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
+    def setup
+      @test_dir = 'st_test'
+      FileUtils.rm_rf(@test_dir) # for debug
+      FileUtils.mkdir_p(@test_dir)
+      @name = File.join(@test_dir, 'foo')
+      @logger = proc{|path|
+        logger = Logger.new(path, 1)
+        logger.level = Logger::DEBUG
+        logger
+      }
+    end
+
+    def teardown
+      FileUtils.rm_rf(@test_dir) unless $DEBUG
+    end
+
+    def test_read_only_first_open
+      assert_raise(Errno::ENOENT) {
+        Storage.new(@name, :read_only => true, :logger => @logger)
+      }
+    end
+  end
 end
 
 # Local Variables:
