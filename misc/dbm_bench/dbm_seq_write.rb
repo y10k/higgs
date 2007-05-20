@@ -3,44 +3,20 @@
 # for ident(1)
 CVS_ID = '$Id$'
 
- $: << File.join(File.dirname($0), '..', '..', 'lib')
+$: << File.join(File.dirname($0), '..', '..', 'lib')
 
 require 'benchmark'
 require 'higgs/dbm'
-require 'logger'
-require 'yaml'
+require 'stopts'
 
 loop_count = (ARGV.shift || '100').to_i
 data_count = (ARGV.shift || '10').to_i
 max_dat_len = (ARGV.shift || '32768').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}, MAX_DAT_LEN:#{max_dat_len}"
 
-options = {}
-if (File.exist? '.strc') then
-  for name, value in YAML.load(IO.read('.strc'))
-    options[name.to_sym] = value
-  end
-end
-options[:logger] = proc{|path|
-  logger = Logger.new(path, 1)
-  logger.level = case (options.delete(:log_level))
-		 when 'debug'
-		   Logger::DEBUG
-		 when 'info'
-		   Logger::INFO
-		 when 'warn'
-		   Logger::WARN
-		 when 'error'
-		   Logger::ERROR
-		 when 'fatal'
-		   Logger::FATAL
-		 else
-		   Logger::INFO
-		 end
-  logger
-}
-
+options = get_storage_options
 name = File.join(File.dirname($0), 'foo')
+
 Higgs::DBM.open(name, options) {|dbm|
   srand(0)
 
