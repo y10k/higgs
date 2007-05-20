@@ -78,11 +78,42 @@ class RandomWriteTask < WriteTask
   end
 end
 
+class SortedRandomWriteTask < WriteTask
+  def work
+    open{|w|
+      write_list = []
+      @count.times do |i|
+        pos = rand(@count)
+        write_list << pos
+        if (i % @chunk == 0) then
+          write_list.sort!
+          for pos in write_list
+            w.seek(@data.size * pos)
+            w.write(@data)
+          end
+          write_list.clear
+          io_sync(w)
+        end
+      end
+
+      write_list.sort!
+      for pos in write_list
+        w.seek(@data.size * pos)
+        w.write(@data)
+      end
+      write_list.clear
+      io_sync(w)
+    }
+  end
+end
+
 task_list = [
   [ 'seq write:',         SequentialWriteTask.new(data_file, segment_count, segment_size, chunk_count, false) ],
   [ 'seq write (fsync):', SequentialWriteTask.new(data_file, segment_count, segment_size, chunk_count, true) ],
   [ 'rnd write:',         RandomWriteTask.new(data_file, segment_count, segment_size, chunk_count, false) ],
-  [ 'rnd write (fsync):', RandomWriteTask.new(data_file, segment_count, segment_size, chunk_count, true) ]
+  [ 'rnd write (fsync):', RandomWriteTask.new(data_file, segment_count, segment_size, chunk_count, true) ],
+  [ 'sorted rnd write:',  SortedRandomWriteTask.new(data_file, segment_count, segment_size, chunk_count, false) ],
+  [ 'sorted rnd write (fsync):', SortedRandomWriteTask.new(data_file, segment_count, segment_size, chunk_count, true) ]
 ]
 
 Benchmark.bm(task_list.map{|n,t| n.length }.max) do |x|
