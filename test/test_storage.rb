@@ -23,7 +23,7 @@ module Higgs::Test
         logger.level = Logger::DEBUG
         logger
       }
-      @st = Storage.new(@name, :logger => @logger)
+      @st = Storage.new(@name, :data_cksum_type => :MD5, :logger => @logger)
     end
 
     def teardown
@@ -48,6 +48,7 @@ module Higgs::Test
     def test_recover
       @st.shutdown
       @st = Storage.new(@name,
+                        :data_cksum_type => :MD5,
                         :jlog_rotate_max => 0, # unlimited rotation
                         :logger => @logger)
 
@@ -111,7 +112,7 @@ module Higgs::Test
 
       assert_equal("Hello world.\n", @st.fetch('foo'))
       properties = @st.fetch_properties('foo')
-      assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
+      assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
       assert_equal({}, properties['custom_properties'])
 
       # update properties
@@ -119,7 +120,7 @@ module Higgs::Test
 
       assert_equal("Hello world.\n", @st.fetch('foo'))
       properties = @st.fetch_properties('foo')
-      assert_equal(Digest::SHA512.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
+      assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
 
       # update
@@ -127,7 +128,7 @@ module Higgs::Test
 
       assert_equal("Good bye.\n", @st.fetch('foo'))
       properties = @st.fetch_properties('foo')
-      assert_equal(Digest::SHA512.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
+      assert_equal(Digest::MD5.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
 
       # delete
@@ -145,7 +146,7 @@ module Higgs::Test
 
       assert_equal('', @st.fetch('foo'))
       properties = @st.fetch_properties('foo')
-      assert_equal(Digest::SHA512.hexdigest(''), properties['system_properties']['hash_value'])
+      assert_equal(Digest::MD5.hexdigest(''), properties['system_properties']['hash_value'])
       assert_equal({}, properties['custom_properties'])
     end
 

@@ -1,5 +1,8 @@
 # $Id$
 
+require 'digest/md5'
+require 'digest/rmd160'
+require 'digest/sha1'
 require 'digest/sha2'
 require 'higgs/block'
 require 'higgs/cache'
@@ -30,9 +33,23 @@ module Higgs
     class ShutdownException < Exceptions::ShutdownException
     end
 
-    DATA_CKSUM_TYPE = 'SHA512'
     PROPERTIES_CKSUM_TYPE = 'SUM16'
     PROPERTIES_CKSUM_BITS = 16
+
+    DATA_CKSUM = {
+      :SUM16  => proc{|s| s.sum(16).to_s },
+      :MD5    => proc{|s| Digest::MD5.hexdigest(s) },
+      :RMD160 => proc{|s| Digest::RMD160.hexdigest(s) },
+      :SHA1   => proc{|s| Digest::SHA1.hexdigest(s) },
+      :SHA256 => proc{|s| Digest::SHA256.hexdigest(s) },
+      :SHA384 => proc{|s| Digest::SHA384.hexdigest(s) },
+      :SHA512 => proc{|s| Digest::SHA512.hexdigest(s) }
+    }
+
+    DATA_CKSUM_BIN = {}
+    DATA_CKSUM.each do |cksum_symbol, cksum_proc|
+      DATA_CKSUM_BIN[cksum_symbol.to_s] = cksum_proc
+    end
 
     module InitOptions
       def init_options(options)
@@ -48,6 +65,11 @@ module Higgs
           @properties_cache = options[:properties_cache]
         else
           @properties_cache = LRUCache.new
+        end
+
+        @data_cksum_type = options[:data_cksum_type] || :MD5
+        unless (DATA_CKSUM.key? @data_cksum_type) then
+          raise "unknown data cksum type: #{@data_cksum_type}"
         end
 
         if (options.include? :jlog_sync) then
@@ -76,6 +98,7 @@ module Higgs
 
       attr_reader :read_only
       attr_reader :number_of_read_io
+      attr_reader :data_cksum_type
       attr_reader :jlog_sync
       attr_reader :jlog_cksum_type
       attr_reader :jlog_rotate_size
@@ -119,7 +142,7 @@ module Higgs
         @logger.info format('block format version: 0x%04X', Block::FMT_VERSION)
         @logger.info("journal log cksum type: #{@jlog_cksum_type}")
         @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
-        @logger.info("storage data cksum type: #{DATA_CKSUM_TYPE}")
+        @logger.info("storage data cksum type: #{@data_cksum_type}")
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
         @logger.info("storage properties cksum bits: #{PROPERTIES_CKSUM_BITS} ")
 
@@ -738,7 +761,7 @@ module Higgs
             # new properties
             properties = {
               'system_properties' => {
-                'hash_type' => DATA_CKSUM_TYPE,
+                'hash_type' => @data_cksum_type.to_s,
                 'hash_value' => nil,
                 'created_time' => commit_time,
                 'changed_time' => commit_time,
@@ -748,7 +771,7 @@ module Higgs
             }
             update_properties[key] = properties
           end
-          properties['system_properties']['hash_value'] = Digest::SHA512.hexdigest(value)
+          properties['system_properties']['hash_value'] = DATA_CKSUM[@data_cksum_type].call(value)
           properties['system_properties']['modified_time'] = commit_time
           @properties_cache.delete(key)
         when :delete
@@ -851,12 +874,13 @@ module Higgs
         @logger.error("BROKEN: failed to read properties: #{key}")
         raise BrokenError, "failed to read properties: #{key}"
       end
-      if (properties['system_properties']['hash_type'] != DATA_CKSUM_TYPE) then
+      hash_type = properties['system_properties']['hash_type']
+      unless (cksum_proc = DATA_CKSUM_BIN[hash_type]) then
         @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: unknown data cksum type: #{properties['system_properties']['hash_type']}")
-        raise BrokenError, "unknown data cksum type: #{properties['system_properties']['hash_type']}"
+        @logger.error("BROKEN: unknown data cksum type: #{hash_type}")
+        raise BrokenError, "unknown data cksum type: #{hash_type}"
       end
-      hash_value = Digest::SHA512.hexdigest(value)
+      hash_value = DATA_CKSUM_BIN[hash_type].call(value)
       if (hash_value != properties['system_properties']['hash_value']) then
         @state_lock.synchronize{ @broken = true }
         @logger.error("BROKEN: mismatch hash value at #{key}")
