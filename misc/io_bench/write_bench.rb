@@ -72,7 +72,7 @@ class RandomWriteTask < WriteTask
         if (i % @chunk == 0) then
           io_sync(w)
         end
-p      end
+      end
       io_sync(w)
     }
   end
