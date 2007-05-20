@@ -1,5 +1,7 @@
 2007-05-21  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb: various data cksum type.
+
 	* lib/higgs/block.rb, lib/higgs/jlog.rb: various block body cksum
 	type.
 
