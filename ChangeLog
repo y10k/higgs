@@ -1,3 +1,8 @@
+2007-05-21  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/block.rb, lib/higgs/jlog.rb: various block body cksum
+	type.
+
 2007-05-19  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/cgi/session/higgs.rb: for CGI session.

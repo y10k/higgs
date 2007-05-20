@@ -1,5 +1,8 @@
 # block read/write
 
+require 'digest/md5'
+require 'digest/rmd160'
+require 'digest/sha1'
 require 'digest/sha2'
 require 'higgs/exceptions'
 
@@ -33,7 +36,21 @@ module Higgs
     HEAD_CKSUM_BITS = 16
     HEAD_CKSUM_POS = 36..37
     HEAD_CKSUM_FMT = 'v'
-    BODY_CKSUM_TYPE = 'SHA512'
+
+    BODY_CKSUM = {
+      :SUM16  => proc{|s| s.sum(16).to_s },
+      :MD5    => proc{|s| Digest::MD5.digest(s) },
+      :RMD160 => proc{|s| Digest::RMD160.digest(s) },
+      :SHA1   => proc{|s| Digest::SHA1.digest(s) },
+      :SHA256 => proc{|s| Digest::SHA256.digest(s) },
+      :SHA384 => proc{|s| Digest::SHA384.digest(s) },
+      :SHA512 => proc{|s| Digest::SHA512.digest(s) }
+    }
+
+    BODY_CKSUM_BIN = {}
+    BODY_CKSUM.each do |cksum_symbol, cksum_proc|
+      BODY_CKSUM_BIN[cksum_symbol.to_s] = cksum_proc
+    end
 
     HEAD_FMT = [
       'Z16',                    # magic symbol
@@ -116,11 +133,11 @@ module Higgs
         raise BrokenError, 'short read'
       end
 
-      if (body_cksum_type != BODY_CKSUM_TYPE) then
+      unless (cksum_proc = BODY_CKSUM_BIN[body_cksum_type]) then
         raise BrokenError, "unknown body cksum type: #{body_cksum_type}"
       end
 
-      if (Digest::SHA512.digest(body) != body_cksum_bin) then
+      if (cksum_proc.call(body) != body_cksum_bin) then
         raise BrokenError, 'body cksum error'
       end
 
@@ -134,9 +151,10 @@ module Higgs
     end
     module_function :block_read
 
-    def block_write(io, magic_symbol, body)
-      body_cksum = Digest::SHA512.digest(body)
-      head_write(io, magic_symbol, body.length, BODY_CKSUM_TYPE, body_cksum)
+    def block_write(io, magic_symbol, body, body_cksum_type=:MD5)
+      cksum_proc = BODY_CKSUM[body_cksum_type.to_sym] or "unknown body cksum type: #{body_cksum_type}"
+      body_cksum = cksum_proc.call(body)
+      head_write(io, magic_symbol, body.length, body_cksum_type.to_s, body_cksum)
 
       bytes = io.write(body)
       if (bytes != body.size) then
