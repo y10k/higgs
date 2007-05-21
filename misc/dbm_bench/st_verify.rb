@@ -10,8 +10,7 @@ require 'higgs/storage'
 
 puts $0
 
-name = File.join(File.dirname($0), 'foo')
-st = Higgs::Storage.new(name, :read_only => true)
+st = Higgs::Storage.new('foo', :read_only => true)
 begin
   Benchmark.bm do |x|
     x.report('st verify') {

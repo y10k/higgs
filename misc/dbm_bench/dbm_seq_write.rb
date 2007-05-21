@@ -15,9 +15,8 @@ max_dat_len = (ARGV.shift || '32768').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}, MAX_DAT_LEN:#{max_dat_len}"
 
 options = get_storage_options
-name = File.join(File.dirname($0), 'foo')
 
-Higgs::DBM.open(name, options) {|dbm|
+Higgs::DBM.open('foo', options) {|dbm|
   srand(0)
 
   Benchmark.bm do |x|

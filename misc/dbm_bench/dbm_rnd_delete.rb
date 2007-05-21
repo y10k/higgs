@@ -14,9 +14,8 @@ data_count = (ARGV.shift || '10').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}"
 
 options = get_storage_options
-name = File.join(File.dirname($0), 'foo')
 
-Higgs::DBM.open(name, options) {|dbm|
+Higgs::DBM.open('foo', options) {|dbm|
   srand(0)
   key_list = dbm.transaction{|tx| tx.keys }
 

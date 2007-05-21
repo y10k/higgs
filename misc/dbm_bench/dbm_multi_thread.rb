@@ -19,14 +19,13 @@ puts "#{$0}: LOOP:#{loop_count}, TRANSACTION:#{transaction_count}, THREAD:#{thre
 puts ''
 
 options = get_storage_options
-name = File.join(File.dirname($0), 'foo')
 
 [ Higgs::GiantLockManager.new,
   Higgs::FineGrainLockManager.new
 ].each do |lock_manager|
   puts lock_manager.class
   options[:lock_manager] = lock_manager
-  Higgs::DBM.open(name, options) {|dbm|
+  Higgs::DBM.open('foo', options) {|dbm|
     dbm.transaction{|tx|
       tx[:foo] = 'a'
       thread_count.times do |i|

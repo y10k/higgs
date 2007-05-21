@@ -15,6 +15,12 @@ def prof(cmd)
   ruby '-I', LIB_DIR, '-r', 'profile', cmd, LOOP_COUNT, DATA_COUNT, MAX_DAT_LEN
 end
 
+def ruby_prof(cmd)
+  ENV['RUBYLIB'] = [ ENV['RUBYLIB'], File.expand_path(LIB_DIR) ].join(':')
+  printer = ENV['PROF_PRINTER'] || 'flat'
+  sh 'ruby-prof', '-p', printer, cmd
+end
+
 def benchmarks
   print "\n"
   yield 'dbm_seq_write.rb'
@@ -51,6 +57,12 @@ end
 task :prof => [ :clean ] do
   benchmarks do |rb|
     prof rb
+  end
+end
+
+task :ruby_prof => [ :clean ] do
+  benchmarks do |rb|
+    ruby_prof rb
   end
 end
 

@@ -15,9 +15,8 @@ puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}"
 
 options = get_storage_options
 options[:read_only] = true
-name = File.join(File.dirname($0), 'foo')
 
-Higgs::DBM.open(name, options) {|dbm|
+Higgs::DBM.open('foo', options) {|dbm|
   key_list = dbm.transaction{|tx|
     tx.keys.map{|k| k.to_i }.sort.map{|i| i.to_s }
   }
