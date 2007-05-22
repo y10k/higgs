@@ -412,8 +412,8 @@ module Higgs::Test
       assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['created_time'])
       assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['changed_time'])
       assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['modified_time'])
-      assert_equal('SHA512', @st.fetch_properties(:foo)['system_properties']['hash_type'])
-      assert_equal(Digest::SHA512.hexdigest('apple'), @st.fetch_properties(:foo)['system_properties']['hash_value'])
+      assert_equal('MD5', @st.fetch_properties(:foo)['system_properties']['hash_type'])
+      assert_equal(Digest::MD5.hexdigest('apple'), @st.fetch_properties(:foo)['system_properties']['hash_value'])
       assert_equal('banana', @st.fetch_properties(:foo)['custom_properties']['bar'])
       assert_nil(@st.fetch_properties(:bar))
 
@@ -421,8 +421,8 @@ module Higgs::Test
         assert_instance_of(Time, tx.property(:foo, :created_time))
         assert_instance_of(Time, tx.property(:foo, :changed_time))
         assert_instance_of(Time, tx.property(:foo, :modified_time))
-        assert_equal('SHA512', tx.property(:foo, :hash_type))
-        assert_equal(Digest::SHA512.hexdigest('apple'), tx.property(:foo, :hash_value))
+        assert_equal('MD5', tx.property(:foo, :hash_type))
+        assert_equal(Digest::MD5.hexdigest('apple'), tx.property(:foo, :hash_value))
         assert_equal('banana', tx.property(:foo, 'bar'))
 
         assert_equal(nil, tx.property(:bar, :created_time))
@@ -535,8 +535,8 @@ module Higgs::Test
           [ :created_time,  proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :changed_time,  proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :modified_time, proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
-          [ :hash_type,     proc{|n, v| assert_equal('SHA512', v, "name: #{n}") } ],
-          [ :hash_value,    proc{|n, v| assert_equal(Digest::SHA512.hexdigest('apple'), v, "name: #{n}") } ],
+          [ :hash_type,     proc{|n, v| assert_equal('MD5', v, "name: #{n}") } ],
+          [ :hash_value,    proc{|n, v| assert_equal(Digest::MD5.hexdigest('apple'), v, "name: #{n}") } ],
           [ 'bar',          proc{|n, v| assert_equal('banana', v, "name: #{n}") } ]
         ]
         tx.each_property(:foo) do |name, value|
@@ -592,8 +592,8 @@ module Higgs::Test
         assert_instance_of(Time, tx.property(:foo, :created_time))
         assert_instance_of(Time, tx.property(:foo, :changed_time))
         assert_instance_of(Time, tx.property(:foo, :modified_time))
-        assert_equal('SHA512', tx.property(:foo, :hash_type))
-        assert_equal(Digest::SHA512.hexdigest('apple'), tx.property(:foo, :hash_value))
+        assert_equal('MD5', tx.property(:foo, :hash_type))
+        assert_equal(Digest::MD5.hexdigest('apple'), tx.property(:foo, :hash_value))
         assert_equal('banana', tx.property(:foo, 'bar'))
 
         assert_equal(true, (tx.property? :foo, :created_time))
@@ -607,8 +607,8 @@ module Higgs::Test
           [ :created_time,  proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :changed_time,  proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :modified_time, proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
-          [ :hash_type,     proc{|n, v| assert_equal('SHA512', v, "name: #{n}") } ],
-          [ :hash_value,    proc{|n, v| assert_equal(Digest::SHA512.hexdigest('apple'), v, "name: #{n}") } ],
+          [ :hash_type,     proc{|n, v| assert_equal('MD5', v, "name: #{n}") } ],
+          [ :hash_value,    proc{|n, v| assert_equal(Digest::MD5.hexdigest('apple'), v, "name: #{n}") } ],
           [ 'bar',          proc{|n, v| assert_equal('banana', v, "name: #{n}") } ]
         ]
         tx.each_property(:foo) do |name, value|
@@ -649,8 +649,8 @@ module Higgs::Test
         assert_instance_of(Time, tx.property(:foo, :created_time))
         assert_instance_of(Time, tx.property(:foo, :changed_time))
         assert_instance_of(Time, tx.property(:foo, :modified_time))
-        assert_equal('SHA512', tx.property(:foo, :hash_type))
-        assert_equal(Digest::SHA512.hexdigest('apple'), tx.property(:foo, :hash_value))
+        assert_equal('MD5', tx.property(:foo, :hash_type))
+        assert_equal(Digest::MD5.hexdigest('apple'), tx.property(:foo, :hash_value))
         assert_equal('banana', tx.property(:foo, 'bar'))
 
         assert_equal(true, (tx.property? :foo, :created_time))
@@ -664,8 +664,8 @@ module Higgs::Test
           [ :created_time,  proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :changed_time,  proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :modified_time, proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
-          [ :hash_type,     proc{|n, v| assert_equal('SHA512', v, "name: #{n}") } ],
-          [ :hash_value,    proc{|n, v| assert_equal(Digest::SHA512.hexdigest('apple'), v, "name: #{n}") } ],
+          [ :hash_type,     proc{|n, v| assert_equal('MD5', v, "name: #{n}") } ],
+          [ :hash_value,    proc{|n, v| assert_equal(Digest::MD5.hexdigest('apple'), v, "name: #{n}") } ],
           [ 'bar',          proc{|n, v| assert_equal('banana', v, "name: #{n}") } ]
         ]
         tx.each_property(:foo) do |name, value|
