@@ -145,7 +145,7 @@ module Higgs
         end
 
         @logger.info format('block format version: 0x%04X', Block::FMT_VERSION)
-        @logger.info("journal log cksum type: #{@jlog_hash_type}")
+        @logger.info("journal log hash type: #{@jlog_hash_type}")
         @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
         @logger.info("storage data hash type: #{@data_hash_type}")
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
