@@ -13,10 +13,10 @@ module Higgs
     EOF_MARK = :END_OF_JLOG
     BIN_EOF_MARK = Marshal.dump(EOF_MARK)
 
-    def initialize(out, sync=false, cksum_type=:MD5)
+    def initialize(out, sync=false, hash_type=:MD5)
       @out = out
       @sync = sync
-      @cksum_type = cksum_type
+      @hash_type = hash_type
     end
 
     def sync?
@@ -27,12 +27,12 @@ module Higgs
       @out.stat.size
     end
 
-    def write(log, cksum_type=nil)
+    def write(log, hash_type=nil)
       bin_log = Marshal.dump(log)
       start_pos = @out.tell
       commit_completed = false
       begin
-        block_write(@out, MAGIC_SYMBOL, bin_log, cksum_type || @cksum_type)
+        block_write(@out, MAGIC_SYMBOL, bin_log, hash_type || @hash_type)
         if (@sync) then
           @out.fsync
         else

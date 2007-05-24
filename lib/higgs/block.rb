@@ -16,10 +16,10 @@ module Higgs
   # 34..35  : x2   : (reserved)
   # 36..37  : v    : head cksum
   # 38..39  : x2   : (reserved)
-  # 40..55  : Z16  : body cksum type
-  # 56..57  : v    : body cksum length
+  # 40..55  : Z16  : body hash type
+  # 56..57  : v    : body hash length
   # 58..71  : x14  : (reserved)
-  # 73..511 : a440 : body cksum binary
+  # 73..511 : a440 : body hash binary
   #
   module Block
     # for ident(1)
@@ -37,7 +37,7 @@ module Higgs
     HEAD_CKSUM_POS = 36..37
     HEAD_CKSUM_FMT = 'v'
 
-    BODY_CKSUM = {
+    BODY_HASH = {
       :SUM16  => proc{|s| s.sum(16).to_s },
       :MD5    => proc{|s| Digest::MD5.digest(s) },
       :RMD160 => proc{|s| Digest::RMD160.digest(s) },
@@ -47,9 +47,9 @@ module Higgs
       :SHA512 => proc{|s| Digest::SHA512.digest(s) }
     }
 
-    BODY_CKSUM_BIN = {}
-    BODY_CKSUM.each do |cksum_symbol, cksum_proc|
-      BODY_CKSUM_BIN[cksum_symbol.to_s] = cksum_proc
+    BODY_HASH_BIN = {}
+    BODY_HASH.each do |hash_symbol, hash_proc|
+      BODY_HASH_BIN[hash_symbol.to_s] = hash_proc
     end
 
     HEAD_FMT = [
@@ -60,10 +60,10 @@ module Higgs
       'x2',                     # (reserved)
       HEAD_CKSUM_FMT,           # head cksum
       'x2',                     # (reserved)
-      'Z16',                    # body cksum type
-      'v',                      # body cksum length
+      'Z16',                    # body hash type
+      'v',                      # body hash length
       'x14',                    # (reserved)
-      'a440'                    # body cksum binary
+      'a440'                    # body hash binary
     ].join('')
 
     def padding_size(bytes)
@@ -79,7 +79,7 @@ module Higgs
       end
 
       _magic_symbol, body_len, fmt_version, head_cksum,
-        body_cksum_type, body_cksum_len, body_cksum_bucket = head_block.unpack(HEAD_FMT)
+        body_hash_type, body_hash_len, body_hash_bucket = head_block.unpack(HEAD_FMT)
 
       head_block[HEAD_CKSUM_POS] = "\000\000"
       if (head_block.sum(HEAD_CKSUM_BITS) != head_cksum) then
@@ -94,21 +94,21 @@ module Higgs
         raise BrokenError, format('unknown format version: 0x%04F', fmt_version)
       end
 
-      body_cksum_bin = body_cksum_bucket[0, body_cksum_len]
+      body_hash_bin = body_hash_bucket[0, body_hash_len]
 
-      return body_len, body_cksum_type, body_cksum_bin
+      return body_len, body_hash_type, body_hash_bin
     end
     module_function :head_read
 
-    def head_write(io, magic_symbol, body_len, body_cksum_type, body_cksum_bin)
+    def head_write(io, magic_symbol, body_len, body_hash_type, body_hash_bin)
       head_block = [
         magic_symbol,
         body_len,
         FMT_VERSION,
         0,
-        body_cksum_type,
-        body_cksum_bin.length,
-        body_cksum_bin
+        body_hash_type,
+        body_hash_bin.length,
+        body_hash_bin
       ].pack(HEAD_FMT)
 
       head_cksum = head_block.sum(HEAD_CKSUM_BITS)
@@ -123,7 +123,7 @@ module Higgs
     module_function :head_write
 
     def block_read(io, magic_symbol)
-      body_len, body_cksum_type, body_cksum_bin = head_read(io, magic_symbol)
+      body_len, body_hash_type, body_hash_bin = head_read(io, magic_symbol)
       unless (body_len) then
         return
       end
@@ -133,12 +133,12 @@ module Higgs
         raise BrokenError, 'short read'
       end
 
-      unless (cksum_proc = BODY_CKSUM_BIN[body_cksum_type]) then
-        raise BrokenError, "unknown body cksum type: #{body_cksum_type}"
+      unless (hash_proc = BODY_HASH_BIN[body_hash_type]) then
+        raise BrokenError, "unknown body hash type: #{body_hash_type}"
       end
 
-      if (cksum_proc.call(body) != body_cksum_bin) then
-        raise BrokenError, 'body cksum error'
+      if (hash_proc.call(body) != body_hash_bin) then
+        raise BrokenError, 'body hash error'
       end
 
       padding_size = padding_size(body_len)
@@ -151,10 +151,10 @@ module Higgs
     end
     module_function :block_read
 
-    def block_write(io, magic_symbol, body, body_cksum_type=:MD5)
-      cksum_proc = BODY_CKSUM[body_cksum_type.to_sym] or "unknown body cksum type: #{body_cksum_type}"
-      body_cksum = cksum_proc.call(body)
-      head_write(io, magic_symbol, body.length, body_cksum_type.to_s, body_cksum)
+    def block_write(io, magic_symbol, body, body_hash_type=:MD5)
+      hash_proc = BODY_HASH[body_hash_type.to_sym] or "unknown body hash type: #{body_hash_type}"
+      body_hash = hash_proc.call(body)
+      head_write(io, magic_symbol, body.length, body_hash_type.to_s, body_hash)
 
       bytes = io.write(body)
       if (bytes != body.size) then

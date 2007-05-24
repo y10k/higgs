@@ -69,7 +69,7 @@ module Higgs
 
         @data_hash_type = options[:data_hash_type] || :MD5
         unless (DATA_HASH.key? @data_hash_type) then
-          raise "unknown data cksum type: #{@data_hash_type}"
+          raise "unknown data hash type: #{@data_hash_type}"
         end
 
         if (options.include? :jlog_sync) then
@@ -142,7 +142,7 @@ module Higgs
         @logger.info format('block format version: 0x%04X', Block::FMT_VERSION)
         @logger.info("journal log cksum type: #{@jlog_cksum_type}")
         @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
-        @logger.info("storage data cksum type: #{@data_hash_type}")
+        @logger.info("storage data hash type: #{@data_hash_type}")
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
         @logger.info("storage properties cksum bits: #{PROPERTIES_CKSUM_BITS} ")
 
@@ -877,8 +877,8 @@ module Higgs
       hash_type = properties['system_properties']['hash_type']
       unless (cksum_proc = DATA_HASH_BIN[hash_type]) then
         @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: unknown data cksum type: #{hash_type}")
-        raise BrokenError, "unknown data cksum type: #{hash_type}"
+        @logger.error("BROKEN: unknown data hash type: #{hash_type}")
+        raise BrokenError, "unknown data hash type: #{hash_type}"
       end
       hash_value = DATA_HASH_BIN[hash_type].call(value)
       if (hash_value != properties['system_properties']['hash_value']) then
