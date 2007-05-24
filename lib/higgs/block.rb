@@ -37,15 +37,24 @@ module Higgs
     HEAD_CKSUM_POS = 36..37
     HEAD_CKSUM_FMT = 'v'
 
-    BODY_HASH = {
-      :SUM16  => proc{|s| s.sum(16).to_s },
-      :MD5    => proc{|s| Digest::MD5.digest(s) },
-      :RMD160 => proc{|s| Digest::RMD160.digest(s) },
-      :SHA1   => proc{|s| Digest::SHA1.digest(s) },
-      :SHA256 => proc{|s| Digest::SHA256.digest(s) },
-      :SHA384 => proc{|s| Digest::SHA384.digest(s) },
-      :SHA512 => proc{|s| Digest::SHA512.digest(s) }
-    }
+    BODY_HASH = {}
+    [ [ :SUM16,  proc{|s| s.sum(16).to_s           },  nil            ],
+      [ :MD5,    proc{|s| Digest::MD5.digest(s)    }, 'digest/md5'    ],
+      [ :RMD160, proc{|s| Digest::RMD160.digest(s) }, 'digest/rmd160' ],
+      [ :SHA1,   proc{|s| Digest::SHA1.digest(s)   }, 'digest/sha1'   ],
+      [ :SHA256, proc{|s| Digest::SHA256.digest(s) }, 'digest/sha2'   ],
+      [ :SHA384, proc{|s| Digest::SHA384.digest(s) }, 'digest/sha2'   ],
+      [ :SHA512, proc{|s| Digest::SHA512.digest(s) }, 'digest/sha2'   ]
+    ].each do |hash_symbol, hash_proc, hash_lib|
+      if (hash_lib) then
+        begin
+          require(hash_lib)
+        rescue LoadError
+          next
+        end
+      end
+      BODY_HASH[hash_symbol] = hash_proc
+    end
 
     BODY_HASH_BIN = {}
     BODY_HASH.each do |hash_symbol, hash_proc|
