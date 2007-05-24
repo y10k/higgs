@@ -83,7 +83,7 @@ module Higgs
           @jlog_sync = false
         end
 
-        @jlog_cksum_type = options[:jlog_cksum_type] || :MD5
+        @jlog_hash_type = options[:jlog_hash_type] || :MD5
         @jlog_rotate_size = options[:jlog_rotate_size] || 1024 * 256
         @jlog_rotate_max = options[:jlog_rotate_max] || 1
         @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
@@ -105,7 +105,7 @@ module Higgs
       attr_reader :number_of_read_io
       attr_reader :data_hash_type
       attr_reader :jlog_sync
-      attr_reader :jlog_cksum_type
+      attr_reader :jlog_hash_type
       attr_reader :jlog_rotate_size
       attr_reader :jlog_rotate_max
       attr_reader :jlog_rotate_service_uri
@@ -145,7 +145,7 @@ module Higgs
         end
 
         @logger.info format('block format version: 0x%04X', Block::FMT_VERSION)
-        @logger.info("journal log cksum type: #{@jlog_cksum_type}")
+        @logger.info("journal log cksum type: #{@jlog_hash_type}")
         @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
         @logger.info("storage data hash type: #{@data_hash_type}")
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
@@ -187,7 +187,7 @@ module Higgs
         unless (@read_only) then
           @logger.info("journal log sync mode: #{@jlog_sync}")
           @logger.info("open journal log for write: #{@jlog_name}")
-          @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_cksum_type)
+          @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_hash_type)
         end
 
         if (@jlog_rotate_service_uri) then
@@ -441,7 +441,7 @@ module Higgs
         end
       end
       @logger.info("open journal log: #{@jlog_name}")
-      @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_cksum_type)
+      @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_hash_type)
 
       @logger.info("completed journal log rotation.")
     end
