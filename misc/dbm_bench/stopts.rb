@@ -20,22 +20,23 @@ def get_storage_options
   end
 
   if (options.key? :log_level) then
+    log_level = case (options.delete(:log_level))
+                when 'debug'
+                  Logger::DEBUG
+                when 'info'
+                  Logger::INFO
+                when 'warn'
+                  Logger::WARN
+                when 'error'
+                  Logger::ERROR
+                when 'fatal'
+                  Logger::FATAL
+                else
+                  raise 'unknown log_level'
+                end
     options[:logger] = proc{|path|
       logger = Logger.new(path, 1)
-      logger.level = case (options.delete(:log_level))
-                     when 'debug'
-                       Logger::DEBUG
-                     when 'info'
-                       Logger::INFO
-                     when 'warn'
-                       Logger::WARN
-                     when 'error'
-                       Logger::ERROR
-                     when 'fatal'
-                       Logger::FATAL
-                     else
-                       raise 'unknown log_level'
-                     end
+      logger.level = log_level
       logger
     }
   end
