@@ -33,7 +33,7 @@ spec = Gem::Specification.new{|s|
   s.summary = 'transactional storage'
   s.author = 'TOKI Yoshinori'
   s.email = 'toki@freedom.ne.jp'
-  s.files = Dir['{bin,lib,misc}/**/*.rb'] << 'ChangeLog'
+  s.files = Dir['{bin,lib,test,misc}/**/*.rb'] << 'ChangeLog'
   s.test_files = [ 'test/run.rb' ]
   s.has_rdoc = false
 }
