@@ -26,7 +26,23 @@ task :rdoc do
   }
 end
 
-task :clean do
+require 'rake/gempackagetask'
+spec = Gem::Specification.new{|s|
+  s.name = 'higgs'
+  s.version = '0.0.1'
+  s.summary = 'transactional storage'
+  s.author = 'TOKI Yoshinori'
+  s.email = 'toki@freedom.ne.jp'
+  s.files = Dir['{bin,lib,misc}/**/*.rb'] << 'ChangeLog'
+  s.test_files = [ 'test/run.rb' ]
+  s.has_rdoc = false
+}
+Rake::GemPackageTask.new(spec) do |pkg|
+  pkg.need_zip = true
+  pkg.need_tar = true
+end
+
+task :clean => [ :clobber_package ] do
   rm_rf RDOC_DIR
 end
 
