@@ -628,8 +628,9 @@ module Higgs
               @w_tar.add(name, cmd[:val], :mtime => cmd[:mod])
             when :free_store
               @logger.debug("write free segment to storage: (pos,size)=(#{cmd[:pos]},#{cmd[:siz]})") if @logger.debug?
+              name = format('.free.%x', cmd[:pos] >> 9)
               @w_tar.seek(cmd[:pos])
-              @w_tar.write_header(:name => '.free', :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
+              @w_tar.write_header(:name => name, :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
             when :delete, :eoa, :free_fetch, :succ
               # nothing to do.
             else
@@ -690,8 +691,9 @@ module Higgs
             index.free_fetch_at(cmd[:pos], cmd[:siz])
           when :free_store
             index.free_store(cmd[:pos], cmd[:siz])
+            name = format('.free.%x', cmd[:pos] >> 9)
             w_tar.seek(cmd[:pos])
-            w_tar.write_header(:name => '.free', :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
+            w_tar.write_header(:name => name, :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
           when :eoa
             index.eoa = cmd[:pos]
           when :succ
