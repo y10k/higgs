@@ -17,6 +17,7 @@ module Higgs
       @cache = {}
     end
 
+    attr_reader :limit_size
     def_delegator :@cache, :keys
     def_delegator :@cache, :key?
     alias has_key? key?

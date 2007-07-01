@@ -887,7 +887,7 @@ module Higgs
         @logger.error("BROKEN: unknown data hash type: #{hash_type}")
         raise BrokenError, "unknown data hash type: #{hash_type}"
       end
-      hash_value = DATA_HASH_BIN[hash_type].call(value)
+      hash_value = cksum_proc.call(value)
       if (hash_value != properties['system_properties']['hash_value']) then
         @state_lock.synchronize{ @broken = true }
         @logger.error("BROKEN: mismatch hash value at #{key}")
