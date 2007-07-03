@@ -401,6 +401,14 @@ module Higgs::Test
         assert_equal('banana', tx.property(:foo, 'bar'))
         assert_equal(nil, tx.property(:foo, 'baz'))
 
+        tx.commit
+        assert_instance_of(Time, tx.property(:foo, :created_time))
+        assert_instance_of(Time, tx.property(:foo, :changed_time))
+        assert_instance_of(Time, tx.property(:foo, :modified_time))
+        assert_equal('MD5', tx.property(:foo, :hash_type))
+        assert_equal(Digest::MD5.hexdigest('apple'), tx.property(:foo, :hash_value))
+        assert_equal('banana', tx.property(:foo, 'bar'))
+
         assert_equal(nil, tx.property(:bar, :created_time))
         assert_equal(nil, tx.property(:bar, :changed_time))
         assert_equal(nil, tx.property(:bar, :modified_time))
@@ -445,6 +453,15 @@ module Higgs::Test
         assert_equal(false, (tx.property? :foo, :hash_type))
         assert_equal(false, (tx.property? :foo, :hash_value))
         assert_equal(true,  (tx.property? :foo, 'bar'))
+        assert_equal(false, (tx.property? :foo, 'baz'))
+
+        tx.commit
+        assert_equal(true, (tx.property? :foo, :created_time))
+        assert_equal(true, (tx.property? :foo, :changed_time))
+        assert_equal(true, (tx.property? :foo, :modified_time))
+        assert_equal(true, (tx.property? :foo, :hash_type))
+        assert_equal(true, (tx.property? :foo, :hash_value))
+        assert_equal(true, (tx.property? :foo, 'bar'))
         assert_equal(false, (tx.property? :foo, 'baz'))
 
         assert_equal(false, (tx.property? :bar, :created_time))
