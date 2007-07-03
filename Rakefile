@@ -27,10 +27,11 @@ task :rdoc do
 end
 
 require 'rake/gempackagetask'
+require 'lib/higgs/version'
 spec = Gem::Specification.new{|s|
   s.name = 'higgs'
-  s.version = '0.0.1'
-  s.summary = 'transactional storage'
+  s.version = Higgs::VERSION
+  s.summary = 'pure ruby transactional storage compatible with unix TAR format'
   s.author = 'TOKI Yoshinori'
   s.email = 'toki@freedom.ne.jp'
   s.files = Dir['{bin,lib,test,misc}/**/*.rb'] << 'ChangeLog'
