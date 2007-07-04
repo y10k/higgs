@@ -442,6 +442,34 @@ module Higgs::Test
       }
     end
 
+    def test_system_properties
+      @tman.transaction{|tx|
+        tx[:foo] = 'apple'
+        tx.commit
+
+        cre_time = tx.property(:foo, :created_time)
+        chg_time = tx.property(:foo, :changed_time)
+        mod_time = tx.property(:foo, :modified_time)
+
+        sleep(0.001)
+        tx[:foo] = 'banana'
+        tx.commit
+
+        assert_equal(cre_time, tx.property(:foo, :created_time))
+        assert_equal(chg_time, tx.property(:foo, :changed_time))
+        assert(tx.property(:foo, :modified_time) > mod_time)
+
+        mod_time2 = tx.property(:foo, :modified_time)
+        sleep(0.001)
+        tx.set_property(:foo, 'bar', 'orange')
+        tx.commit
+
+        assert_equal(cre_time, tx.property(:foo, :created_time))
+        assert(tx.property(:foo, :changed_time) > chg_time)
+        assert_equal(mod_time2, tx.property(:foo, :modified_time))
+      }
+    end
+
     def test_has_property
       @tman.transaction{|tx|
         tx[:foo] = 'apple'

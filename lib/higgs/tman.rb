@@ -359,17 +359,16 @@ module Higgs
     def commit
       write_list = write_list()
       unless (write_list.empty?) then
+        @storage.write_and_commit(write_list)
         for ope, key, value in write_list
           case (ope)
-          when :write
-            @master_cache.delete(key)
-            @local_properties_cache.delete(key) unless (@storage.key? key)
-          when :delete
+          when :write, :delete
             @master_cache.delete(key)
           end
+          @local_properties_cache.delete(key)
         end
+        @update_properties.clear
         @ope_map.clear
-        @storage.write_and_commit(write_list)
       end
       nil
     end

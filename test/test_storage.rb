@@ -200,6 +200,29 @@ module Higgs::Test
       }
     end
 
+    def test_system_properties
+      @st.write_and_commit([ [ :write, :foo, 'apple' ] ])
+
+      cre_time = @st.fetch_properties(:foo)['system_properties']['created_time']
+      chg_time = @st.fetch_properties(:foo)['system_properties']['changed_time']
+      mod_time = @st.fetch_properties(:foo)['system_properties']['modified_time']
+
+      sleep(0.001)
+      @st.write_and_commit([ [ :write, :foo, 'banana' ] ])
+
+      assert_equal(cre_time, @st.fetch_properties(:foo)['system_properties']['created_time'])
+      assert_equal(chg_time, @st.fetch_properties(:foo)['system_properties']['changed_time'])
+      assert(@st.fetch_properties(:foo)['system_properties']['modified_time'] > mod_time)
+
+      mod_time2 = @st.fetch_properties(:foo)['system_properties']['modified_time']
+      sleep(0.001)
+      @st.write_and_commit([ [ :update_properties, :foo, { 'bar' => 'orange' } ] ])
+
+      assert_equal(cre_time, @st.fetch_properties(:foo)['system_properties']['created_time'])
+      assert(@st.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time)
+      assert_equal(mod_time2, @st.fetch_properties(:foo)['system_properties']['modified_time'])
+    end
+
     def test_key
       assert_equal(false, (@st.key? 'foo'))
       @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
