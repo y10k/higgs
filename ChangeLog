@@ -1,5 +1,7 @@
 2007-07-05  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/version.rb:  version 0.0.2.
+
 	* lib/higgs/tman.rb: clear local properties cache on new write.
 
 2007-07-04  TOKI Yoshinori  <toki@freedom.ne.jp>
