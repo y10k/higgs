@@ -149,7 +149,6 @@ module Higgs
         @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
         @logger.info("storage data hash type: #{@data_hash_type}")
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
-        @logger.info("storage properties cksum bits: #{PROPERTIES_CKSUM_BITS} ")
 
         @logger.info("properties cache type: #{@properties_cache.class}")
         @properties_cache = SharedWorkCache.new(@properties_cache) {|key|
