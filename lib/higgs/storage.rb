@@ -802,10 +802,8 @@ module Higgs
           when :custom_properties
             properties['custom_properties'] = value
           when :system_properties
-            for name in %w[ string_only ]
-              if (value.key? name) then
-                properties['system_properties'][name] = value[name]
-              end
+            if (value.key? 'string_only') then
+              properties['system_properties']['string_only'] = value['string_only'] ? true : false
             end
           else
             raise ArgumentError, "unknown operation: #{ope}"
