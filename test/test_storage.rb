@@ -116,6 +116,7 @@ module Higgs::Test
       assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
       assert_equal(false, properties['system_properties']['string_only'])
       assert_equal({}, properties['custom_properties'])
+      assert_equal(false, @st.string_only('foo'))
 
       # update properties
       @st.write_and_commit([ [ :system_properties, 'foo', { 'string_only' => true } ] ])
@@ -126,6 +127,7 @@ module Higgs::Test
       assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
       assert_equal(true, properties['system_properties']['string_only'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
+      assert_equal(true, @st.string_only('foo'))
 
       # update
       @st.write_and_commit([ [ :write, 'foo', "Good bye.\n" ] ])
@@ -135,6 +137,7 @@ module Higgs::Test
       assert_equal(Digest::MD5.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
       assert_equal(true, properties['system_properties']['string_only'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
+      assert_equal(true, @st.string_only('foo'))
 
       # delete
       @st.write_and_commit([ [ :delete, 'foo' ] ])
@@ -251,6 +254,10 @@ module Higgs::Test
       assert_equal(cre_time, @st.fetch_properties(:foo)['system_properties']['created_time'])
       assert(@st.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time2)
       assert_equal(mod_time2, @st.fetch_properties(:foo)['system_properties']['modified_time'])
+    end
+
+    def test_string_only_IndexError_not_exist_properties
+      assert_raise(IndexError) { @st.string_only('foo') }
     end
 
     def test_key

@@ -905,6 +905,11 @@ module Higgs
       value
     end
 
+    def string_only(key)
+      properties = fetch_properties(key) or raise IndexError, "not exist properties at key: #{key}"
+      properties['system_properties']['string_only']
+    end
+
     def key?(key)
       check_consistency
       @index.key? key
