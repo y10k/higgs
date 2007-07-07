@@ -57,6 +57,8 @@ module Higgs::Test
       FileUtils.rm_rf(@restore_dir) unless $DEBUG
     end
 
+    CHARS = ('A'..'Z').to_a + ('a'..'z').to_a
+
     def run_backup_storage
       # step 0: storage starts with jlog_rotate_service_uri option
       # (jlog_rotate_service_uri option is disabled by default)
@@ -74,15 +76,18 @@ module Higgs::Test
         FileUtils.touch(@start_latch)
         until (File.exist? @stop_latch)
           write_list = []
-          ope = [ :write, :update_properties, :delete ][rand(3)]
+          ope = [ :write, :system_properties, :custom_properties, :delete ][rand(3)]
           key = rand(STORAGE_ITEMS)
           case (ope)
           when :write
             value = rand(256).chr * rand(MAX_ITEM_BYTES)
             write_list << [ ope, key, value ]
-          when :update_properties
+          when :system_properties
             next unless (st.key? key)
-            value = rand(256).chr * rand(MAX_ITEM_BYTES)
+            write_list << [ ope, key, { 'string_only' => [ true, false ][rand(2)] } ]
+          when :custom_properties
+            next unless (st.key? key)
+            value = CHARS[rand(CHARS.size)] * rand(MAX_ITEM_BYTES)
             write_list << [ ope, key, { 'foo' => value } ]
           when :delete
             next unless (st.key? key)

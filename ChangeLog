@@ -1,3 +1,7 @@
+2007-07-07  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb: new `string_only' system property.
+
 2007-07-05  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb:  version 0.0.2.

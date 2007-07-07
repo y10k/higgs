@@ -771,7 +771,8 @@ module Higgs
                 'hash_value' => nil,
                 'created_time' => commit_time,
                 'changed_time' => commit_time,
-                'modified_time' => nil
+                'modified_time' => nil,
+                'string_only' => false
               },
               'custom_properties' => {}
             }
@@ -785,7 +786,7 @@ module Higgs
           deleted_entries[key] = true
           update_properties.delete(key)
           @properties_cache.delete(key)
-        when :update_properties
+        when :custom_properties, :system_properties
           if (deleted_entries[key]) then
             raise IndexError, "not exist properties at key: #{key}"
           end
@@ -797,7 +798,18 @@ module Higgs
             raise IndexError, "not exist properties at key: #{key}"
           end
           properties['system_properties']['changed_time'] = commit_time
-          properties['custom_properties'] = value
+          case (ope)
+          when :custom_properties
+            properties['custom_properties'] = value
+          when :system_properties
+            for name in %w[ string_only ]
+              if (value.key? name) then
+                properties['system_properties'][name] = value[name]
+              end
+            end
+          else
+            raise ArgumentError, "unknown operation: #{ope}"
+          end
           @properties_cache.delete(key)
         else
           raise ArgumentError, "unknown operation: #{ope}"

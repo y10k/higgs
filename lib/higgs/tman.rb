@@ -351,7 +351,7 @@ module Higgs
         end
       } + \
       @update_properties.map{|key, properties|
-        [ :update_properties, key, properties ]
+        [ :custom_properties, key, properties ]
       }
     end
     private :write_list

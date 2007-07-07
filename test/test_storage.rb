@@ -98,7 +98,8 @@ module Higgs::Test
         [ :write, :foo, '' ],
         [ :delete, :foo ],
         [ :write, :foo, "Hello world.\n" ],
-        [ :update_properties, :foo, { 'TestDate' => '2007-04-29' } ]
+        [ :system_properties, :foo, { 'string_only' => true } ],
+        [ :custom_properties, :foo, { 'TestDate' => '2007-04-29' } ]
       ]
       @st.write_and_commit(write_list)
     end
@@ -113,14 +114,17 @@ module Higgs::Test
       assert_equal("Hello world.\n", @st.fetch('foo'))
       properties = @st.fetch_properties('foo')
       assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
+      assert_equal(false, properties['system_properties']['string_only'])
       assert_equal({}, properties['custom_properties'])
 
       # update properties
-      @st.write_and_commit([ [ :update_properties, 'foo', { :comment => 'test' } ] ])
+      @st.write_and_commit([ [ :system_properties, 'foo', { 'string_only' => true } ] ])
+      @st.write_and_commit([ [ :custom_properties, 'foo', { :comment => 'test' } ] ])
 
       assert_equal("Hello world.\n", @st.fetch('foo'))
       properties = @st.fetch_properties('foo')
       assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
+      assert_equal(true, properties['system_properties']['string_only'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
 
       # update
@@ -129,6 +133,7 @@ module Higgs::Test
       assert_equal("Good bye.\n", @st.fetch('foo'))
       properties = @st.fetch_properties('foo')
       assert_equal(Digest::MD5.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
+      assert_equal(true, properties['system_properties']['string_only'])
       assert_equal({ :comment => 'test' }, properties['custom_properties'])
 
       # delete
@@ -171,7 +176,13 @@ module Higgs::Test
 
     def test_write_and_commit_IndexError_not_exist_properties
       assert_raise(IndexError) {
-        @st.write_and_commit([ [ :update_properties, 'foo', {} ] ])
+        @st.write_and_commit([ [ :system_properties, 'foo', {} ] ])
+      }
+      assert_nil(@st.fetch('foo'))
+      assert_nil(@st.fetch_properties('foo'))
+
+      assert_raise(IndexError) {
+        @st.write_and_commit([ [ :custom_properties, 'foo', {} ] ])
       }
       assert_nil(@st.fetch('foo'))
       assert_nil(@st.fetch_properties('foo'))
@@ -180,7 +191,18 @@ module Higgs::Test
         write_list = [
           [ :write, 'foo', "Hello world.\n" ],
           [ :delete, 'foo' ],
-          [ :update_properties, 'foo', {} ]
+          [ :system_properties, 'foo', {} ]
+        ]
+        @st.write_and_commit(write_list)
+      }
+      assert_nil(@st.fetch('foo'))
+      assert_nil(@st.fetch_properties('foo'))
+
+      assert_raise(IndexError) {
+        write_list = [
+          [ :write, 'foo', "Hello world.\n" ],
+          [ :delete, 'foo' ],
+          [ :custom_properties, 'foo', {} ]
         ]
         @st.write_and_commit(write_list)
       }
@@ -216,10 +238,18 @@ module Higgs::Test
 
       mod_time2 = @st.fetch_properties(:foo)['system_properties']['modified_time']
       sleep(0.001)
-      @st.write_and_commit([ [ :update_properties, :foo, { 'bar' => 'orange' } ] ])
+      @st.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'orange' } ] ])
 
       assert_equal(cre_time, @st.fetch_properties(:foo)['system_properties']['created_time'])
       assert(@st.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time)
+      assert_equal(mod_time2, @st.fetch_properties(:foo)['system_properties']['modified_time'])
+
+      chg_time2 = @st.fetch_properties(:foo)['system_properties']['changed_time']
+      sleep(0.001)
+      @st.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
+
+      assert_equal(cre_time, @st.fetch_properties(:foo)['system_properties']['created_time'])
+      assert(@st.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time2)
       assert_equal(mod_time2, @st.fetch_properties(:foo)['system_properties']['modified_time'])
     end
 

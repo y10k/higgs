@@ -582,6 +582,7 @@ module Higgs::Test
           [ :modified_time, proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :hash_type,     proc{|n, v| assert_equal('MD5', v, "name: #{n}") } ],
           [ :hash_value,    proc{|n, v| assert_equal(Digest::MD5.hexdigest('apple'), v, "name: #{n}") } ],
+          [ :string_only,   proc{|n, v| assert_equal(false, v, "name: #{n}") } ],
           [ 'bar',          proc{|n, v| assert_equal('banana', v, "name: #{n}") } ]
         ]
         tx.each_property(:foo) do |name, value|
@@ -654,6 +655,7 @@ module Higgs::Test
           [ :modified_time, proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :hash_type,     proc{|n, v| assert_equal('MD5', v, "name: #{n}") } ],
           [ :hash_value,    proc{|n, v| assert_equal(Digest::MD5.hexdigest('apple'), v, "name: #{n}") } ],
+          [ :string_only,   proc{|n, v| assert_equal(false, v, "name: #{n}") } ],
           [ 'bar',          proc{|n, v| assert_equal('banana', v, "name: #{n}") } ]
         ]
         tx.each_property(:foo) do |name, value|
@@ -711,6 +713,7 @@ module Higgs::Test
           [ :modified_time, proc{|n, v| assert_instance_of(Time, v, "name: #{n}") } ],
           [ :hash_type,     proc{|n, v| assert_equal('MD5', v, "name: #{n}") } ],
           [ :hash_value,    proc{|n, v| assert_equal(Digest::MD5.hexdigest('apple'), v, "name: #{n}") } ],
+          [ :string_only,   proc{|n, v| assert_equal(false, v, "name: #{n}") } ],
           [ 'bar',          proc{|n, v| assert_equal('banana', v, "name: #{n}") } ]
         ]
         tx.each_property(:foo) do |name, value|
