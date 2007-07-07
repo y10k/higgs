@@ -64,6 +64,40 @@ module Higgs::Test
       }
     end
 
+    def test_string_only
+      @st.transaction{|tx|
+        assert_equal(nil, tx.property(:foo, :string_only))
+        tx[:foo] = 0
+      }
+
+      @st.transaction{|tx|
+        assert_equal(false, tx.property(:foo, :string_only))
+        assert_equal(0, tx[:foo])
+        tx.set_property(:foo, :string_only, true)
+        assert_equal(0, tx[:foo])
+      }
+
+      @st.transaction{|tx|
+        assert_equal(true, tx.property(:foo, :string_only))
+        assert_equal(Marshal.dump(0), tx[:foo])
+        tx[:foo] = "Hello world.\n"
+      }
+
+      @st.transaction{|tx|
+        assert_equal(true, tx.property(:foo, :string_only))
+        assert_equal("Hello world.\n", tx[:foo])
+      }
+    end
+
+    def test_string_only_TypeError_cant_convert_into_String
+      @st.transaction{|tx|
+        tx[:foo] = 0
+        tx.set_property(:foo, :string_only, true)
+        assert_raise(TypeError) { tx.commit }
+        tx.rollback
+      }
+    end
+
     def test_replica_problem
       @st.transaction{|tx|
         tx[:foo] = 'a'

@@ -51,7 +51,13 @@ module Higgs
       init_options(options)
 
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
-        value = @storage.fetch(key) and @decode.call(value)
+        if (value = @storage.fetch(key)) then
+          if (! @storage.string_only(key)) then
+            @decode.call(value)
+          else
+            value
+          end
+        end
       }
     end
 
@@ -99,7 +105,8 @@ module Higgs
 
       @locked_map = {}
       @locked_map.default = false
-      @update_properties = {}
+      @update_system_properties = {}
+      @update_custom_properties = {}
       @ope_map = {}
     end
 
@@ -138,7 +145,8 @@ module Higgs
       lock(key)
       if (@ope_map[key] != :delete) then
         @ope_map[key] = :delete
-        @update_properties.delete(key)
+        @update_system_properties.delete(key)
+        @update_custom_properties.delete(key)
         @local_properties_cache.delete(key)
         @local_data_cache[key]  # data load from storage
         @local_data_cache.delete(key)
@@ -250,29 +258,35 @@ module Higgs
     end
 
     def set_property(key, name, value)
-      unless (name.kind_of? String) then
-        raise TypeError, "can't convert #{name.class} (name) to String"
-      end
       unless (self.key? key) then
         raise IndexError, "not exist properties at key: #{key}"
       end
-      properties = @local_properties_cache[key]['custom_properties']
-      properties[name] = value
-      @update_properties[key] = properties
+      case (name)
+      when String
+        properties = @local_properties_cache[key]['custom_properties']
+        properties[name] = value
+        @update_custom_properties[key] = properties
+      when :string_only
+        properties = @local_properties_cache[key]['system_properties']
+        properties['string_only'] = value
+        @update_system_properties[key] = properties
+      else
+        raise TypeError, "can't convert #{name.class} (name) to String"
+      end
       nil
     end
 
     def delete_property(key, name)
-      unless (name.kind_of? String) then
-        raise TypeError, "can't convert #{name.class} (name) to String"
-      end
       unless (self.key? key) then
         raise IndexError, "not exist properties at key: #{key}"
+      end
+      unless (name.kind_of? String) then
+        raise TypeError, "can't convert #{name.class} (name) to String"
       end
       properties = @local_properties_cache[key]['custom_properties']
       if (properties.include? name) then
         value = properties.delete(name)
-        @update_properties[key] = properties
+        @update_custom_properties[key] = properties
         return value
       end
       nil
@@ -347,10 +361,17 @@ module Higgs
         if (ope == :delete) then
           [ ope, key ]
         else
-          [ ope, key, @encode.call(@local_data_cache[key]) ]
+          if (! @local_properties_cache[key]['system_properties']['string_only']) then
+            [ ope, key, @encode.call(@local_data_cache[key]) ]
+          else
+            [ ope, key, @local_data_cache[key] ]
+          end
         end
       } + \
-      @update_properties.map{|key, properties|
+      @update_system_properties.map{|key, properties|
+        [ :system_properties, key, properties ]
+      } + \
+      @update_custom_properties.map{|key, properties|
         [ :custom_properties, key, properties ]
       }
     end
@@ -362,12 +383,13 @@ module Higgs
         @storage.write_and_commit(write_list)
         for ope, key, value in write_list
           case (ope)
-          when :write, :delete
+          when :write, :delete, :system_properties
             @master_cache.delete(key)
           end
           @local_properties_cache.delete(key)
         end
-        @update_properties.clear
+        @update_system_properties.clear
+        @update_custom_properties.clear
         @ope_map.clear
       end
       nil
@@ -376,7 +398,8 @@ module Higgs
     def rollback
       @local_data_cache.clear
       @local_properties_cache.clear
-      @update_properties.clear
+      @update_system_properties.clear
+      @update_custom_properties.clear
       @ope_map.clear
       nil
     end

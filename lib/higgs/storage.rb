@@ -757,6 +757,9 @@ module Higgs
       for ope, key, value in write_list
         case (ope)
         when :write
+          unless (value.kind_of? String) then
+            raise TypeError, "can't convert #{value.class} (value) to String"
+          end
           raw_write_list << [ :write, key, :d, value ]
           deleted_entries[key] = false
           if (properties = update_properties[key]) then

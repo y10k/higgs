@@ -470,6 +470,33 @@ module Higgs::Test
       }
     end
 
+    def test_string_only_property
+      @tman.transaction{|tx|
+        tx[:foo] = 'apple'
+        assert_equal(nil, tx.property(:foo, :string_only))
+
+        tx.commit
+        assert_equal(false, tx.property(:foo, :string_only))
+
+        tx.set_property(:foo, :string_only, true)
+        assert_equal(true, tx.property(:foo, :string_only))
+
+        tx.commit
+        assert_equal(true, tx.property(:foo, :string_only))
+      }
+
+      @tman.transaction{|tx|
+        tx[:bar] = 'banana'
+        assert_equal(nil, tx.property(:bar, :string_only))
+
+        tx.set_property(:bar, :string_only, true)
+        assert_equal(true, tx.property(:bar, :string_only))
+
+        tx.commit
+        assert_equal(true, tx.property(:bar, :string_only))
+      }
+    end
+
     def test_has_property
       @tman.transaction{|tx|
         tx[:foo] = 'apple'
