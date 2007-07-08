@@ -1,5 +1,7 @@
 2007-07-08  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* bin/higgs_dump_index.rb, bin/higgs_dump_jlog.rb: tools.
+
 	* lib/higgs/version.rb: version 0.0.3.
 
 2007-07-07  TOKI Yoshinori  <toki@freedom.ne.jp>

@@ -1,16 +1,14 @@
 #!/usr/local/bin/ruby
 
-$: << File.join(File.dirname($0), '..', 'lib')
-
-require 'higgs/index'
+require 'higgs/jlog'
 require 'pp'
 
 # for ident(1)
 CVS_ID = '$Id$'
 
-index = Higgs::Index.new
-index.load(ARGV[0])
-pp index
+Higgs::JournalLogger.each_log(ARGV[0]) {|log|
+  pp log
+}
 
 # Local Variables:
 # mode: Ruby
