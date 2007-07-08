@@ -1,0 +1,13 @@
+#!/usr/local/bin/ruby
+
+require 'higgs/storage'
+
+# for ident(1)
+CVS_ID = '$Id$'
+
+st = Higgs::Storage.new(ARGV[0], :read_only => true)
+begin
+  st.verify
+ensure
+  st.shutdown
+end
