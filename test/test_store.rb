@@ -98,6 +98,26 @@ module Higgs::Test
       }
     end
 
+    def test_rollback
+      @st.transaction{|tx|
+        tx[:foo] = %w[ apple banana orange ]
+      }
+
+      @st.transaction{|tx|
+        fruits = tx[:foo]
+        assert_equal(%w[ apple banana orange ], fruits)
+        assert_equal('orange', fruits.pop)
+        assert_equal(%w[ apple banana ], fruits)
+        tx[:foo] = fruits
+        tx.rollback
+        assert_equal(%w[ apple banana orange ], tx[:foo])
+      }
+
+      @st.transaction{|tx|
+        assert_equal(%w[ apple banana orange ], tx[:foo])
+      }
+    end
+
     def test_replica_problem
       @st.transaction{|tx|
         tx[:foo] = 'a'

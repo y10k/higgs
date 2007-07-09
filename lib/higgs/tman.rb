@@ -49,15 +49,8 @@ module Higgs
     def initialize(storage, options={})
       @storage = storage
       init_options(options)
-
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
-        if (value = @storage.fetch(key)) then
-          if (! @storage.string_only(key)) then
-            @decode.call(value)
-          else
-            value
-          end
-        end
+        value = @storage.fetch(key) and value.freeze
       }
     end
 
@@ -93,8 +86,15 @@ module Higgs
       @encode = encode
 
       @local_data_cache = Hash.new{|hash, key|
-        hash[key] = @master_cache[key] if (@storage.key? key)
+        if (@storage.key? key) then
+          if (@storage.string_only(key)) then
+            hash[key] = @master_cache[key]
+          else
+            hash[key] = @decode.call(@master_cache[key])
+          end
+        end
       }
+
       @local_properties_cache = Hash.new{|hash, key|
         if (properties = @storage.fetch_properties(key)) then
           hash[key] = Marshal.load(Marshal.dump(properties)) # deep copy
@@ -361,10 +361,10 @@ module Higgs
         if (ope == :delete) then
           [ ope, key ]
         else
-          if (! @local_properties_cache[key]['system_properties']['string_only']) then
-            [ ope, key, @encode.call(@local_data_cache[key]) ]
-          else
+          if (@local_properties_cache[key]['system_properties']['string_only']) then
             [ ope, key, @local_data_cache[key] ]
+          else
+            [ ope, key, @encode.call(@local_data_cache[key]) ]
           end
         end
       } + \
