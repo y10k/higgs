@@ -1,14 +1,41 @@
 #!/usr/local/bin/ruby
 
 require 'higgs/index'
+require 'optparse'
 require 'pp'
+require 'yaml'
 
 # for ident(1)
 CVS_ID = '$Id$'
 
+opts = OptionParser.new
+opts.banner = "Usage: #{opts.program_name} [options] path"
+
+output_format = :pretty
+opts.on('-o', '--output-format=FORMAT', [ :pretty, :yaml ]) {|v|
+  output_format = v
+}
+
+opts.on_tail('-h', '--help') {
+  puts opts
+  puts 'Output format:'
+  print opts.summary_indent, :pretty, "\n"
+  print opts.summary_indent, :yaml, "\n"
+  exit(1)
+}
+opts.parse!
+
 index = Higgs::Index.new
 index.load(ARGV[0])
-pp index
+
+case (output_format)
+when :pretty
+  pp index
+when :yaml
+  puts index.to_yaml
+else
+  raise "unknown output format: #{output_format}"
+end
 
 # Local Variables:
 # mode: Ruby

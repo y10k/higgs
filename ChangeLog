@@ -1,3 +1,7 @@
+2007-07-11  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* bin/higgs_dump_index: command line options.
+
 2007-07-10  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/tman.rb: decode or freeze in each transaction for the rollback.
