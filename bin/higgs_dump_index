@@ -12,8 +12,8 @@ opts = OptionParser.new
 opts.banner = "Usage: #{opts.program_name} [options] path"
 
 output_format = :pretty
-opts.on('-o', '--output-format=FORMAT', [ :pretty, :yaml ]) {|v|
-  output_format = v
+opts.on('-o', '--output-format=FORMAT', [ :pretty, :yaml ]) {|value|
+  output_format = value
 }
 
 opts.on_tail('-h', '--help') {

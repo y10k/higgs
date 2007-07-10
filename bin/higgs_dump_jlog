@@ -1,13 +1,39 @@
 #!/usr/local/bin/ruby
 
 require 'higgs/jlog'
+require 'optparse'
 require 'pp'
+require 'yaml'
 
 # for ident(1)
 CVS_ID = '$Id$'
 
-Higgs::JournalLogger.each_log(ARGV[0]) {|log|
-  pp log
+opts = OptionParser.new
+opts.banner = "Usage: #{opts.program_name} [options] [journal logs]"
+
+output_format = :pretty
+opts.on('-o', '--output-format=FORMAT', [ :pretty, :yaml ]) {|value|
+  output_format = value
+}
+
+opts.on_tail('-h', '--help') {
+  puts opts
+  puts 'Output format:'
+  print opts.summary_indent, :pretty, "\n"
+  print opts.summary_indent, :yaml, "\n"
+  exit(1)
+}
+opts.parse!
+
+Higgs::JournalLogger.scan_log(ARGF) {|log|
+  case (output_format)
+  when :pretty
+    pp log
+  when :yaml
+    puts log.to_yaml
+  else
+    raise "unknown output format: #{output_format}"
+  end
 }
 
 # Local Variables:

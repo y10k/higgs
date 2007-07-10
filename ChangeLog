@@ -1,6 +1,6 @@
 2007-07-11  TOKI Yoshinori  <toki@freedom.ne.jp>
 
-	* bin/higgs_dump_index: command line options.
+	* bin/higgs_dump_index, bin/higgs_dump_jlog: command line options.
 
 2007-07-10  TOKI Yoshinori  <toki@freedom.ne.jp>
 
