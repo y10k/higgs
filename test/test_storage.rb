@@ -33,14 +33,14 @@ module Higgs::Test
 
     def test_raw_write_and_commit
       write_list = [
-        [ :write, :foo, :data, 0xFF.chr * 1024 ],
-        [ :write, :foo, :data, "Hello world.\n" ],
-        [ :write, :foo, :data, "Hello world.\n" ],
-        [ :write, :foo, :data, 0xFF.chr * 1024 ],
-        [ :write, :foo, :data, "Hello world.\n" ],
+        [ :write, :foo, :data, 'foo', 0xFF.chr * 1024 ],
+        [ :write, :foo, :data, 'foo', "Hello world.\n" ],
+        [ :write, :foo, :data, 'foo', "Hello world.\n" ],
+        [ :write, :foo, :data, 'foo', 0xFF.chr * 1024 ],
+        [ :write, :foo, :data, 'foo', "Hello world.\n" ],
         [ :delete, :foo ],
-        [ :write, :foo, :data, "Hello world.\n" ],
-        [ :write, :foo, :data, 0xFF.chr * 1024 ]
+        [ :write, :foo, :data, 'foo', "Hello world.\n" ],
+        [ :write, :foo, :data, 'foo', 0xFF.chr * 1024 ]
       ]
       @st.raw_write_and_commit(write_list)
     end
@@ -63,7 +63,7 @@ module Higgs::Test
         when :write
           type = [ :a, :b ][rand(2)]
           value = rand(256).chr * rand(5120)
-          write_list << [ ope, key, type, value ]
+          write_list << [ ope, key, type, key.to_s, value ]
         when :delete
           next unless (@st.key? key)
           write_list << [ ope, key ]

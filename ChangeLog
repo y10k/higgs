@@ -1,3 +1,9 @@
+2007-07-12  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb: change journal log format.
+
+	* lib/higgs/version.rb: version 0.0.4.
+
 2007-07-11  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* bin/higgs_dump_index, bin/higgs_dump_jlog: command line options.

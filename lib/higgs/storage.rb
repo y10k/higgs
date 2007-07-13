@@ -483,7 +483,7 @@ module Higgs
         eoa = @index.eoa
 
         begin
-          for ope, key, type, value in write_list
+          for ope, key, type, name, value in write_list
             case (ope)
             when :write
               @logger.debug("journal log for write: (key,type)=(#{key},#{type})") if @logger.debug?
@@ -506,6 +506,7 @@ module Higgs
                   :pos => pos,
                   :typ => type,
                   :mod => commit_time,
+                  :nam => name,
                   :val => value
                 }
                 if (i = @index[key]) then
@@ -539,6 +540,7 @@ module Higgs
                       :pos => j[:pos],
                       :typ => type,
                       :mod => commit_time,
+                      :nam => name,
                       :val => value
                     }
                     if (j[:siz] > blocked_size) then
@@ -565,6 +567,7 @@ module Higgs
                 :pos => eoa,
                 :typ => type,
                 :mod => commit_time,
+                :nam => name,
                 :val => value
               }
               if (i = @index[key]) then
@@ -621,7 +624,7 @@ module Higgs
           for cmd in commit_log
             case (cmd[:ope])
             when :write
-              name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
+              name = cmd[:nam][0, Tar::Block::MAX_LEN]
               @logger.debug("write data to storage: (name,pos,size)=(#{name},#{cmd[:pos]},#{cmd[:val].size})") if @logger.debug?
               @w_tar.seek(cmd[:pos])
               @w_tar.add(name, cmd[:val], :mtime => cmd[:mod])
@@ -672,7 +675,7 @@ module Higgs
           when :write
             name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
             w_tar.seek(cmd[:pos])
-            w_tar.add(name, cmd[:val], :mtime => cmd[:mod])
+            w_tar.add(cmd[:nam], cmd[:val], :mtime => cmd[:mod])
             blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(cmd[:val].length)
             if (i = index[cmd[:key]]) then
               if (j = i[cmd[:typ]]) then
@@ -760,7 +763,7 @@ module Higgs
           unless (value.kind_of? String) then
             raise TypeError, "can't convert #{value.class} (value) to String"
           end
-          raw_write_list << [ :write, key, :d, value ]
+          raw_write_list << [ :write, key, :d, key.to_s, value ]
           deleted_entries[key] = false
           if (properties = update_properties[key]) then
             # nothing to do.
@@ -818,7 +821,7 @@ module Higgs
       end
 
       for key, properties in update_properties
-        raw_write_list << [ :write, key, :p, encode_properties(properties) ]
+        raw_write_list << [ :write, key, :p, "#{key}.p", encode_properties(properties) ]
       end
 
       raw_write_and_commit(raw_write_list, commit_time)
