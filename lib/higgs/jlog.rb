@@ -83,6 +83,8 @@ module Higgs
             return false
           end
         }
+
+        false
       end
 
       def need_for_recovery?(path)
