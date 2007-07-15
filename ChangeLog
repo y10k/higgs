@@ -1,3 +1,9 @@
+2007-07-16  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/tman.rb: new Higgs::TransactionManager::Export
+	module. export transaction manager methods from @tman instance
+	variable.
+
 2007-07-15  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/storage.rb: new Higgs::Storage::Export module. export

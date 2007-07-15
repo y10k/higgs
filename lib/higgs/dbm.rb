@@ -1,6 +1,5 @@
 # storage interface like dbm
 
-require 'forwardable'
 require 'higgs/storage'
 require 'higgs/tman'
 
@@ -12,6 +11,7 @@ module Higgs
 
     extend Forwardable
     include Storage::Export
+    include TransactionManager::Export
 
     DECODE = proc{|r| r }
     ENCODE = proc{|w| w }
@@ -22,9 +22,6 @@ module Higgs
       options[:encode] = ENCODE
       @tman = TransactionManager.new(@storage, options)
     end
-
-    def_delegator :@tman, :read_only
-    def_delegator :@tman, :transaction
 
     def self.open(*args)
       dbm = new(*args)
