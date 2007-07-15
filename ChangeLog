@@ -1,5 +1,9 @@
 2007-07-15  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb: change confusing error name:
+	Higgs::Storage::BrokenError (alike Higgs::Block::BrokenError) ->
+	Higgs::Storage::PanicError.
+
 	* bin/higgs_verify: command line options.
 
 2007-07-12  TOKI Yoshinori  <toki@freedom.ne.jp>

@@ -339,7 +339,7 @@ module Higgs::Test
         w.seek(data_body_offset)
         w.write(0xFF.chr * Tar::Block::BLKSIZ)
       }
-      assert_raise(Storage::BrokenError) {
+      assert_raise(Storage::PanicError) {
         @st.verify
       }
     end
@@ -362,7 +362,7 @@ module Higgs::Test
         t.write_EOA
         t.close(false)
       }
-      assert_raise(Storage::BrokenError) {
+      assert_raise(Storage::PanicError) {
         @st.verify
       }
     end
@@ -383,7 +383,7 @@ module Higgs::Test
         t.write_EOA
         t.close(false)
       }
-      assert_raise(Storage::BrokenError) {
+      assert_raise(Storage::PanicError) {
         @st.verify
       }
     end

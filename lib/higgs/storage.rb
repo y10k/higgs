@@ -20,7 +20,7 @@ module Higgs
     class Error < HiggsError
     end
 
-    class BrokenError < Error
+    class PanicError < Error
     end
 
     class NotWritableError < Error
@@ -271,22 +271,22 @@ module Higgs
       end
     end
 
-    def check_consistency
+    def check_panic
       @state_lock.synchronize{
         if (@shutdown) then
           raise ShutdownException, 'storage shutdown'
         end
         if (@broken) then
-          raise BrokenError, 'broken storage'
+          raise PanicError, 'broken storage'
         end
       }
     end
-    private :check_consistency
+    private :check_panic
 
     def recover
       @logger.warn('incompleted storage and recover from journal log...')
 
-      check_consistency
+      check_panic
       if (@read_only) then
         @logger.warn('read only storage is not recoverable.')
         raise NotWritableError, 'need for recovery'
@@ -448,7 +448,7 @@ module Higgs
 
     def rotate_journal_log(save_index=true)
       @commit_lock.synchronize{
-        check_consistency
+        check_panic
         if (@read_only) then
           raise NotWritableError, 'failed to write to read only storage'
         end
@@ -473,7 +473,7 @@ module Higgs
       @commit_lock.synchronize{
         @logger.debug("start raw_write_and_commit.") if @logger.debug?
 
-        check_consistency
+        check_panic
         if (@read_only) then
           raise NotWritableError, 'failed to write to read only storage'
         end
@@ -701,7 +701,7 @@ module Higgs
           when :succ
             index.succ!
             if (index.change_number != cmd[:cnum]) then
-              raise BrokenError, 'lost journal log'
+              raise PanicError, 'lost journal log'
             end
           else
             raise "unknown operation from #{curr_jlog_name}: #{cmd[:ope]}"
@@ -748,7 +748,7 @@ module Higgs
     end
 
     def write_and_commit(write_list, commit_time=Time.now)
-      check_consistency
+      check_panic
       if (@read_only) then
         raise NotWritableError, 'failed to write to read only storage'
       end
@@ -840,7 +840,7 @@ module Higgs
           unless (head_and_body) then
             @state_lock.synchronize{ @broken = true }
             @logger.error("BROKEN: failed to read record: #{key}")
-            raise BrokenError, "failed to read record: #{key}"
+            raise PanicError, "failed to read record: #{key}"
           end
         end
       end
@@ -867,12 +867,12 @@ module Higgs
       if (cksum_type != PROPERTIES_CKSUM_TYPE) then
         @state_lock.synchronize{ @broken = true }
         @logger.error("BROKEN: unknown properties cksum type: #{cksum_type}")
-        raise BrokenError, "unknown properties cksum type: #{cksum_type}"
+        raise PanicError, "unknown properties cksum type: #{cksum_type}"
       end
       if (body.sum(PROPERTIES_CKSUM_BITS) != Integer(cksum_value)) then
         @state_lock.synchronize{ @broken = true }
         @logger.error("BROKEN: mismatch properties cksum at #{key}")
-        raise BrokenError, "mismatch properties cksum at #{key}"
+        raise PanicError, "mismatch properties cksum at #{key}"
       end
       YAML.load(body)
     end
@@ -884,29 +884,29 @@ module Higgs
     private :internal_fetch_properties
 
     def fetch_properties(key)
-      check_consistency
+      check_panic
       internal_fetch_properties(key)
     end
 
     def fetch(key)
-      check_consistency
+      check_panic
       value = read_record_body(key, :d) or return
       unless (properties = internal_fetch_properties(key)) then
         @state_lock.synchronize{ @broken = true }
         @logger.error("BROKEN: failed to read properties: #{key}")
-        raise BrokenError, "failed to read properties: #{key}"
+        raise PanicError, "failed to read properties: #{key}"
       end
       hash_type = properties['system_properties']['hash_type']
       unless (cksum_proc = DATA_HASH_BIN[hash_type]) then
         @state_lock.synchronize{ @broken = true }
         @logger.error("BROKEN: unknown data hash type: #{hash_type}")
-        raise BrokenError, "unknown data hash type: #{hash_type}"
+        raise PanicError, "unknown data hash type: #{hash_type}"
       end
       hash_value = cksum_proc.call(value)
       if (hash_value != properties['system_properties']['hash_value']) then
         @state_lock.synchronize{ @broken = true }
         @logger.error("BROKEN: mismatch hash value at #{key}")
-        raise BrokenError, "mismatch hash value at #{key}"
+        raise PanicError, "mismatch hash value at #{key}"
       end
       value
     end
@@ -917,12 +917,12 @@ module Higgs
     end
 
     def key?(key)
-      check_consistency
+      check_panic
       @index.key? key
     end
 
     def each_key
-      check_consistency
+      check_panic
       @index.each_key do |key|
         yield(key)
       end
@@ -939,7 +939,7 @@ module Higgs
     ]
 
     def verify(out=nil, verbose_level=1)
-      check_consistency
+      check_panic
       @index.each_key do |key|
         if (out && verbose_level >= 1) then
           out << "check #{key}\n"
@@ -949,7 +949,7 @@ module Higgs
 
         if (out && verbose_level >= 2) then
           out << "  #{data.length} bytes\n"
-          properties = fetch_properties(key) or raise BrokenError, "not exist properties at key: #{key}"
+          properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"
           for key, format in VERIFY_VERBOSE_LIST
             value = properties['system_properties'][key]
             out << '  ' << key << ': ' << format.call(value) << "\n"
