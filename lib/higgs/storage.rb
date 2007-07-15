@@ -929,11 +929,32 @@ module Higgs
       self
     end
 
-    def verify(out=nil)
+    VERIFY_VERBOSE_LIST = [
+      [ 'hash_type', proc{|type| type } ],
+      [ 'hash_value', proc{|value| value } ],
+      [ 'created_time', proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
+      [ 'changed_time', proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
+      [ 'modified_time', proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
+      [ 'string_only', proc{|flag| flag.to_s } ]
+    ]
+
+    def verify(out=nil, verbose_level=1)
       check_consistency
       @index.each_key do |key|
-        out << "check #{key}\n" if out
-        fetch(key)
+        if (out && verbose_level >= 1) then
+          out << "check #{key}\n"
+        end
+
+        data = fetch(key)
+
+        if (out && verbose_level >= 2) then
+          out << "  #{data.length} bytes\n"
+          properties = fetch_properties(key) or raise BrokenError, "not exist properties at key: #{key}"
+          for key, format in VERIFY_VERBOSE_LIST
+            value = properties['system_properties'][key]
+            out << '  ' << key << ': ' << format.call(value) << "\n"
+          end
+        end
       end
       nil
     end
