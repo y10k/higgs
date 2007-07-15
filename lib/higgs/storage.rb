@@ -114,7 +114,7 @@ module Higgs
     end
     include InitOptions
 
-    # export storage methods from +@storage+ instance variable.
+    # export storage methods from @storage instance variable.
     module Export
       extend Forwardable
 
