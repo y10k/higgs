@@ -929,9 +929,10 @@ module Higgs
       self
     end
 
-    def verify
+    def verify(out=nil)
       check_consistency
       @index.each_key do |key|
+        out << "check #{key}\n" if out
         fetch(key)
       end
       nil

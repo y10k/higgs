@@ -1,13 +1,29 @@
 #!/usr/local/bin/ruby
 
 require 'higgs/storage'
+require 'optparse'
 
 # for ident(1)
 CVS_ID = '$Id$'
 
-st = Higgs::Storage.new(ARGV[0], :read_only => true)
+opts = OptionParser.new
+opts.banner = "Usage: #{opts.program_name} [options] HIGGS_NAME"
+
+verbose = false
+opts.on('-v', '--verbose') {|v|
+  verbose = v
+}
+
+opts.parse!
+higgs_name = ARGV.shift or raise 'requried HIGGS_PATH'
+
+st = Higgs::Storage.new(higgs_name, :read_only => true)
 begin
-  st.verify
+  if (verbose) then
+    st.verify(STDOUT)
+  else
+    st.verify
+  end
 ensure
   st.shutdown
 end

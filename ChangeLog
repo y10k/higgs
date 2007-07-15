@@ -1,3 +1,7 @@
+2007-07-15  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* bin/higgs_verify: command line options.
+
 2007-07-12  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/storage.rb: change journal log format.

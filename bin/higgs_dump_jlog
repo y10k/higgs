@@ -9,7 +9,7 @@ require 'yaml'
 CVS_ID = '$Id$'
 
 opts = OptionParser.new
-opts.banner = "Usage: #{opts.program_name} [options] [journal logs]"
+opts.banner = "Usage: #{opts.program_name} [options] [JOURNAL_LOG_PATHs]"
 
 output_format = :pretty
 opts.on('-o', '--output-format=FORMAT', [ :pretty, :yaml ]) {|value|
