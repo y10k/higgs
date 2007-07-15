@@ -1,4 +1,4 @@
-# $Id$
+# file lock
 
 module Higgs
   class FileLock

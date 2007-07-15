@@ -1,10 +1,11 @@
-# $Id$
+# storage interface like pstore
 
 require 'forwardable'
 require 'higgs/storage'
 require 'higgs/tman'
 
 module Higgs
+  # storage interface like pstore
   class Store
     # for ident(1)
     CVS_ID = '$Id$'

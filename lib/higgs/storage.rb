@@ -1,4 +1,4 @@
-# $Id$
+# transactional storage core
 
 require 'higgs/block'
 require 'higgs/cache'
@@ -11,6 +11,7 @@ require 'thread'
 require 'yaml'
 
 module Higgs
+  # transactional storage core
   class Storage
     # for ident(1)
     CVS_ID = '$Id$'

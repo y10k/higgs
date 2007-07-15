@@ -4,18 +4,18 @@ require 'higgs/exceptions'
 
 module Higgs
   # block header format
-  # -
-  #  0..15  : Z16  : magic symbol
-  # 16..19  : V    : body length
-  # 20..31  : x12  : (reserved)
-  # 32..33  : v    : format version
-  # 34..35  : x2   : (reserved)
-  # 36..37  : v    : head cksum
-  # 38..39  : x2   : (reserved)
-  # 40..55  : Z16  : body hash type
-  # 56..57  : v    : body hash length
-  # 58..71  : x14  : (reserved)
-  # 73..511 : a440 : body hash binary
+  # 
+  #   0..15  : Z16  : magic symbol
+  #  16..19  : V    : body length
+  #  20..31  : x12  : (reserved)
+  #  32..33  : v    : format version
+  #  34..35  : x2   : (reserved)
+  #  36..37  : v    : head cksum
+  #  38..39  : x2   : (reserved)
+  #  40..55  : Z16  : body hash type
+  #  56..57  : v    : body hash length
+  #  58..71  : x14  : (reserved)
+  #  73..511 : a440 : body hash binary
   #
   module Block
     # for ident(1)

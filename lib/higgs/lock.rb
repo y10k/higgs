@@ -1,4 +1,4 @@
-# $Id$
+# multi-thread lock manager
 
 require 'forwardable'
 require 'higgs/cache'
@@ -7,6 +7,7 @@ require 'singleton'
 require 'thread'
 
 module Higgs
+  # multi-thread lock manager
   class LockManager
     # for ident(1)
     CVS_ID = '$Id$'

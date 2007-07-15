@@ -1,4 +1,4 @@
-# $Id$
+# unix TAR utilities
 
 require 'forwardable'
 require 'higgs/exceptions'
@@ -32,23 +32,23 @@ module Higgs
     end
 
     # tar header format
-    # -
-    # name     : Z100 : null terminated string, primary hard link name
-    # mode     : A8   : octet number format ascii string
-    # uid      : A8   : octet number format ascii string
-    # gid      : A8   : octet number format ascii string
-    # size     : A12  : octet number format ascii string
-    # mtime    : A12  : octet number format ascii string, seconds since epoch date-time (UTC 1970-01-01 00:00:00)
-    # cksum    : A8   : octet number format ascii string
-    # typeflag : a1   : ascii number character (null character is old tar format)
-    # linkname : Z100 : null terminated string, secondly hard link name
-    # magic    : A6   : white space terminated string
-    # version  : a2   : 2 ascii characters
-    # uname    : Z32  : null terminated string
-    # gname    : Z32  : null terminated string
-    # devmajor : Z8   : octet number format ascii string
-    # devminor : Z8   : octet number format ascii string
-    # prefix   : Z155 : null terminated string
+    # 
+    #  name     : Z100 : null terminated string, primary hard link name
+    #  mode     : A8   : octet number format ascii string
+    #  uid      : A8   : octet number format ascii string
+    #  gid      : A8   : octet number format ascii string
+    #  size     : A12  : octet number format ascii string
+    #  mtime    : A12  : octet number format ascii string, seconds since epoch date-time (UTC 1970-01-01 00:00:00)
+    #  cksum    : A8   : octet number format ascii string
+    #  typeflag : a1   : ascii number character (null character is old tar format)
+    #  linkname : Z100 : null terminated string, secondly hard link name
+    #  magic    : A6   : white space terminated string
+    #  version  : a2   : 2 ascii characters
+    #  uname    : Z32  : null terminated string
+    #  gname    : Z32  : null terminated string
+    #  devmajor : Z8   : octet number format ascii string
+    #  devminor : Z8   : octet number format ascii string
+    #  prefix   : Z155 : null terminated string
     #
     module Block
       # block size

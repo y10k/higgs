@@ -1,4 +1,4 @@
-# $Id$
+# multi-thread utilities
 
 require 'forwardable'
 require 'higgs/exceptions'

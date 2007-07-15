@@ -1,10 +1,11 @@
-# $Id$
+# storage interface like dbm
 
 require 'forwardable'
 require 'higgs/storage'
 require 'higgs/tman'
 
 module Higgs
+  # storage interface like dbm
   class DBM
     # for ident(1)
     CVS_ID = '$Id$'

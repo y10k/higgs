@@ -1,5 +1,26 @@
 2007-07-15  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	* lib/cgi/session/higgs.rb, lib/higgs.rb, lib/higgs/block.rb,
+	lib/higgs/cache.rb, lib/higgs/dbm.rb, lib/higgs/exceptions.rb,
+	lib/higgs/flock.rb, lib/higgs/index.rb, lib/higgs/jlog.rb,
+	lib/higgs/lock.rb, lib/higgs/storage.rb, lib/higgs/store.rb,
+	lib/higgs/tar.rb, lib/higgs/thread.rb, lib/higgs/tman.rb: some
+	rdoc comments.
+
 	* lib/higgs/storage.rb: change confusing error name:
 	Higgs::Storage::BrokenError (alike Higgs::Block::BrokenError) ->
 	Higgs::Storage::PanicError.

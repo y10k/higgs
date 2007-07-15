@@ -1,4 +1,4 @@
-# $Id$
+# exceptions
 
 module Higgs
   module Exceptions

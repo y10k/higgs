@@ -1,10 +1,11 @@
-# $Id$
+# cache utilities
 
 require 'forwardable'
 require 'higgs/thread'
 require 'thread'
 
 module Higgs
+  # cache by Least Recently Used strategy
   class LRUCache
     # for ident(1)
     CVS_ID = '$Id$'
@@ -61,6 +62,7 @@ module Higgs
     end
   end
 
+  # multi-thread safe cache
   class SharedWorkCache
     # for ident(1)
     CVS_ID = '$Id$'

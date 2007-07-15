@@ -7,6 +7,7 @@ require 'higgs/store'
 
 class CGI
   class Session
+    # like cgi/session/pstore.rb
     class HiggsStore
       # for ident(1)
       CVS_ID = '$Id$'

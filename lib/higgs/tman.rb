@@ -1,4 +1,4 @@
-# $Id$
+# transaction manager
 
 require 'higgs/cache'
 require 'higgs/exceptions'
