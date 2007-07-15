@@ -37,7 +37,7 @@ spec = Gem::Specification.new{|s|
   s.executables << 'higgs_dump_index' << 'higgs_dump_jlog' << 'higgs_verify'
   s.files = Dir['{lib,test,misc}/**/*.rb'] << 'ChangeLog'
   s.test_files = [ 'test/run.rb' ]
-  s.has_rdoc = false
+  s.has_rdoc = true
 }
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_zip = true
