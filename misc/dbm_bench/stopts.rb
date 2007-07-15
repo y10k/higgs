@@ -1,5 +1,6 @@
 # storage options
 
+require 'higgs/cache'
 require 'logger'
 require 'yaml'
 
@@ -13,6 +14,14 @@ def get_storage_options
 
   if (options.key? :data_cksum_type) then
     options[:data_cksum_type] = options[:data_cksum_type].to_sym
+  end
+
+  if (options.key? :properties_cache_entries) then
+    options[:properties_cache] = Higgs::LRUCache.new(options.delete(:properties_cache_entries))
+  end
+
+  if (options.key? :master_cache_entries) then
+    options[:master_cache] = Higgs::LRUCache.new(options.delete(:master_cache_entries))
   end
 
   if (options.key? :jlog_cksum_type) then
