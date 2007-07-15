@@ -1,5 +1,8 @@
 2007-07-15  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb: new Higgs::Storage::Export module. export
+	storage methods from @storage instance variable.
+
 	* lib/cgi/session/higgs.rb, lib/higgs.rb, lib/higgs/block.rb,
 	lib/higgs/cache.rb, lib/higgs/dbm.rb, lib/higgs/exceptions.rb,
 	lib/higgs/flock.rb, lib/higgs/index.rb, lib/higgs/jlog.rb,

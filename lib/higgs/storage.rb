@@ -1,5 +1,6 @@
 # transactional storage core
 
+require 'forwardable'
 require 'higgs/block'
 require 'higgs/cache'
 require 'higgs/flock'
@@ -112,6 +113,25 @@ module Higgs
       attr_reader :jlog_rotate_service_uri
     end
     include InitOptions
+
+    # export storage methods from +@storage+ instance variable.
+    module Export
+      extend Forwardable
+
+      def_delegator :@storage, :name
+      def_delegator :@storage, :read_only
+      def_delegator :@storage, :number_of_read_io
+      def_delegator :@storage, :data_hash_type
+      def_delegator :@storage, :jlog_sync
+      def_delegator :@storage, :jlog_hash_type
+      def_delegator :@storage, :jlog_rotate_size
+      def_delegator :@storage, :jlog_rotate_max
+      def_delegator :@storage, :jlog_rotate_service_uri
+      def_delegator :@storage, :shutdown
+      def_delegator :@storage, :shutdown?
+      def_delegator :@storage, :rotate_journal_log
+      def_delegator :@storage, :verify
+    end
 
     def initialize(name, options={})
       @name = name

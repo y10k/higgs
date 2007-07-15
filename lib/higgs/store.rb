@@ -11,6 +11,7 @@ module Higgs
     CVS_ID = '$Id$'
 
     extend Forwardable
+    include Storage::Export
 
     DECODE = proc{|r| Marshal.load(r) }
     ENCODE = proc{|w| Marshal.dump(w) }
@@ -21,17 +22,6 @@ module Higgs
       @storage = Storage.new(name, options)
       @tman = TransactionManager.new(@storage, options)
     end
-
-    def_delegator :@storage, :name
-    def_delegator :@storage, :number_of_read_io
-    def_delegator :@storage, :jlog_sync
-    def_delegator :@storage, :jlog_rotate_size
-    def_delegator :@storage, :jlog_rotate_max
-    def_delegator :@storage, :jlog_rotate_service_uri
-    def_delegator :@storage, :shutdown
-    def_delegator :@storage, :shutdown?
-    def_delegator :@storage, :rotate_journal_log
-    def_delegator :@storage, :verify
 
     def_delegator :@tman, :read_only
     def_delegator :@tman, :transaction
