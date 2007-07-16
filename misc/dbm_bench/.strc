@@ -4,5 +4,5 @@ data_cksum_type: MD5
 jlog_sync: false
 jlog_cksum_type: MD5
 jlog_rotate_size: 1048576
-jlog_rotate_max: 0
+jlog_rotate_max: 1
 logging_level: info
