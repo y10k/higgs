@@ -184,6 +184,15 @@ module Higgs::Test
 	logger.close
       end
     end
+
+    def test_logging_level_unknown
+      File.open(@conf_path, 'w') {|w|
+	w << "logging_level: foo\n"
+      }
+      assert_raise(RuntimeError) {
+	Storage.load_conf(@conf_path)
+      }
+    end
   end
 end
 
