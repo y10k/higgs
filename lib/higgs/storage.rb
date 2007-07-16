@@ -545,7 +545,7 @@ module Higgs
 
               # recycle
               if (pos = @index.free_fetch(blocked_size)) then
-                @logger.debug("write type of recycle free segment: (pos,size)=(#{pos},#{blocked_size})") if @logger.debug?
+                @logger.debug("write type of recycle free region: (pos,size)=(#{pos},#{blocked_size})") if @logger.debug?
                 commit_log << {
                   :ope => :free_fetch,
                   :pos => pos,
@@ -601,7 +601,7 @@ module Higgs
                         :siz => j[:siz] - blocked_size,
                         :mod => commit_time
                       }
-                      @logger.debug("tail free segment: (pos,size)=(#{commit_log[-1][:pos]},#{commit_log[-1][:siz]})") if @logger.debug?
+                      @logger.debug("tail free region: (pos,size)=(#{commit_log[-1][:pos]},#{commit_log[-1][:siz]})") if @logger.debug?
                       @index.free_store(commit_log.last[:pos], commit_log.last[:siz])
                       j[:siz] = blocked_size
                     end
@@ -680,7 +680,7 @@ module Higgs
               @w_tar.seek(cmd[:pos])
               @w_tar.add(name, cmd[:val], :mtime => cmd[:mod])
             when :free_store
-              @logger.debug("write free segment to storage: (pos,size)=(#{cmd[:pos]},#{cmd[:siz]})") if @logger.debug?
+              @logger.debug("write free region to storage: (pos,size)=(#{cmd[:pos]},#{cmd[:siz]})") if @logger.debug?
               name = format('.free.%x', cmd[:pos] >> 9)
               @w_tar.seek(cmd[:pos])
               @w_tar.write_header(:name => name, :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])

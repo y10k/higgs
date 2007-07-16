@@ -3,6 +3,6 @@ number_of_read_io: 2
 data_cksum_type: MD5
 jlog_sync: false
 jlog_cksum_type: MD5
-jlog_rotate_size: 262144
-jlog_rotate_max: 1
-log_level: info
+jlog_rotate_size: 1048576
+jlog_rotate_max: 0
+logging_level: info

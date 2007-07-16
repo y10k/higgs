@@ -7,16 +7,19 @@ $: << File.join(File.dirname($0), '..', '..', 'lib')
 
 require 'benchmark'
 require 'higgs/dbm'
-require 'stopts'
 
 loop_count = (ARGV.shift || '100').to_i
 data_count = (ARGV.shift || '10').to_i
 max_dat_len = (ARGV.shift || '32768').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}, MAX_DAT_LEN:#{max_dat_len}"
 
-options = get_storage_options
+name = File.join(File.dirname($0), 'foo')
+conf_path = File.join(File.dirname($0), '.strc')
 
-Higgs::DBM.open('foo', options) {|dbm|
+options = {}
+options.update(Higgs::Storage.load_conf(conf_path)) if (File.exist? conf_path)
+
+Higgs::DBM.open(name, options) {|dbm|
   srand(0)
 
   Benchmark.bm do |x|
