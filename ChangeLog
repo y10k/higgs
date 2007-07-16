@@ -1,5 +1,8 @@
 2007-07-16  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb: load storage options from YAML
+	configuration file.
+
 	* lib/higgs/tman.rb: new Higgs::TransactionManager::Export
 	module. export transaction manager methods from @tman instance
 	variable.

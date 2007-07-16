@@ -133,6 +133,36 @@ module Higgs
       def_delegator :@storage, :verify
     end
 
+    def self.load_conf(path)
+      conf = YAML.load(IO.read(path))
+      options = {}
+      for name, value in conf
+        case (name)
+        when 'data_hash_type', 'jlog_hash_type'
+          value = value.to_sym
+        when 'properties_cache_limit_size', 'master_cache_limit_size'
+          name = name.sub(/_limit_size$/, '')
+          value = LRUCache.new(value)
+        when 'logging_level'
+          require 'logger'
+          name = 'logger'
+          level = case (value)
+                  when 'debug', 'info', 'warn', 'error', 'fatal'
+                    Logger.const_get(value.upcase)
+                  else
+                    raise "unknown logging level: #{value}"
+                  end
+          value = proc{|path|
+            logger = Logger.new(path, 1)
+            logger.level = level
+            logger
+          }
+        end
+        options[name.to_sym] = value
+      end
+      options
+    end
+
     def initialize(name, options={})
       @name = name
       @log_name = "#{@name}.log"
