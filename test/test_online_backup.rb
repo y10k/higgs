@@ -14,6 +14,7 @@ module Higgs::Test
     MAX_ITEM_BYTES = (ENV['MAX_ITEM_BYTES'] || '16384').to_i
     LEAST_COMMITS_PER_ROTATION = (ENV['LEAST_COMMITS_PER_ROTATION'] || '8').to_i
     UPTIME_SECONDS = (ENV['UPTIME_SECONDS'] || '3').to_i
+    ITEM_CHARS = ('A'..'Z').to_a + ('a'..'z').to_a
 
     if ($DEBUG) then
       puts 'online backup test parameters...'
@@ -57,8 +58,6 @@ module Higgs::Test
       FileUtils.rm_rf(@restore_dir) unless $DEBUG
     end
 
-    CHARS = ('A'..'Z').to_a + ('a'..'z').to_a
-
     def run_backup_storage
       # step 0: storage starts with jlog_rotate_service_uri option
       # (jlog_rotate_service_uri option is disabled by default)
@@ -87,7 +86,7 @@ module Higgs::Test
             write_list << [ ope, key, { 'string_only' => [ true, false ][rand(2)] } ]
           when :custom_properties
             next unless (st.key? key)
-            value = CHARS[rand(CHARS.size)] * rand(MAX_ITEM_BYTES)
+            value = ITEM_CHARS[rand(ITEM_CHARS.size)] * rand(MAX_ITEM_BYTES)
             write_list << [ ope, key, { 'foo' => value } ]
           when :delete
             next unless (st.key? key)
