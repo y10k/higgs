@@ -96,7 +96,7 @@ module Higgs
         end
 
         for to_jlog in Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog'))
-          to_jlog =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
+          to_jlog =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{to_jlog}"
           ext = $&
           from_jlog = @from + ext
           if (File.exist? from_jlog) then
