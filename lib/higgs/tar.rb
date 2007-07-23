@@ -291,7 +291,7 @@ module Higgs
           uname, gname, devmajor, devminor, prefix
         ].pack(HEAD_FMT)
         header += "\0" * 12
-        if (head.include? :chksum) then
+        if (head.key? :chksum) then
           chksum = head[:chksum]
         else
           chksum = header.sum(20)
@@ -335,7 +335,7 @@ module Higgs
 
       def add_file(path)
         stat = File.stat(path)
-        unless (FTYPE_TO_TAR.include? stat.ftype) then
+        unless (FTYPE_TO_TAR.key? stat.ftype) then
           raise FormatError, "unknown file type: #{stat.ftype}"
         end
         head = {

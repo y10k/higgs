@@ -79,7 +79,7 @@ module Higgs
     def [](key)
       work = nil
       @lock.synchronize{
-        unless (@cache.include? key) then
+        unless (@cache.key? key) then
           @cache[key] = SharedWork.new{ @work.call(key) } 
         end
         work = @cache[key]

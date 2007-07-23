@@ -20,7 +20,7 @@ module Higgs
 
     module InitOptions
       def init_options(options)
-        if (options.include? :read_only) then
+        if (options.key? :read_only) then
           @read_only = options[:read_only]
         else
           @read_only = false
@@ -29,14 +29,14 @@ module Higgs
         @decode = options[:decode] || proc{|r| r }
         @encode = options[:encode] || proc{|w| w }
 
-        if (options.include? :lock_manager) then
+        if (options.key? :lock_manager) then
           @lock_manager = options[:lock_manager]
         else
           require 'higgs/lock'
           @lock_manager = GiantLockManager.new
         end
 
-        if (options.include? :master_cache) then
+        if (options.key? :master_cache) then
           @master_cache = options[:master_cache]
         else
           @master_cache = LRUCache.new
@@ -293,7 +293,7 @@ module Higgs
         raise TypeError, "can't convert #{name.class} (name) to String"
       end
       properties = @local_properties_cache[key]['custom_properties']
-      if (properties.include? name) then
+      if (properties.key? name) then
         value = properties.delete(name)
         @update_custom_properties[key] = properties
         return value

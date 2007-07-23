@@ -62,13 +62,13 @@ module Higgs
       def init_options(options)
         @number_of_read_io = options[:number_of_read_io] || 2
 
-        if (options.include? :read_only) then
+        if (options.key? :read_only) then
           @read_only = options[:read_only]
         else
           @read_only = false
         end
 
-        if (options.include? :properties_cache) then
+        if (options.key? :properties_cache) then
           @properties_cache = options[:properties_cache]
         else
           @properties_cache = LRUCache.new
@@ -79,7 +79,7 @@ module Higgs
           raise "unknown data hash type: #{@data_hash_type}"
         end
 
-        if (options.include? :jlog_sync) then
+        if (options.key? :jlog_sync) then
           @jlog_sync = options[:jlog_sync]
         else
           @jlog_sync = false
@@ -90,7 +90,7 @@ module Higgs
         @jlog_rotate_max = options[:jlog_rotate_max] || 1
         @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
 
-        if (options.include? :logger) then
+        if (options.key? :logger) then
           @Logger = options[:logger]
         else
           require 'logger'
