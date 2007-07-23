@@ -140,7 +140,7 @@ module Higgs::Test
     end
     private :update_storage
 
-    def test_recover_and_verify
+    def test_recover_and_verify_and_clean_jlog
       options = {
         :end_of_warm_up => Latch.new,
         :spin_lock => true
@@ -156,12 +156,14 @@ module Higgs::Test
       @bman.rotate_jlog
       @bman.backup_jlog
       @bman.recover
+      @bman.verify
+      @bman.clean_jlog
 
       assert(FileUtils.cmp(@from + '.tar', File.join(@to_dir, @to_name + '.tar')))
       assert_equal(Index.new.load(@from + '.idx').to_h,
                    Index.new.load(File.join(@to_dir, @to_name + '.idx')).to_h)
-
-      @bman.verify
+      assert_equal(0, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
     end
 
     def test_clean_jlog
