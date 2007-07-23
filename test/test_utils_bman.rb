@@ -109,6 +109,48 @@ module Higgs::Test
       assert_equal(10, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
     end
 
+    def test_clean_jlog
+      @bman.rotate_jlog
+      @bman.rotate_jlog
+      @bman.rotate_jlog
+      @bman.backup_jlog
+
+      assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(3, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+
+      @bman.clean_jlog
+      assert_equal(0, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+    end
+
+    def test_clean_jlog_delete_backup
+      @bman.rotate_jlog
+      @bman.rotate_jlog
+      @bman.rotate_jlog
+      @bman.backup_jlog
+      @bman.rotate_jlog
+
+      assert_equal(4, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(3, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+
+      @bman.clean_jlog
+      assert_equal(1, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+    end
+
+    def test_clean_jlog_no_backup_no_delete
+      @bman.rotate_jlog
+      @bman.rotate_jlog
+      @bman.rotate_jlog
+
+      assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+
+      @bman.clean_jlog
+      assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+    end
+
     def update_storage(options)
       count = 0
       while (options[:spin_lock])
@@ -163,48 +205,6 @@ module Higgs::Test
       assert_equal(Index.new.load(@from + '.idx').to_h,
                    Index.new.load(File.join(@to_dir, @to_name + '.idx')).to_h)
       assert_equal(0, Storage.rotate_entries(@from + '.jlog').length)
-      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
-    end
-
-    def test_clean_jlog
-      @bman.rotate_jlog
-      @bman.rotate_jlog
-      @bman.rotate_jlog
-      @bman.backup_jlog
-
-      assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
-      assert_equal(3, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
-
-      @bman.clean_jlog
-      assert_equal(0, Storage.rotate_entries(@from + '.jlog').length)
-      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
-    end
-
-    def test_clean_jlog_delete_backup
-      @bman.rotate_jlog
-      @bman.rotate_jlog
-      @bman.rotate_jlog
-      @bman.backup_jlog
-      @bman.rotate_jlog
-
-      assert_equal(4, Storage.rotate_entries(@from + '.jlog').length)
-      assert_equal(3, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
-
-      @bman.clean_jlog
-      assert_equal(1, Storage.rotate_entries(@from + '.jlog').length)
-      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
-    end
-
-    def test_clean_jlog_no_backup_no_delete
-      @bman.rotate_jlog
-      @bman.rotate_jlog
-      @bman.rotate_jlog
-
-      assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
-      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
-
-      @bman.clean_jlog
-      assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
       assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
     end
   end
