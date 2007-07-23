@@ -207,6 +207,23 @@ module Higgs::Test
       assert_equal(0, Storage.rotate_entries(@from + '.jlog').length)
       assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
     end
+
+    def test_online_backup
+      options = {
+        :end_of_warm_up => Latch.new,
+        :spin_lock => true
+      }
+      t = Thread.new{ update_storage(options) }
+
+      options[:end_of_warm_up].wait
+      @bman.online_backup
+      options[:spin_lock] = false
+      t.join
+
+      assert((File.file? File.join(@to_dir, @to_name + '.tar')))
+      assert((File.file? File.join(@to_dir, @to_name + '.idx')))
+      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+    end
   end
 end
 

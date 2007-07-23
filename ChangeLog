@@ -1,3 +1,7 @@
+2007-07-24  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/utils/bman.rb: online backup scenario.
+
 2007-07-23  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* test/test_utils_bman.rb: unit test for backup manager.

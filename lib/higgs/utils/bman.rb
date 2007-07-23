@@ -110,6 +110,18 @@ module Higgs
 
         nil
       end
+
+      # run online backup scenario
+      def online_backup
+        backup_index
+        backup_data
+        rotate_jlog
+        backup_jlog
+        recover
+        verify
+        clean_jlog
+        nil
+      end
     end
   end
 end
