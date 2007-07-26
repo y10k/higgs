@@ -13,8 +13,9 @@ module Higgs
 
       def initialize(options={})
         @from = options[:from]
-        @to_dir = options[:to_dir]
-        @to_name = options[:to_name] || File.basename(@from)
+        to_dir = options[:to_dir]
+        to_name = options[:to_name] || File.basename(@from)
+        @to = File.join(to_dir, to_name)
         @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
         @verbose = options[:verbose] || 0
         @out = options[:out] || STDOUT
@@ -30,7 +31,7 @@ module Higgs
 
       def backup_index
         connect_service
-        @jlog_rotate_service.call(File.join(@to_dir, @to_name) + '.idx')
+        @jlog_rotate_service.call(@to + '.idx')
         nil
       end
 
@@ -38,10 +39,10 @@ module Higgs
         unless (@from) then
           raise 'required from_storage'
         end
-        unless (@to_dir && @to_name) then
+        unless (@to) then
           raise 'required to_storage'
         end
-        FileUtils.cp(@from + '.tar', File.join(@to_dir, @to_name) + '.tar', :preserve => true)
+        FileUtils.cp("#{@from}.tar", "#{@to}.tar", :preserve => true)
         nil
       end
 
@@ -55,30 +56,30 @@ module Higgs
         unless (@from) then
           raise 'required from_storage'
         end
-        unless (@to_dir && @to_name) then
+        unless (@to) then
           raise 'required to_storage'
         end
         for path in Storage.rotate_entries(@from + '.jlog')
           path =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
           ext = $&
-          FileUtils.cp(path, File.join(@to_dir, @to_name) + ext, :preserve => true)
+          FileUtils.cp(path, "#{@to}#{ext}", :preserve => true)
         end
         nil
       end
 
       def recover
-        unless (@to_dir && @to_name) then
+        unless (@to) then
           raise 'required to_storage'
         end
-        Storage.recover(File.join(@to_dir, @to_name))
+        Storage.recover(@to)
         nil
       end
 
       def verify
-        unless (@to_dir && @to_name) then
+        unless (@to) then
           raise 'required to_storage'
         end
-        st = Storage.new(File.join(@to_dir, @to_name), :read_only => true)
+        st = Storage.new(@to, :read_only => true)
         begin
           st.verify
         ensure
@@ -91,11 +92,11 @@ module Higgs
         unless (@from) then
           raise 'required from_storage'
         end
-        unless (@to_dir && @to_name) then
+        unless (@to) then
           raise 'required to_storage'
         end
 
-        for to_jlog in Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog'))
+        for to_jlog in Storage.rotate_entries("#{@to}.jlog")
           to_jlog =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{to_jlog}"
           ext = $&
           from_jlog = @from + ext
@@ -104,7 +105,7 @@ module Higgs
           end
         end
 
-        for to_jlog in Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog'))
+        for to_jlog in Storage.rotate_entries("#{@to}.jlog")
           FileUtils.rm(to_jlog)
         end
 
