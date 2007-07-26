@@ -23,7 +23,9 @@ module Higgs
 
       def log(msg)
         t = Time.now
-        "#{t.strftime('%Y-%m-%d %H:%M:%S')}.#{format('%03d', t.to_f * 1000 % 1000)} [#{$$}]: #{msg}\n"
+        timestamp = t.strftime('%Y-%m-%d %H:%M:%S')
+        milli_sec = format('%03d', t.to_f * 1000 % 1000)
+        "#{timestamp}.#{milli_sec} [#{$$}]: #{msg}\n"
       end
       private :log
 
