@@ -22,7 +22,8 @@ module Higgs
       end
 
       def log(msg)
-        "#{Time.now} [#{$$}]: #{msg}\n"
+        t = Time.now
+        "#{t.strftime('%Y-%m-%d %H:%M:%S')}.#{format('%03d', t.to_f * 1000 % 1000)} [#{$$}]: #{msg}\n"
       end
       private :log
 
@@ -36,7 +37,7 @@ module Higgs
       private :connect_service
 
       def backup_index
-        @out << log('backup index') if (@verbose >= 1)
+        @out << log('start index backup.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
@@ -45,11 +46,12 @@ module Higgs
         end
         connect_service
         @jlog_rotate_service.call(@to + '.idx')
+        @out << log('completed index backup.') if (@verbose >= 1)
         nil
       end
 
       def backup_data
-        @out << log('backup data') if (@verbose >= 1)
+        @out << log('start data backup.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
@@ -57,18 +59,20 @@ module Higgs
           raise 'required to_storage'
         end
         FileUtils.cp("#{@from}.tar", "#{@to}.tar", :preserve => true, :verbose => @verbose >= 2)
+        @out << log('completed data backup.') if (@verbose >= 1)
         nil
       end
 
       def rotate_jlog
-        @out << log('rotate journal log') if (@verbose >= 1)
+        @out << log('start journal log rotation.') if (@verbose >= 1)
         connect_service
         @jlog_rotate_service.call(true)
+        @out << log('completed journal log rotation.') if (@verbose >= 1)
         nil
       end
 
       def backup_jlog
-        @out << log('backup journal logs') if (@verbose >= 1)
+        @out << log('start journal logs backup.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
@@ -80,20 +84,22 @@ module Higgs
           ext = $&
           FileUtils.cp(path, "#{@to}#{ext}", :preserve => true, :verbose => @verbose >= 2)
         end
+        @out << log('completed journal logs backup.') if (@verbose >= 1)
         nil
       end
 
       def recover
-        @out << log('recover backup storage') if (@verbose >= 1)
+        @out << log('start backup storage recovery.') if (@verbose >= 1)
         unless (@to) then
           raise 'required to_storage'
         end
         Storage.recover(@to)
+        @out << log('completed backup storage recovery.') if (@verbose >= 1)
         nil
       end
 
       def verify
-        @out << log('verify backup storage') if (@verbose >= 1)
+        @out << log('start backup storage verify.') if (@verbose >= 1)
         unless (@to) then
           raise 'required to_storage'
         end
@@ -103,11 +109,12 @@ module Higgs
         ensure
           st.shutdown
         end
+        @out << log('completed backup storage verify.') if (@verbose >= 1)
         nil
       end
 
       def clean_jlog
-        @out << log('clean journal logs') if (@verbose >= 1)
+        @out << log('start journal logs clean.') if (@verbose >= 1)
 
         unless (@from) then
           raise 'required from_storage'
@@ -129,11 +136,13 @@ module Higgs
           FileUtils.rm(to_jlog, :verbose => @verbose >= 2)
         end
 
+        @out << log('completed journal logs clean.') if (@verbose >= 1)
         nil
       end
 
       # run online backup scenario
       def online_backup
+        @out << log('**** START BACKUP SCENARIO ****') if (@verbose >= 1)
         backup_index
         backup_data
         rotate_jlog
@@ -141,6 +150,7 @@ module Higgs
         recover
         verify
         clean_jlog
+        @out << log('**** COMPLETED BACKUP SCENARIO ****') if (@verbose >= 1)
         nil
       end
     end
