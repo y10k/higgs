@@ -42,7 +42,7 @@ module Higgs::Test
                                        :to_dir => @to_dir,
                                        :to_name => @to_name,
                                        :jlog_rotate_service_uri => @jlog_rotate_service_uri,
-                                       :verbose => $DEBUG ? 1 : 0)
+                                       :verbose => $DEBUG ? 2 : 0)
     end
 
     def teardown

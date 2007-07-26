@@ -762,7 +762,7 @@ module Higgs
       nil
     end
 
-    def self.recover(name)
+    def self.recover(name, out=nil, verbose_level=1)
       tar_name = "#{name}.tar"
       idx_name = "#{name}.idx"
       jlog_name = "#{name}.jlog"
@@ -781,8 +781,12 @@ module Higgs
         index = Index.new
         index.load(idx_name) if (File.exist? idx_name)
 
+        
+        out << "recovery target: #{name}\n" if (out && verbose_level >= 1)
         for curr_name in rotate_entries(jlog_name)
           JournalLogger.each_log(curr_name) do |log|
+            change_number = log[0]
+            out << "apply journal log: #{change_number}\n" if (out && verbose_level >= 1)
             apply_journal(w_tar, index, log)
           end
         end

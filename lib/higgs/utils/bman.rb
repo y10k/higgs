@@ -96,7 +96,7 @@ module Higgs
         unless (@to) then
           raise 'required to_storage'
         end
-        Storage.recover(@to)
+        Storage.recover(@to, @out, @verbose - 1)
         @out << log('completed backup storage recovery.') if (@verbose >= 1)
         nil
       end
