@@ -41,7 +41,8 @@ module Higgs::Test
       @bman = Utils::BackupManager.new(:from => @from,
                                        :to_dir => @to_dir,
                                        :to_name => @to_name,
-                                       :jlog_rotate_service_uri => @jlog_rotate_service_uri)
+                                       :jlog_rotate_service_uri => @jlog_rotate_service_uri,
+                                       :verbose => $DEBUG ? 1 : 0)
     end
 
     def teardown

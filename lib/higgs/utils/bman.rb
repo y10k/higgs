@@ -21,6 +21,11 @@ module Higgs
         @out = options[:out] || STDOUT
       end
 
+      def log(msg)
+        "#{Time.now} [#{$$}]: #{msg}\n"
+      end
+      private :log
+
       def connect_service
         unless (@jlog_rotate_service_uri) then
           raise 'required jlog_rotate_service_uri'
@@ -30,12 +35,20 @@ module Higgs
       private :connect_service
 
       def backup_index
+        @out << log('backup index') if (@verbose >= 1)
+        unless (@from) then
+          raise 'required from_storage'
+        end
+        unless (@to) then
+          raise 'required to_storage'
+        end
         connect_service
         @jlog_rotate_service.call(@to + '.idx')
         nil
       end
 
       def backup_data
+        @out << log('backup data') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
@@ -47,12 +60,14 @@ module Higgs
       end
 
       def rotate_jlog
+        @out << log('rotate journal log') if (@verbose >= 1)
         connect_service
         @jlog_rotate_service.call(true)
         nil
       end
 
       def backup_jlog
+        @out << log('backup journal logs') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
@@ -68,6 +83,7 @@ module Higgs
       end
 
       def recover
+        @out << log('recover backup storage') if (@verbose >= 1)
         unless (@to) then
           raise 'required to_storage'
         end
@@ -76,6 +92,7 @@ module Higgs
       end
 
       def verify
+        @out << log('verify backup storage') if (@verbose >= 1)
         unless (@to) then
           raise 'required to_storage'
         end
@@ -89,6 +106,8 @@ module Higgs
       end
 
       def clean_jlog
+        @out << log('clean journal logs') if (@verbose >= 1)
+
         unless (@from) then
           raise 'required from_storage'
         end
