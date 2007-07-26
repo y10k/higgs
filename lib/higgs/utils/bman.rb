@@ -30,6 +30,7 @@ module Higgs
         unless (@jlog_rotate_service_uri) then
           raise 'required jlog_rotate_service_uri'
         end
+        @out << log("connect to jlog_rotate_service: #{@jlog_rotate_service_uri}") if (@verbose >= 2)
         @jlog_rotate_service = DRbObject.new_with_uri(@jlog_rotate_service_uri)
       end
       private :connect_service
@@ -55,7 +56,7 @@ module Higgs
         unless (@to) then
           raise 'required to_storage'
         end
-        FileUtils.cp("#{@from}.tar", "#{@to}.tar", :preserve => true)
+        FileUtils.cp("#{@from}.tar", "#{@to}.tar", :preserve => true, :verbose => @verbose >= 2)
         nil
       end
 
@@ -77,7 +78,7 @@ module Higgs
         for path in Storage.rotate_entries(@from + '.jlog')
           path =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
           ext = $&
-          FileUtils.cp(path, "#{@to}#{ext}", :preserve => true)
+          FileUtils.cp(path, "#{@to}#{ext}", :preserve => true, :verbose => @verbose >= 2)
         end
         nil
       end
@@ -98,7 +99,7 @@ module Higgs
         end
         st = Storage.new(@to, :read_only => true)
         begin
-          st.verify
+          st.verify(@out, @verbose - 1)
         ensure
           st.shutdown
         end
@@ -120,12 +121,12 @@ module Higgs
           ext = $&
           from_jlog = @from + ext
           if (File.exist? from_jlog) then
-            FileUtils.rm(from_jlog)
+            FileUtils.rm(from_jlog, :verbose => @verbose >= 2)
           end
         end
 
         for to_jlog in Storage.rotate_entries("#{@to}.jlog")
-          FileUtils.rm(to_jlog)
+          FileUtils.rm(to_jlog, :verbose => @verbose >= 2)
         end
 
         nil
