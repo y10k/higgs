@@ -14,7 +14,7 @@ module Higgs
       def initialize(options={})
         @from = options[:from]
         to_dir = options[:to_dir]
-        to_name = options[:to_name] || File.basename(@from)
+        to_name = options[:to_name] || (@from && File.basename(@from))
         @to = File.join(to_dir, to_name)
         @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
         @verbose = options[:verbose] || 0
