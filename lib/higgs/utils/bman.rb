@@ -48,7 +48,7 @@ module Higgs
         end
         connect_service
         @out << log("save to #{@to}.idx") if (@verbose >= 2)
-        @jlog_rotate_service.call(@to + '.idx')
+        @jlog_rotate_service.call(File.expand_path(@to) + '.idx')
         @out << log('completed index backup.') if (@verbose >= 1)
         nil
       end
