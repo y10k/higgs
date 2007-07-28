@@ -4,7 +4,7 @@ module Higgs
   # for ident(1)
   CVS_ID = '$Id$'
 
-  VERSION = '0.0.4'
+  VERSION = '0.0.5'
 end
 
 # Local Variables:

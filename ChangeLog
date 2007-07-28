@@ -1,5 +1,7 @@
 2007-07-28  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/version.rb: version 0.0.5.
+
 	* bin/higgs_backup: backup utility.
 
 2007-07-24  TOKI Yoshinori  <toki@freedom.ne.jp>
