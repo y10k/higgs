@@ -15,7 +15,7 @@ module Higgs
         @from = options[:from]
         to_dir = options[:to_dir]
         to_name = options[:to_name] || (@from && File.basename(@from))
-        @to = File.join(to_dir, to_name)
+        @to = File.join(to_dir, to_name) if (to_dir && to_name)
         @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
         @verbose = options[:verbose] || 0
         @out = options[:out] || STDOUT
