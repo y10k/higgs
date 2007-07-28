@@ -1,0 +1,65 @@
+#!/usr/local/bin/ruby
+
+require 'higgs/utils/bman'
+require 'optparse'
+
+# for ident(1)
+CVS_ID = '$Id$'
+
+opts = OptionParser.new
+opts.banner = "Usage: #{opts.program_name} [options]"
+
+command = :online_backup
+options = { :verbose => 0 }
+
+opts.on('--command=BACKUP_COMMAND',
+	[ :index, :data, :rotate, :jlog, :recover, :verify, :clean, :online_backup ]) {|value|
+  command = value
+}
+
+opts.on('-f', '--from=BACKUP_TARGET_STORAGE', String) {|value|
+  options[:from] = value
+}
+opts.on('-t', '--to-dir=DIR_TO_BACUP', String) {|value|
+  options[:to_dir] = value
+}
+opts.on('--to-name=NAME_to_BACKUP', String) {|value|
+  options[:to_name] = value
+}
+opts.on('-u', '--jlog-rotate-service_uri=URI', String) {|value|
+  options[:jlog_rotate_service_uri] = value
+}
+opts.on('-v', '--verbose', '--[no-]verbose') {|value|
+  if (value) then
+    options[:verbose] += 1
+  else
+    options[:verbose] -= 1
+  end
+}
+opts.on('--verbose-level=LEVEL', Integer) {|value|
+  options[:verbose] = value
+}
+
+opts.parse!
+bman = Higgs::Utils::BackupManager.new(options)
+
+case (command)
+when :online_backup
+  bman.online_backup
+when :index
+  bman.backup_index
+when :data
+  bman.backup_data
+when :rotate
+  bman.rotate_jlog
+when :jlog
+  bman.backup_jlog
+when :recover
+  bman.recover
+when :verify
+  bman.verify
+when :clean
+  bman.clean_jlog
+else
+  raise "unknown backup command: #{command}"
+end
