@@ -159,6 +159,43 @@ module Higgs::Test
     end
   end
 
+  class IndexIdentitiesTest < Test::Unit::TestCase
+    include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
+
+    def setup
+      @idx = Index.new
+    end
+
+    def test_identity
+      @idx[:foo] = 0
+      assert_equal('foo', @idx.identity(:foo))
+    end
+
+    def test_identity_not_defined
+      assert_nil(@idx.identity(:foo))
+    end
+
+    def test_identity_dup
+      @idx[:foo] = 0
+      @idx['foo'] = 1
+      @idx[ %w[ f o o ] ] = 2
+      assert_equal('foo', @idx.identity(:foo))
+      assert_equal('foo.a', @idx.identity('foo'))
+      assert_equal('foo.b', @idx.identity(%w[ f o o ]))
+    end
+
+    def test_delete
+      @idx[:foo] = 0
+      @idx['foo'] = 1
+      @idx.delete(:foo)
+      assert_equal(nil, @idx.identity(:foo))
+      assert_equal('foo.a', @idx.identity('foo'))
+    end
+  end
+
   class IndexLoadSaveTest < Test::Unit::TestCase
     include Higgs
 

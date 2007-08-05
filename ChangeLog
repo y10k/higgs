@@ -1,5 +1,7 @@
 2007-08-05  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/index.rb: identities for key of secondary cache.
+
 	* cvs tag of higgs_snapshot_20070805. snapshot before secondary
 	cache implementation.
 
