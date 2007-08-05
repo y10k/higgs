@@ -1,6 +1,7 @@
 #!/usr/local/bin/ruby
 
 require 'fileutils'
+require 'higgs/block'
 require 'higgs/index'
 require 'test/unit'
 
@@ -221,9 +222,32 @@ module Higgs::Test
       j = Index.new
       j.load(@path)
       assert_equal(1, j.change_number)
+      assert_equal(2048, j.eoa)
       assert_equal(0, j.free_fetch(512))
       assert_equal(1024, j[:foo])
-      assert_equal(2048, j.eoa)
+      assert_equal('foo', j.identity(:foo))
+    end
+
+    def test_migration
+      index_data_0_0 = {
+        :version => [ 0, 0 ],
+        :change_number => 0,
+        :eoa => 1024,
+        :free_lists => { 512 => [ 512 ] },
+        :index => { :foo => 0 }
+      }
+      File.open(@path, 'w') {|w|
+        w.binmode
+        Block.block_write(w, Index::MAGIC_SYMBOL, Marshal.dump(index_data_0_0))
+      }
+
+      i = Index.new
+      i.load(@path)
+      assert_equal(0, i.change_number)
+      assert_equal(1024, i.eoa)
+      assert_equal(512, i.free_fetch(512))
+      assert_equal(0, i[:foo])
+      assert_equal('foo', i.identity(:foo))
     end
   end
 end

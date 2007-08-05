@@ -98,7 +98,7 @@ module Higgs
     end
 
     def migration_0_0_to_0_1(index_data)
-      if ((index_data[:version] <=> [ 0, 0 ]) >= 0) then
+      if ((index_data[:version] <=> [ 0, 0 ]) > 0) then
         return
       end
       if ((index_data[:version] <=> [ 0, 0 ]) < 0) then
@@ -108,12 +108,13 @@ module Higgs
       index = index_data[:index]
       identities = index_data[:identities] = {}
       for key in index.keys
-        id = Index.create_id(key)
+        id = Index.create_id(key, identities)
         identities[id] = key
         value = index[key]
         index[key] = [ id, value ]
       end
       index_data[:version] = [ 0, 1 ]
+
       index_data
     end
     private :migration_0_0_to_0_1
