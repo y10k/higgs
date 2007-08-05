@@ -1,3 +1,8 @@
+2007-08-05  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* cvs tag of higgs_snapshot_20070805. snapshot before secondary
+	cache implementation.
+
 2007-07-28  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb: version 0.0.5.
