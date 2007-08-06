@@ -17,6 +17,7 @@ module Higgs
     # for ident(1)
     CVS_ID = '$Id$'
 
+    extend Forwardable
     include Exceptions
 
     class Error < HiggsError
@@ -970,6 +971,8 @@ module Higgs
       properties = fetch_properties(key) or raise IndexError, "not exist properties at key: #{key}"
       properties['system_properties']['string_only']
     end
+
+    def_delegator :@index, :identity
 
     def key?(key)
       check_panic

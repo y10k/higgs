@@ -3,7 +3,9 @@
 require 'forwardable'
 require 'higgs/cache'
 require 'higgs/exceptions'
+require 'higgs/lock'
 require 'higgs/storage'
+require 'singleton'
 
 module Higgs
   class TransactionManager
@@ -18,6 +20,20 @@ module Higgs
     class NotWritableError < Error
     end
 
+    class PseudoSecondaryCache
+      include Singleton
+
+      def [](key)
+      end
+
+      def []=(key, value)
+        value
+      end
+
+      def delete(key)
+      end
+    end
+
     module InitOptions
       def init_options(options)
         if (options.key? :read_only) then
@@ -28,19 +44,9 @@ module Higgs
 
         @decode = options[:decode] || proc{|r| r }
         @encode = options[:encode] || proc{|w| w }
-
-        if (options.key? :lock_manager) then
-          @lock_manager = options[:lock_manager]
-        else
-          require 'higgs/lock'
-          @lock_manager = GiantLockManager.new
-        end
-
-        if (options.key? :master_cache) then
-          @master_cache = options[:master_cache]
-        else
-          @master_cache = LRUCache.new
-        end
+        @lock_manager = options[:lock_manager] || GiantLockManager.new
+        @master_cache = options[:master_cache] || LRUCache.new
+        @secondary_cache = options[:secondary_cache] || PseudoSecondaryCache.instance
       end
 
       attr_reader :read_only
@@ -59,7 +65,12 @@ module Higgs
       @storage = storage
       init_options(options)
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
-        value = @storage.fetch(key) and value.freeze
+        id = @storage.identity(key) and @secondary_cache[key] or
+          value = @storage.fetch(key) and @secondary_cache[@storage.identity(key)] = value.freeze
+      }
+      @cache_expire = proc{|key|
+        @secondary_cache.delete(key)
+        @master_cache.delete(key)
       }
     end
 
@@ -67,12 +78,12 @@ module Higgs
       r = nil
       @lock_manager.transaction(read_only) {|lock_handler|
         if (read_only) then
-          tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @decode, @encode)
+          tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
         else
           if (@read_only) then
             raise NotWritableError, 'not writable'
           end
-          tx = ReadWriteTransactionContext.new(lock_handler, @storage, @master_cache, @decode, @encode)
+          tx = ReadWriteTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
         end
         r = yield(tx)
         tx.commit unless read_only
@@ -87,10 +98,11 @@ module Higgs
 
     include Enumerable
 
-    def initialize(lock_handler, storage, master_cache, decode, encode)
+    def initialize(lock_handler, storage, master_cache, cache_expire, decode, encode)
       @lock_handler = lock_handler
       @storage = storage
       @master_cache = master_cache
+      @cache_expire = cache_expire
       @decode = decode
       @encode = encode
 
@@ -393,7 +405,7 @@ module Higgs
         for ope, key, value in write_list
           case (ope)
           when :write, :delete, :system_properties
-            @master_cache.delete(key)
+            @cache_expire.call(key)
           end
           @local_properties_cache.delete(key)
         end

@@ -1,3 +1,7 @@
+2007-08-07  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/tman.rb: secondary cache.
+
 2007-08-05  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/index.rb: identities for key of secondary cache.
