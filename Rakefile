@@ -44,6 +44,10 @@ Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_tar = true
 end
 
+task :gem_install => [ :gem ] do
+  sh 'gem', 'install', "pkg/higgs-#{Higgs::VERSION}.gem"
+end
+
 task :clean => [ :clobber_package ] do
   rm_rf RDOC_DIR
 end
