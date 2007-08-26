@@ -76,7 +76,6 @@ module Higgs
 
     def transaction(read_only=@read_only)
       r = nil
-      th_curr = Thread.current
       @lock_manager.transaction(read_only) {|lock_handler|
         if (read_only) then
           tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
