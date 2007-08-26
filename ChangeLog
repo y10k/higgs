@@ -1,7 +1,6 @@
 2007-08-26  TOKI Yoshinori  <toki@freedom.ne.jp>
 
-	* lib/higgs/tman.rb: allow nested read only transaction in a
-	thread.
+	* lib/higgs/tman.rb: current transaction access in a thread.
 
 2007-08-07  TOKI Yoshinori  <toki@freedom.ne.jp>
 
