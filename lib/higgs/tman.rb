@@ -78,6 +78,9 @@ module Higgs
       r = nil
       @lock_manager.transaction(read_only) {|lock_handler|
         begin
+          if (TransactionManager.in_transaction?) then
+            raise 'nested transaction forbidden'
+          end
           if (read_only) then
             tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
           else
