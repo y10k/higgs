@@ -77,29 +77,18 @@ module Higgs
     def transaction(read_only=@read_only)
       r = nil
       th_curr = Thread.current
-      if (th_curr[:higgs_in_transaction?] && read_only) then
-        # allow nested read only transaction in a thread.
-        tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
-        r = yield(tx)
-      else
-        @lock_manager.transaction(read_only) {|lock_handler|
-          begin
-            th_curr[:higgs_in_transaction?] = true
-            if (read_only) then
-              tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
-            else
-              if (@read_only) then
-                raise NotWritableError, 'not writable'
-              end
-              tx = ReadWriteTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
-            end
-            r = yield(tx)
-            tx.commit unless read_only
-          ensure
-            th_curr[:higgs_in_transaction?] = false
+      @lock_manager.transaction(read_only) {|lock_handler|
+        if (read_only) then
+          tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
+        else
+          if (@read_only) then
+            raise NotWritableError, 'not writable'
           end
-        }
-      end
+          tx = ReadWriteTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
+        end
+        r = yield(tx)
+        tx.commit unless read_only
+      }
       r
     end
   end
