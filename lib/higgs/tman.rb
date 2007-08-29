@@ -178,6 +178,20 @@ module Higgs
       @local_data_cache[key] = value
     end
 
+    def update(key, default_value=nil)
+      if (self.key? key) then   # lock
+        value = self[key]
+      else
+        unless (default_value) then
+          raise IndexError, "not exist properties at key: #{key}"
+        end
+        value = default_value
+      end
+      r = yield(value)
+      self[key] = value
+      r
+    end
+
     def delete(key)
       lock(key)
       if (@ope_map[key] != :delete) then
@@ -295,7 +309,7 @@ module Higgs
     end
 
     def set_property(key, name, value)
-      unless (self.key? key) then
+      unless (self.key? key) then # lock
         raise IndexError, "not exist properties at key: #{key}"
       end
       case (name)
@@ -314,7 +328,7 @@ module Higgs
     end
 
     def delete_property(key, name)
-      unless (self.key? key) then
+      unless (self.key? key) then # lock
         raise IndexError, "not exist properties at key: #{key}"
       end
       unless (name.kind_of? String) then
@@ -337,7 +351,7 @@ module Higgs
         raise TypeError, "can't convert #{name.class} (name) to Symbol or String"
       end
 
-      if (self.key? key) then
+      if (self.key? key) then   # lock
         case (name)
         when Symbol
           return (@local_properties_cache[key]['system_properties'].key? name.to_s)
@@ -351,7 +365,7 @@ module Higgs
     end
 
     def each_property(key)
-      unless (self.key? key) then
+      unless (self.key? key) then # lock
         raise IndexError, "not exist properties at key: #{key}"
       end
       @local_properties_cache[key]['system_properties'].each_pair do |name, value|

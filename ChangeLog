@@ -1,3 +1,7 @@
+2007-08-29  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/tman.rb: update method.
+
 2007-08-26  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/tman.rb: current transaction access in a thread.

@@ -64,6 +64,49 @@ module Higgs::Test
       }
     end
 
+    def test_update
+      @st.transaction{|tx|
+        tx[:foo] = []
+      }
+
+      @st.transaction{|tx|
+        tx.update(:foo) {|a|
+          a << 'apple'
+          a << 'banana'
+          a << 'orange'
+        }
+      }
+
+      @st.transaction{|tx|
+        assert_equal(%w[ apple banana orange ], tx[:foo])
+      }
+    end
+
+    def test_update_with_default_value
+      @st.transaction{|tx|
+        assert(! (tx.key? :foo))
+        tx.update(:foo, []) {|a|
+          a << 'apple'
+          a << 'banana'
+          a << 'orange'
+        }
+      }
+
+      @st.transaction{|tx|
+        assert_equal(%w[ apple banana orange ], tx[:foo])
+      }
+    end
+
+    def test_update_IndexError
+      @st.transaction{|tx|
+        assert_raise(IndexError) {
+          tx.update(:foo) {|value|
+            flunk('not to reach.')
+          }
+        }
+      }
+    end
+
     def test_string_only
       @st.transaction{|tx|
         assert_equal(nil, tx.property(:foo, :string_only))
