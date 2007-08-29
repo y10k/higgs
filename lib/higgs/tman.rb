@@ -458,6 +458,7 @@ module Higgs
 
   class ReadOnlyTransactionContext < TransactionContext
     undef []=
+    undef update
     undef delete
     undef set_property
     undef delete_property
