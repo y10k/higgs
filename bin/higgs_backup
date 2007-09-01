@@ -6,6 +6,8 @@ require 'optparse'
 # for ident(1)
 CVS_ID = '$Id$'
 
+STDOUT.sync = true
+
 opts = OptionParser.new
 opts.banner = "Usage: #{opts.program_name} [options]"
 
