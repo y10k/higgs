@@ -877,7 +877,6 @@ module Higgs
       end
 
       for key, properties in update_properties
-        @properties_cache[key] = properties
         raw_write_list << [ :write, key, :p, "#{key}.p", encode_properties(properties) ]
       end
 

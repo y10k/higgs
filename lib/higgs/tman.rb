@@ -65,8 +65,8 @@ module Higgs
       @storage = storage
       init_options(options)
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
-        id = @storage.identity(key) and @secondary_cache[key] or
-          value = @storage.fetch(key) and @secondary_cache[@storage.identity(key)] = value.freeze
+        (id = @storage.identity(key) and @secondary_cache[key]) or
+          (value = @storage.fetch(key) and @secondary_cache[@storage.identity(key)] = value.freeze)
       }
     end
 
@@ -434,7 +434,7 @@ module Higgs
         for ope, key, value in write_list
           case (ope)
           when :write
-            @master_cache[key] = value
+            @master_cache.delete(key)
             @secondary_cache[key] = value
           when :delete
             @master_cache.delete(key)
