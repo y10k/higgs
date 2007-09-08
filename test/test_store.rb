@@ -187,6 +187,21 @@ module Higgs::Test
         assert_not_same(tx[:foo], tx[:bar])
       }
     end
+
+    def test_each_key
+      @st.transaction{|tx|
+        tx[:foo] = 'apple'
+        tx[:bar] = ''
+        tx[:baz] = nil
+
+        expected_keys = [ :foo, :bar, :baz ]
+        tx.each_key do |key|
+          assert((expected_keys.include? key), key)
+          expected_keys.delete(key)
+        end
+        assert_equal([], expected_keys)
+      }
+    end
   end
 end
 

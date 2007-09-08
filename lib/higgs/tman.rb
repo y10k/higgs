@@ -230,15 +230,13 @@ module Higgs
       @local_data_cache.each_key do |key|
         lock(key)
         if (@ope_map[key] != :delete) then
-          if (@local_data_cache[key] != nil) then
-            yield(key)
-          end
+          yield(key)
         end
       end
       @storage.each_key do |key|
         lock(key)
         if (@ope_map[key] != :delete) then
-          if (! (@local_data_cache.key? key)) then
+          unless (@local_data_cache.key? key) then
             yield(key)
           end
         end
