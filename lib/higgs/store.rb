@@ -9,7 +9,6 @@ module Higgs
     # for ident(1)
     CVS_ID = '$Id$'
 
-    extend Forwardable
     include Storage::Export
     include TransactionManager::Export
 
