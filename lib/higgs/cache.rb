@@ -76,15 +76,24 @@ module Higgs
       @cache = cache
     end
 
-    def [](key)
-      work = nil
+    def fetch_work(key)
       @lock.synchronize{
-        unless (@cache.key? key) then
+        if (@cache.key? key) then
+          @cache[key]
+        else
           @cache[key] = SharedWork.new{ @work.call(key) } 
         end
-        work = @cache[key]
       }
-      work.result
+    end
+    private :fetch_work
+
+    def [](key)
+      fetch_work(key).result
+    end
+
+    def []=(key, value)
+      work = fetch_work(key)
+      work.result = value
     end
 
     def delete(key)

@@ -68,10 +68,6 @@ module Higgs
         id = @storage.identity(key) and @secondary_cache[key] or
           value = @storage.fetch(key) and @secondary_cache[@storage.identity(key)] = value.freeze
       }
-      @cache_expire = proc{|key|
-        @secondary_cache.delete(key)
-        @master_cache.delete(key)
-      }
     end
 
     def transaction(read_only=@read_only)
@@ -82,12 +78,12 @@ module Higgs
             raise 'nested transaction forbidden'
           end
           if (read_only) then
-            tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
+            tx = ReadOnlyTransactionContext.new(lock_handler, @storage, @master_cache, @secondary_cache, @decode, @encode)
           else
             if (@read_only) then
               raise NotWritableError, 'not writable'
             end
-            tx = ReadWriteTransactionContext.new(lock_handler, @storage, @master_cache, @cache_expire, @decode, @encode)
+            tx = ReadWriteTransactionContext.new(lock_handler, @storage, @master_cache, @secondary_cache, @decode, @encode)
           end
           Thread.current[:higgs_current_transaction] = tx
           r = yield(tx)
@@ -119,11 +115,11 @@ module Higgs
     end
     private :deep_copy
 
-    def initialize(lock_handler, storage, master_cache, cache_expire, decode, encode)
+    def initialize(lock_handler, storage, master_cache, secondary_cache, decode, encode)
       @lock_handler = lock_handler
       @storage = storage
       @master_cache = master_cache
-      @cache_expire = cache_expire
+      @secondary_cache = secondary_cache
       @decode = decode
       @encode = encode
 
@@ -437,8 +433,12 @@ module Higgs
         @storage.write_and_commit(write_list)
         for ope, key, value in write_list
           case (ope)
-          when :write, :delete, :system_properties
-            @cache_expire.call(key)
+          when :write
+            @master_cache[key] = value
+            @secondary_cache[key] = value
+          when :delete
+            @master_cache.delete(key)
+            @secondary_cache.delete(key)
           end
           @local_properties_cache.delete(key)
         end

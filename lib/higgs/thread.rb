@@ -107,29 +107,44 @@ module Higgs
       @result = nil
     end
 
+    def result=(value)
+      @lock.synchronize{
+        case (@state)
+        when :init
+          @state = :done
+        when :working
+          until (@state == :done)
+            @cond.wait(@lock)
+          end
+        end
+        @result = value
+      }
+    end
+
     def result
       @lock.synchronize{
         case (@state)
         when :done
           return @result
+        when :init
+          @state = :working
+          # fall through
         when :working
           until (@state == :done)
             @cond.wait(@lock)
           end
           return @result
-        when :init
-          @state = :working
-          # fall through
         else
           raise 'internal error'
         end
       }
-      @result = @work.call
+
+      r = @result = @work.call
       @lock.synchronize{
         @state = :done
         @cond.broadcast
       }
-      @result
+      r
     end
   end
 
@@ -210,7 +225,7 @@ module Higgs
           @count_of_standby_writers -= 1
         end
       }
-      nil
+      raise 'not to reach'
     end
 
     def __write_unlock__

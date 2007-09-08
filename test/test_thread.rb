@@ -223,6 +223,44 @@ module Higgs::Test
     def test_no_work_block
       assert_raise(RuntimeError) { SharedWork.new }
     end
+
+    def test_set_result
+      work = SharedWork.new{ :foo }
+      work.result = :bar
+      assert_equal(:bar, work.result)
+    end
+
+    def test_set_result_after_work
+      work = SharedWork.new{ :foo }
+      assert_equal(:foo, work.result)
+      work.result = :bar
+      assert_equal(:bar, work.result)
+    end
+
+    def test_set_result_after_work_multithread
+      barrier = Barrier.new(3)
+
+      work = SharedWork.new{
+        barrier.wait
+        sleep(DELTA_T)
+        :foo
+      }
+
+      th_set_result = Thread.new{
+        barrier.wait
+        work.result = :bar
+      }
+
+      th_work = Thread.new{
+        assert_equal(:foo, work.result)
+      }
+
+      barrier.wait
+      th_set_result.join
+      th_work.join
+
+      assert_equal(:bar, work.result)
+    end
   end
 
   class ReadWriteLockTest < Test::Unit::TestCase

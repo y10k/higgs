@@ -1,3 +1,17 @@
+2007-09-09  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/tman.rb (Higgs::TransactionContext class): update data
+	cache on writing.
+
+	* lib/higgs/storage.rb (Higgs::Storage class): update properties
+	cache on writing.
+
+	* lib/higgs/cache.rb (Higgs::SharedWorkCache class): update for
+	cache entry.
+
+	* lib/higgs/thread.rb (Higgs::SharedWork class): update for
+	result.
+
 2007-08-29  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/tman.rb: update method.
