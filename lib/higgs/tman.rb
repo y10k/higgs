@@ -114,6 +114,11 @@ module Higgs
 
     include Enumerable
 
+    def deep_copy(obj)
+      Marshal.load(Marshal.dump(obj))
+    end
+    private :deep_copy
+
     def initialize(lock_handler, storage, master_cache, cache_expire, decode, encode)
       @lock_handler = lock_handler
       @storage = storage
@@ -134,7 +139,7 @@ module Higgs
 
       @local_properties_cache = Hash.new{|hash, key|
         if (properties = @storage.fetch_properties(key)) then
-          hash[key] = Marshal.load(Marshal.dump(properties)) # deep copy
+          hash[key] = deep_copy(properties)
         else
           hash[key] = { 'system_properties' => {}, 'custom_properties' => {} }
         end
