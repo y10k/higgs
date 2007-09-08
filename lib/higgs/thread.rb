@@ -107,20 +107,6 @@ module Higgs
       @result = nil
     end
 
-    def result=(value)
-      @lock.synchronize{
-        case (@state)
-        when :init
-          @state = :done
-        when :working
-          until (@state == :done)
-            @cond.wait(@lock)
-          end
-        end
-        @result = value
-      }
-    end
-
     def result
       @lock.synchronize{
         case (@state)
@@ -145,6 +131,20 @@ module Higgs
         @cond.broadcast
       }
       r
+    end
+
+    def result=(value)
+      @lock.synchronize{
+        case (@state)
+        when :init
+          @state = :done
+        when :working
+          until (@state == :done)
+            @cond.wait(@lock)
+          end
+        end
+        @result = value
+      }
     end
   end
 
