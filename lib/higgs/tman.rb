@@ -65,7 +65,7 @@ module Higgs
       @storage = storage
       init_options(options)
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
-        (id = @storage.identity(key) and @secondary_cache[key]) or
+        (id = @storage.identity(key) and @secondary_cache[id]) or
           (value = @storage.fetch(key) and @secondary_cache[@storage.identity(key)] = value.freeze)
       }
     end
