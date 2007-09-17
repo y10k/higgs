@@ -19,14 +19,6 @@ require 'yaml'
 module Higgs
   # transactional storage core
   #
-  # storage is composed of the following 5 files. (<tt>name</tt> is storage name)
-  # <tt>name.tar</tt>:: data file compatible with unix TAR format.
-  # <tt>name.idx</tt>:: index snapshot. genuine index is Hash in the memory.
-  #                     see Higgs::Index for detail.
-  # <tt>name.jlog</tt>:: transaction journal log. see Higgs::JournalLogger for detail.
-  # <tt>name.lock</tt>:: lock file for File#flock. see Higgs::FileLock for detail.
-  # <tt>name.log</tt>:: event log. default logging level is <tt>WARN</tt>.
-  #
   class Storage
     # for ident(1)
     CVS_ID = '$Id$'
@@ -194,6 +186,17 @@ module Higgs
       options
     end
 
+    # <tt>name</tt> is storage name.
+    # see Higgs::Storage::InitOptions for <tt>options</tt>.
+    #
+    # storage is composed of the following 5 files.
+    # <tt>name.log</tt>:: event log. default logging level is <tt>WARN</tt>.
+    # <tt>name.tar</tt>:: data file compatible with unix TAR format.
+    # <tt>name.idx</tt>:: index snapshot. genuine index is Hash in the memory.
+    #                     see Higgs::Index for detail.
+    # <tt>name.jlog</tt>:: transaction journal log. see Higgs::JournalLogger for detail.
+    # <tt>name.lock</tt>:: lock file for File#flock. see Higgs::FileLock for detail.
+    #
     def initialize(name, options={})
       @name = name
       @log_name = "#{@name}.log"
