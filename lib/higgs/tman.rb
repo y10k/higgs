@@ -245,13 +245,13 @@ module Higgs
       self
     end
 
-    def each_value
+    def each_value              # :yields: value
       each_key do |key|
         yield(self[key])
       end
     end
 
-    def each_pair
+    def each_pair               # :yields: key, value
       each_key do |key|
         yield(key, self[key])
       end
@@ -368,7 +368,7 @@ module Higgs
       false
     end
 
-    def each_property(key)
+    def each_property(key)      # :yields: name, value
       unless (self.key? key) then # lock
         raise IndexError, "not exist properties at key: #{key}"
       end
@@ -381,7 +381,7 @@ module Higgs
       self
     end
 
-    def delete_if(*keys)
+    def delete_if(*keys)        # :yields: key, value
       del_list = []
       if (keys.empty?) then
         each_key do |key|
