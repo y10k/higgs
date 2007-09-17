@@ -17,7 +17,7 @@ Higgs::Store.open('count') {|st|
   barrier = Higgs::Barrier.new(num_of_write_threads + 2)
   is_print = true
 
-  num_of_write_threads.times{|i|
+  num_of_write_threads.times do
     th_grp.add Thread.new{
       barrier.wait
       num_of_count.times do
@@ -27,7 +27,7 @@ Higgs::Store.open('count') {|st|
         }
       end
     }
-  }
+  end
 
   th_read = Thread.new{
     barrier.wait
