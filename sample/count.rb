@@ -3,7 +3,7 @@
 require 'higgs'
 require 'higgs/thread'          # for Higgs::Barrier
 
-num_of_write_threads = (ARGV.shift || '100').to_i
+num_of_write_threads = (ARGV.shift || '10').to_i
 num_of_count = (ARGV.shift || '100').to_i
 
 Higgs::Store.open('count') {|st|
@@ -20,12 +20,12 @@ Higgs::Store.open('count') {|st|
   num_of_write_threads.times{|i|
     th_grp.add Thread.new{
       barrier.wait
-      st.transaction{|tx|
-        tx[:count] = 0 unless (tx.key? :count)
-        num_of_count.times do
+      num_of_count.times do
+        st.transaction{|tx|
+          tx[:count] = 0 unless (tx.key? :count)
           tx[:count] += 1
-        end
-      }
+        }
+      end
     }
   }
 
