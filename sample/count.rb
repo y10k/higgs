@@ -2,7 +2,6 @@
 
 require 'higgs'
 require 'higgs/thread'          # for Higgs::Barrier
-require 'thread'                # for Mutex
 
 num_of_write_threads = (ARGV.shift || '100').to_i
 num_of_count = (ARGV.shift || '100').to_i
