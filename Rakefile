@@ -4,7 +4,7 @@ CVS_ID = '$Id$'
 LIB_DIR = 'lib'
 TEST_DIR = 'test'
 RDOC_DIR = 'api'
-RDOC_MAIN = 'higgs.rb'
+RDOC_MAIN = 'Higgs'
 
 def cd_v(dir)
   cd(dir, :verbose => true) {
@@ -22,7 +22,7 @@ end
 
 task :rdoc do
   cd_v(LIB_DIR) {
-    sh 'rdoc', '-a', '-i', '..', '-o', "../#{RDOC_DIR}", '-m', RDOC_MAIN
+    sh 'rdoc', '-SN', '-i', '..', '-o', "../#{RDOC_DIR}", '-m', RDOC_MAIN
   }
 end
 
