@@ -10,6 +10,10 @@ require 'higgs/tman'
 
 module Higgs
   # storage interface like pstore
+  #
+  # ex: sample/count.rb
+  #   :include: sample/count.rb
+  #
   class Store
     # for ident(1)
     CVS_ID = '$Id$'
@@ -20,6 +24,8 @@ module Higgs
     DECODE = proc{|r| Marshal.load(r) }
     ENCODE = proc{|w| Marshal.dump(w) }
 
+    # <tt>name</tt> is a storage name and see Higgs::Storage for detail.
+    # see Higgs::Storage and Higgs::TransactionManager for <tt>options</tt>.
     def initialize(name, options={})
       options[:decode] = DECODE
       options[:encode] = ENCODE
