@@ -15,7 +15,7 @@ Higgs::DBM.open('test') {|dbm|
           when Symbol
             puts "system_property[#{name}]: #{value}"
           when String
-            puts "custom_property[#{name}], #{value}"
+            puts "custom_property[#{name}]: #{value}"
           else
             raise "unexpected property name: #{name}"
           end
