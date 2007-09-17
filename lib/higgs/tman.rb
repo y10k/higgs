@@ -80,6 +80,8 @@ module Higgs
       }
     end
 
+    # <tt>tx</tt> of block argument is transaction context and see
+    # Higgs::TransactionContext for detail.
     def transaction(read_only=@read_only)
       r = nil
       @lock_manager.transaction(read_only) {|lock_handler|
