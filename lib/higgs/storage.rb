@@ -66,6 +66,26 @@ module Higgs
     end
 
     module InitOptions
+      # these options are defined.
+      # [<tt>:number_of_read_io</tt>] number of read I/O handle of pool. default is <tt>2</tt>.
+      # [<tt>:read_only</tt>] if <tt>true</tt> then storage is read-only. default is <tt>false</tt>.
+      # [<tt>:properties_cache</tt>] read-cache for properties. default is new instance of Higgs::LRUCache.
+      # [<tt>:data_hash_type</tt>] hash type (<tt>:SUM16</tt>, <tt>:MD5</tt>, <tt>:RMD160</tt>,
+      #                            <tt>:SHA1</tt>, <tt>:SHA256</tt>, <tt>:SHA384</tt> or <tt>:SHA512</tt>)
+      #                            for data check. default is <tt>:MD5</tt>.
+      # [<tt>:jlog_sync</tt>] see Higgs::JournalLogger for detail. default is <tt>false</tt>.
+      # [<tt>:jlog_hash_type</tt>] see Higgs::JournalLogger for detail. default is <tt>:MD5</tt>.
+      # [<tt>:jlog_rotate_size</tt>] when this size is exceeded, journal log is switched to a new file.
+      #                              default is <tt>1024 * 256</tt>.
+      # [<tt>:jlog_rotate_max</tt>] old journal log is preserved in this number.
+      #                             if <tt>:jlog_rotate_max</tt> is <tt>0</tt>, old journal log is
+      #                             not deleted. if online-backup is used, <tt>:jlog_rotate_max</tt>
+      #                             should be <tt>0</tt>. default is <tt>1</tt>.
+      # [<tt>:jlog_rotate_service_uri</tt>] URI for DRb remote call to switch journal log to a new file.
+      #                                     if online-backup is used, <tt>:jlog_rotate_service_uri</tt>
+      #                                     should be defined. default is not defined.
+      # [<tt>:logger</tt>] procedure to create a logger. default is a procedure to create a new
+      #                    instance of Logger with logging level <tt>Logger::WARN</tt>.
       def init_options(options)
         @number_of_read_io = options[:number_of_read_io] || 2
 
@@ -754,7 +774,11 @@ module Higgs
 
     def self.apply_journal(w_tar, index, log)
       change_number, commit_log = log
-      if (index.change_number < change_number) then
+      if (change_number - 1 < index.change_number) then
+        # skip old jounal log
+      elsif (change_number - 1 > index.change_number) then
+        raise PanicError, "lost journal log (cnum: #{index.change_number + 1})"
+      else # if (change_number - 1 == index.change_number) then
         for cmd in commit_log
           case (cmd[:ope])
           when :write
