@@ -1,3 +1,7 @@
+2007-09-17  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* sample/count.rb: sample of Higgs::Store
+
 2007-09-09  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/tman.rb (Higgs::TransactionContext class): update
