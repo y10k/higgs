@@ -22,7 +22,7 @@ end
 
 task :rdoc do
   cd_v(LIB_DIR) {
-    sh 'rdoc', '-SN', '-i', '..', '-o', "../#{RDOC_DIR}", '-m', RDOC_MAIN
+    sh 'rdoc', '-SNa', '-i', '..', '-o', "../#{RDOC_DIR}", '-m', RDOC_MAIN
   }
 end
 
