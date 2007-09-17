@@ -1,4 +1,9 @@
 # block read/write
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 require 'higgs/exceptions'
 

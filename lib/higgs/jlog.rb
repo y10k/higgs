@@ -1,4 +1,9 @@
 # journal log writer
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 require 'higgs/block'
 

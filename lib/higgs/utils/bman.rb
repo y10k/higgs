@@ -1,4 +1,9 @@
 # backup manager
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 require 'drb'
 require 'fileutils'

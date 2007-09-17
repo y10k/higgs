@@ -1,4 +1,9 @@
 # cache utilities
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 require 'forwardable'
 require 'higgs/thread'

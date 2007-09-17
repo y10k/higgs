@@ -1,4 +1,9 @@
 # storage interface like dbm
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 require 'higgs/storage'
 require 'higgs/tman'

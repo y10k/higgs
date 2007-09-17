@@ -1,4 +1,9 @@
 # version
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 module Higgs
   # for ident(1)

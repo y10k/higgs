@@ -1,4 +1,9 @@
 # multi-thread lock manager
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 require 'forwardable'
 require 'higgs/cache'

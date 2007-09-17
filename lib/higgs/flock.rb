@@ -1,4 +1,9 @@
 # file lock
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 module Higgs
   class FileLock

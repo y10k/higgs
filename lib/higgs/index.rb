@@ -1,4 +1,9 @@
 # storage index
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 require 'forwardable'
 require 'higgs/block'

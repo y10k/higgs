@@ -1,4 +1,9 @@
 # namespace for utilities
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 module Higgs
   # namespace for utilities

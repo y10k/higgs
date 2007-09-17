@@ -1,4 +1,9 @@
 # exceptions
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 module Higgs
   module Exceptions

@@ -1,4 +1,9 @@
 # like cgi/session/pstore.rb
+#
+# Author:: $Author$
+# Date:: $Date$
+# Revision:: $Revision$
+#
 
 require 'cgi/session'
 require 'digest/md5'
