@@ -10,6 +10,10 @@ require 'higgs/tman'
 
 module Higgs
   # storage interface like dbm
+  #
+  # ex: sample/dbmtest.rb
+  #   :include: sample/dbmtest.rb
+  #
   class DBM
     # for ident(1)
     CVS_ID = '$Id$'

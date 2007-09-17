@@ -58,7 +58,12 @@ module Higgs
     end
     include InitOptions
 
-    # export transaction manager methods from @tman instance variable.
+    # export transaction manager methods from <tt>@tman</tt> instance variable.
+    #
+    # these methods are delegated.
+    # * Higgs::TransactionManager#read_only
+    # * Higgs::TransactionManager#transaction
+    #
     module Export
       extend Forwardable
 

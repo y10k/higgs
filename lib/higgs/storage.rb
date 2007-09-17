@@ -120,7 +120,23 @@ module Higgs
     end
     include InitOptions
 
-    # export storage methods from @storage instance variable.
+    # export storage methods from <tt>@storage</tt> instance variable.
+    #
+    # these methods are delegated.
+    # * Higgs::Storage#name
+    # * Higgs::Storage#read_only
+    # * Higgs::Storage#number_of_read_io
+    # * Higgs::Storage#data_hash_type
+    # * Higgs::Storage#jlog_sync
+    # * Higgs::Storage#jlog_hash_type
+    # * Higgs::Storage#jlog_rotate_size
+    # * Higgs::Storage#jlog_rotate_max
+    # * Higgs::Storage#jlog_rotate_service_uri
+    # * Higgs::Storage#shutdown
+    # * Higgs::Storage#shutdown?
+    # * Higgs::Storage#rotate_journal_log
+    # * Higgs::Storage#verify
+    #
     module Export
       extend Forwardable
 
