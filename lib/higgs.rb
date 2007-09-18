@@ -10,6 +10,14 @@ require 'higgs/store'
 require 'higgs/version'
 
 # = pure ruby transactional storage compatible with unix TAR format
+# == features
+#
+# * data format is compatible with unix TAR format.
+# * data can have meta-data called `property'.
+# * consistency of storage contents is always checked by hash value.
+# * read-write transaction and read-only transaction are supported.
+# * online-backup is supported.
+# 
 # == main classes
 #
 # [Higgs::Store] storage interface like pstore
@@ -32,7 +40,7 @@ require 'higgs/version'
 #                and execute <tt>higgs_backup</tt>
 # [NORMAL SHUTDOWN] OK, no recovery
 # [PROCESS ABORT] OK, automatic recovery on read-write open
-# [SYSTEM ABORT (OS abort)] OK, manual recovery from backup
+# [SYSTEM ABORT (OS abort)] OK, need for <em>MANUAL</em> recovery from backup
 #
 module Higgs
 end
