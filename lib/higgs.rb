@@ -37,7 +37,7 @@ require 'higgs/version'
 # [REQUIREMENTS] open with parameters:
 #                <tt>jlog_rotate_max => 0</tt>,
 #                <tt>jlog_rotate_service_uri => "druby://localhost:<em>appropriate_port_number</em>"</tt>
-#                and execute <tt>higgs_backup</tt>
+#                and execute <tt>higgs_backup</tt> (see Higgs::Utils::BackupManager)
 # [NORMAL SHUTDOWN] OK, no recovery
 # [PROCESS ABORT] OK, automatic recovery on read-write open
 # [SYSTEM ABORT (OS abort)] OK, need for <em>MANUAL</em> recovery from backup
