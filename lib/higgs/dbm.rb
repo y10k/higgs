@@ -1,4 +1,4 @@
-# storage interface like dbm
+# storage like dbm
 #
 # Author:: $Author$
 # Date:: $Date$
@@ -9,9 +9,9 @@ require 'higgs/storage'
 require 'higgs/tman'
 
 module Higgs
-  # storage interface like dbm
-  #
-  # ex: sample/dbmtest.rb
+  # = storage like dbm
+  # == sample script
+  # sample/dbmtest.rb
   #   :include: sample/dbmtest.rb
   #
   class DBM

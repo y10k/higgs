@@ -20,8 +20,8 @@ require 'higgs/version'
 # 
 # == main classes
 #
-# [Higgs::Store] storage interface like pstore
-# [Higgs::DBM] storage interface like dbm
+# [Higgs::Store] storage like pstore
+# [Higgs::DBM] storage like dbm
 # [Higgs::Utils::BackupManager] online backup utility (body of <tt>higgs_backup</tt>)
 #
 # == safety level
