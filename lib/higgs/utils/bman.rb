@@ -11,7 +11,7 @@ require 'higgs/storage'
 
 module Higgs
   module Utils
-    # backup manager
+    # = backup manager
     class BackupManager
       # for ident(1)
       CVS_ID = '$Id$'

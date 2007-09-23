@@ -8,7 +8,7 @@
 require 'higgs/block'
 
 module Higgs
-  # journal log writer
+  # = journal log writer
   class JournalLogger
     # for ident(1)
     CVS_ID = '$Id$'

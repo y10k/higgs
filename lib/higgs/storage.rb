@@ -17,8 +17,7 @@ require 'thread'
 require 'yaml'
 
 module Higgs
-  # transactional storage core
-  #
+  # = transactional storage core
   class Storage
     # for ident(1)
     CVS_ID = '$Id$'

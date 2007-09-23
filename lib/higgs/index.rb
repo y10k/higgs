@@ -9,7 +9,7 @@ require 'forwardable'
 require 'higgs/block'
 
 module Higgs
-  # storage index
+  # = storage index
   class Index
     # for ident(1)
     CVS_ID = '$Id$'

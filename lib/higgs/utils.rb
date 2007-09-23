@@ -6,7 +6,7 @@
 #
 
 module Higgs
-  # namespace for utilities
+  # = namespace for command-line utilities
   module Utils
     # for ident(1)
     CVS_ID = '$Id$'
