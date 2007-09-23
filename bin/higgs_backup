@@ -25,7 +25,7 @@ opts.on('-f', '--from=BACKUP_TARGET_STORAGE', String) {|value|
 opts.on('-t', '--to-dir=DIR_TO_BACUP', String) {|value|
   options[:to_dir] = value
 }
-opts.on('--to-name=NAME_to_BACKUP', String) {|value|
+opts.on('-n', '--to-name=NAME_to_BACKUP', String) {|value|
   options[:to_name] = value
 }
 opts.on('-u', '--jlog-rotate-service-uri=URI', String) {|value|
