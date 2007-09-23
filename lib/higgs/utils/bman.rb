@@ -12,6 +12,49 @@ require 'higgs/storage'
 module Higgs
   module Utils
     # = backup manager
+    # == requirements for online-backup
+    #
+    # these parameters should be required at the open of Higgs::Storage.
+    #
+    # [<tt>:jlog_rotate_max</tt>] <tt>0</tt>. rotated journal logs shuold be preserved.
+    # [<tt>:jlog_rotate_service_uri</tt>] <tt>"druby://localhost:<em>appropriate_port_number</em>"</tt>.
+    #                                     journal log rotation remote service should be enabled.
+    #
+    # == simple online-backup
+    #
+    # online-backup is controlled by <tt>higgs_backup</tt> command that
+    # is the front end of Higgs::Utils::BackupManager.
+    #
+    # simple online-backup is like this...
+    #
+    #   % higgs_backup -v -f foo -t backup_dir -u druby://localhost:appropriate_port_number
+    #   2007-09-23 03:00:08.925 [23706]: **** START BACKUP SCENARIO ****
+    #   2007-09-23 03:00:08.936 [23706]: start index backup.
+    #   2007-09-23 03:00:09.331 [23706]: completed index backup.
+    #   2007-09-23 03:00:09.333 [23706]: start data backup.
+    #   2007-09-23 03:09:16.663 [23706]: completed data backup.
+    #   2007-09-23 03:09:16.692 [23706]: start journal log rotation.
+    #   2007-09-23 03:09:17.153 [23706]: completed journal log rotation.
+    #   2007-09-23 03:09:17.154 [23706]: start journal logs backup.
+    #   2007-09-23 03:09:17.205 [23706]: completed journal logs backup.
+    #   2007-09-23 03:09:17.206 [23706]: start backup storage recovery.
+    #   2007-09-23 03:09:17.798 [23706]: completed backup storage recovery.
+    #   2007-09-23 03:09:17.799 [23706]: start backup storage verify.
+    #   2007-09-23 03:25:44.122 [23706]: completed backup storage verify.
+    #   2007-09-23 03:25:44.140 [23706]: start journal logs clean.
+    #   2007-09-23 03:25:44.541 [23706]: completed journal logs clean.
+    #   2007-09-23 03:25:44.542 [23706]: **** COMPLETED BACKUP SCENARIO ****
+    #
+    # online-backup scenario includes these processes.
+    #
+    # 1. index backup. see Higgs::Utils::BackupManager#backup_index.
+    # 2. data backup. see Higgs::Utils::BackupManager#backup_data.
+    # 3. journal log rotation. see Higgs::Utils::BackupManager#rotate_jlog.
+    # 4. journal logs backup. see Higgs::Utils::BackupManager#backup_jlog.
+    # 5. backup storage recovery. see Higgs::Utils::BackupManager#recover.
+    # 6. backup storage verify. see Higgs::Utils::BackupManager#verify.
+    # 7. journal logs clean. see Higgs::Utils::BackupManager#clean_jlog.
+    #
     class BackupManager
       # for ident(1)
       CVS_ID = '$Id$'
