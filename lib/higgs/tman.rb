@@ -39,6 +39,7 @@ module Higgs
       end
     end
 
+    # options for Higgs::TransactionManager
     module InitOptions
       # these options are defined.
       # [<tt>:read_only</tt>] if <tt>true</tt> then transaction is always read-only.
@@ -74,7 +75,7 @@ module Higgs
     end
     include InitOptions
 
-    # export transaction manager methods from <tt>@tman</tt> instance variable.
+    # export Higgs::TransactionManager methods from <tt>@tman</tt> instance variable.
     #
     # these methods are delegated.
     # * Higgs::TransactionManager#read_only

@@ -64,6 +64,7 @@ module Higgs
       DATA_HASH_BIN[cksum_symbol.to_s] = cksum_proc
     end
 
+    # options for Higgs::Storage
     module InitOptions
       # these options are defined.
       # [<tt>:number_of_read_io</tt>] number of read I/O handle of pool. default is <tt>2</tt>.
@@ -140,7 +141,7 @@ module Higgs
     end
     include InitOptions
 
-    # export storage methods from <tt>@storage</tt> instance variable.
+    # export Higgs::Storage methods from <tt>@storage</tt> instance variable.
     #
     # these methods are delegated.
     # * Higgs::Storage#name
