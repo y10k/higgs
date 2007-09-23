@@ -61,6 +61,7 @@ module Higgs
     #
     # === 1. recovery from last online-backup
     # run these commands.
+    #   % cp -p backup_dir/foo.idx foo.idx
     #   % cp -p backup_dir/foo.tar foo.tar
     #   % higgs_backup -t . -n foo --command recover
     #
