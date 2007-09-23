@@ -19,6 +19,7 @@ module Higgs
     EOF_MARK = :END_OF_JLOG
     BIN_EOF_MARK = Marshal.dump(EOF_MARK)
 
+    # see Higgs::Block#block_write for <tt>hash_type</tt>
     def initialize(out, sync=false, hash_type=:MD5)
       @out = out
       @sync = sync
