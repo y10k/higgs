@@ -73,6 +73,55 @@ module Higgs
     # journal log is not broken. last journal log is not applied and
     # storage data is old version. <em>this situation is inconsistent.</em>
     #
+    # == command-line options
+    #
+    #   % higgs_backup --help
+    #   Usage: higgs_backup [options]
+    #           --command=BACKUP_COMMAND
+    #       -f, --from=BACKUP_TARGET_STORAGE
+    #       -t, --to-dir=DIR_TO_BACUP
+    #       -n, --to-name=NAME_TO_BACKUP
+    #       -u=URI
+    #           --jlog-rotate-service-uri
+    #       -v, --verbose, --[no-]verbose
+    #           --verbose-level=LEVEL
+    #
+    # === option: <tt>--command=BACKUP_COMMAND</tt>
+    # select a process of online-backup.
+    # <tt>BACKUP_COMMAND</tt>s are these.
+    #
+    # <tt>online_backup</tt>:: default. run online-backup scenario.
+    #                          see Higgs::Utils::BackupManager#online_backup.
+    # <tt>index</tt>:: index backup. see Higgs::Utils::BackupManager#backup_index.
+    # <tt>data</tt>:: data backup. see Higgs::Utils::BackupManager#backup_data.
+    # <tt>rotate</tt>:: journal log rotation. see Higgs::Utils::BackupManager#rotate_jlog.
+    # <tt>jlog</tt>:: journal logs backup. see Higgs::Utils::BackupManager#backup_jlog.
+    # <tt>recover</tt>:: backup storage recovery. see Higgs::Utils::BackupManager#recover.
+    # <tt>verify</tt>:: backup storage verify. see Higgs::Utils::BackupManager#verify.
+    # <tt>clean</tt>:: journal logs clean. see Higgs::Utils::BackupManager#clean_jlog.
+    #
+    # === option: <tt>--from=BACKUP_TARGET_STORAGE</tt>
+    # <tt>BACKUP_TARGET_STORAGE</tt> is the name of backup target storage.
+    #
+    # === option: <tt>--to-dir=DIR_TO_BACKUP</tt>
+    # backuped storage is copied to the directory of <tt>DIR_TO_BACKUP</tt>.
+    #
+    # === option: <tt>--to-name=NAME_TO_BACKUP</tt>
+    # <tt>NAME_to_BACKUP</tt> is the name of backuped storage.
+    # if this option is omitted then <tt>NAME_TO_BACKUP</tt> is the same
+    # as <tt>BACKUP_TARGET_STORAGE</tt>.
+    #
+    # === option: <tt>--jlog-rotate-service-uri=URI</tt>
+    # access point journal log rotation remote service.
+    # <tt>URI</tt> is the same as <tt>:jlog_rotate_service_uri</tt>
+    # when Higgs::Storage is opened.
+    #
+    # === option: <tt>--verbose</tt>
+    # verbose level up.
+    #
+    # === option: <tt>--verbose-level=LEVEL</tt>
+    # set verbose level to <tt>LEVEL</tt>.
+    #
     class BackupManager
       # for ident(1)
       CVS_ID = '$Id$'
