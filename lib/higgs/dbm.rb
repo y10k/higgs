@@ -1,8 +1,11 @@
-# storage like dbm
+# = storage like dbm
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'higgs/storage'

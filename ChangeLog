@@ -1,5 +1,7 @@
 2007-09-24  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* LICENSE: BSD style license.
+
 	* lib/higgs/storage.rb (Higgs::Storage class): fix a bug of
 	auto-recovery at the read-write open.
 

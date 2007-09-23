@@ -1,8 +1,11 @@
-# block read/write
+# = block read/write
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'higgs/exceptions'

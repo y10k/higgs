@@ -1,8 +1,11 @@
-# transactional storage core
+# = transactional storage core
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'forwardable'

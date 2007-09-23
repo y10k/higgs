@@ -1,8 +1,11 @@
-# journal log writer
+# = journal log writer
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'higgs/block'

@@ -1,8 +1,11 @@
-# storage index
+# = storage index
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'forwardable'

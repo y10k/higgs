@@ -1,8 +1,11 @@
-# cache utilities
+# = cache utilities
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'forwardable'

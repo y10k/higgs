@@ -1,8 +1,11 @@
-# file lock
+# = file lock
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 module Higgs

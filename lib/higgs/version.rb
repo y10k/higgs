@@ -1,8 +1,11 @@
-# version
+# = version
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 module Higgs

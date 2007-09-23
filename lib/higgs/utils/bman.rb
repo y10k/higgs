@@ -1,8 +1,11 @@
-# backup manager
+# = backup manager
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'drb'

@@ -1,8 +1,11 @@
-# unix TAR utilities
+# = unix TAR utilities
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'forwardable'

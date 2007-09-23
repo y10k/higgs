@@ -1,8 +1,11 @@
-# multi-thread lock manager
+# = multi-thread lock manager
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'forwardable'

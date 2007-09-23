@@ -1,8 +1,11 @@
-# namespace for utilities
+# = namespace for utilities
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 module Higgs

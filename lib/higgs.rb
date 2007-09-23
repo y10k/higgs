@@ -1,8 +1,11 @@
-# pure ruby transactional storage compatible with unix TAR format
+# = pure ruby transactional storage compatible with unix TAR format
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'higgs/dbm'
@@ -41,6 +44,11 @@ require 'higgs/version'
 # [NORMAL SHUTDOWN] OK, no recovery
 # [PROCESS ABORT] OK, automatic recovery on read-write open
 # [SYSTEM ABORT (OS abort)] OK, need for <em>MANUAL</em> recovery from backup
+#
+# === license
+#
+# BSD style license.
+#   :include:LICENSE
 #
 module Higgs
 end

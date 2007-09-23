@@ -1,8 +1,11 @@
-# storage like pstore
+# = storage like pstore
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'higgs/storage'

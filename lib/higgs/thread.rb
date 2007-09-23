@@ -1,8 +1,11 @@
-# multi-thread utilities
+# = multi-thread utilities
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'forwardable'

@@ -1,8 +1,11 @@
-# transaction manager
+# = transaction manager
 #
 # Author:: $Author$
 # Date:: $Date$
 # Revision:: $Revision$
+#
+# == license
+#   :include:LICENSE
 #
 
 require 'forwardable'
