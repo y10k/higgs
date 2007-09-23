@@ -40,6 +40,22 @@ module Higgs
     end
 
     module InitOptions
+      # these options are defined.
+      # [<tt>:read_only</tt>] if <tt>true</tt> then transaction is always read-only.
+      #                       default is <tt>false</tt>.
+      # [<tt>:decode</tt>] procedure to decode data on read. if <tt>:string_only</tt>
+      #                    property at an entry is <tt>true</tt> then <tt>decode</tt>
+      #                    is not used to read the entry. default is <tt>proc{|r| r }</tt>.
+      # [<tt>:encode</tt>] procedure to encode data on write. if <tt>:string_only</tt>
+      #                    property at an entry is <tt>true</tt> then <tt>encode</tt>
+      #                    is not used to write the entry. default is <tt>proc{|w| w }</tt>.
+      # [<tt>:lock_manager</tt>] lock of a transaction and individual data. default is
+      #                          a new instance of Higgs::GiantLockManager.
+      # [<tt>:master_cache</tt>] read-cache for encoded string data. defauilt is
+      #                          a new instance of Higgs::LRUCache.
+      # [<tt>:secondary_cache</tt>] secondary read-cache for encoded string data.
+      #                             key of cache is always unique string.
+      #                             default is no effect.
       def init_options(options)
         if (options.key? :read_only) then
           @read_only = options[:read_only]
