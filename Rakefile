@@ -35,7 +35,7 @@ spec = Gem::Specification.new{|s|
   s.author = 'TOKI Yoshinori'
   s.email = 'toki@freedom.ne.jp'
   s.executables << 'higgs_dump_index' << 'higgs_dump_jlog' << 'higgs_verify' << 'higgs_backup'
-  s.files = Dir['{lib,test,misc}/**/*.rb'] << 'ChangeLog'
+  s.files = Dir['{lib,test,misc,sample}/**/*.rb'] << 'ChangeLog'
   s.test_files = [ 'test/run.rb' ]
   s.has_rdoc = true
 }

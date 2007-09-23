@@ -20,7 +20,7 @@ module Higgs
     # [<tt>:jlog_rotate_service_uri</tt>] <tt>"druby://localhost:<em>appropriate_port_number</em>"</tt>.
     #                                     journal log rotation remote service should be enabled.
     #
-    # == simple online-backup
+    # == online-backup
     #
     # online-backup is controlled by <tt>higgs_backup</tt> command that
     # is the front end of Higgs::Utils::BackupManager.
@@ -54,6 +54,24 @@ module Higgs
     # 5. backup storage recovery. see Higgs::Utils::BackupManager#recover.
     # 6. backup storage verify. see Higgs::Utils::BackupManager#verify.
     # 7. journal logs clean. see Higgs::Utils::BackupManager#clean_jlog.
+    #
+    # == restore from online-backup
+    # === 0. situation
+    # storage name is `foo' and backup directory is `backup_dir'.
+    #
+    # === 1. recovery from last online-backup
+    # run these commands.
+    #   % cp -p backup_dir/foo.tar foo.tar
+    #   % higgs_backup -t . -n foo --command recover
+    #
+    # === 2. apply last journal log
+    # if system is aborted then last journal log is broken.
+    # Higgs::Storage applies last jounal log to a readable point at
+    # the read-write open.
+    #
+    # <em>WARNING.</em> Higgs::Storage is normal shutdown and last
+    # journal log is not broken. last journal log is not applied and
+    # storage data is old version. <em>this situation is inconsistent.</em>
     #
     class BackupManager
       # for ident(1)
