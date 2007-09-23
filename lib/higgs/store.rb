@@ -163,8 +163,9 @@ module Higgs
     DECODE = proc{|r| Marshal.load(r) }
     ENCODE = proc{|w| Marshal.dump(w) }
 
-    # <tt>name</tt> is a storage name and see Higgs::Storage for detail.
-    # see Higgs::Storage and Higgs::TransactionManager for <tt>options</tt>.
+    # <tt>name</tt> is a storage name and see Higgs::Storage.new for
+    # detail. see Higgs::Storage::InitOptions and
+    # Higgs::TransactionManager::InitOptions for <tt>options</tt>.
     def initialize(name, options={})
       options[:decode] = DECODE
       options[:encode] = ENCODE
