@@ -16,8 +16,8 @@ module Higgs
     #
     # these parameters should be required when Higgs::Storage is opened.
     #
-    # [<tt>:jlog_rotate_max</tt>] <tt>0</tt>. rotated journal logs shuold be preserved.
-    # [<tt>:jlog_rotate_service_uri</tt>] <tt>"druby://localhost:<em>appropriate_port_number</em>"</tt>.
+    # [<tt>:jlog_rotate_max</tt>] value is <tt>0</tt>. rotated journal logs shuold be preserved.
+    # [<tt>:jlog_rotate_service_uri</tt>] value is <tt>"druby://localhost:<em>appropriate_port_number</em>"</tt>.
     #                                     journal log rotation remote service should be enabled.
     #
     # == online-backup
@@ -27,7 +27,7 @@ module Higgs
     #
     # simple online-backup is like this...
     #
-    #   % higgs_backup -v -f foo -t backup_dir -u druby://localhost:appropriate_port_number
+    #   % higgs_backup -v -f foo -t backup_dir -u druby://localhost:17320
     #   2007-09-23 03:00:08.925 [23706]: **** START BACKUP SCENARIO ****
     #   2007-09-23 03:00:08.936 [23706]: start index backup.
     #   2007-09-23 03:00:09.331 [23706]: completed index backup.
