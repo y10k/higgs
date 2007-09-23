@@ -142,7 +142,14 @@ module Higgs
   #     changed_time: *id001
   #     string_only: true
   #
+  # === 13. other operations
+  #
+  # <tt>tx</tt> of block argument is an instance of
+  # Higgs::TransactionContext. see Higgs::TransactionContext for all
+  # operations of transaction.
+  #
   # == sample script
+  #
   # sample/count.rb
   #   :include: sample/count.rb
   #
