@@ -401,7 +401,7 @@ module Higgs
       begin
         safe_pos = 0
         @logger.info("open journal log for read: #{@jlog_name}")
-        File.open(@jlog_name, 'r') {|f|
+        File.open(@jlog_name, File::RDONLY) {|f|
           f.binmode
           begin
             JournalLogger.scan_log(f) {|log|
@@ -416,7 +416,8 @@ module Higgs
         }
         @logger.info("last safe point of journal log: #{safe_pos}")
 
-        File.open(@jlog_name, 'w') {|f|
+        File.open(@jlog_name, File::WRONLY, 0660) {|f|
+          f.binmode
           @logger.info("shrink journal log to erase last broken segment.")
           f.truncate(safe_pos)
           f.seek(safe_pos)
