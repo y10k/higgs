@@ -79,7 +79,7 @@ module Higgs
     #   Usage: higgs_backup [options]
     #           --command=BACKUP_COMMAND
     #       -f, --from=BACKUP_TARGET_STORAGE
-    #       -t, --to-dir=DIR_TO_BACUP
+    #       -t, --to-dir=DIR_TO_BACKUP
     #       -n, --to-name=NAME_TO_BACKUP
     #       -u=URI
     #           --jlog-rotate-service-uri
