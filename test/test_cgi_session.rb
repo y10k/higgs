@@ -22,7 +22,7 @@ module Higgs::Test
       FileUtils.mkdir_p(@tmpdir)
       @logger = proc{|path|
         logger = Logger.new(path, 1)
-        logger.level = Logger::DEBUG
+        logger.level = Logger::WARN
         logger
       }
       @session = Object.new
