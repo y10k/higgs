@@ -1,4 +1,4 @@
-# ident for core dump
+# for ident(1)
 CVS_ID = '$Id$'
 
 LIB_DIR = 'lib'
