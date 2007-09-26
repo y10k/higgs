@@ -25,7 +25,7 @@ require 'higgs/version'
 #
 # [Higgs::Store] storage like pstore
 # [Higgs::DBM] storage like dbm
-# [Higgs::Utils::BackupManager] online backup utility (body of <tt>higgs_backup</tt>)
+# [Higgs::Utils::BackupManager] online backup utility (body of <tt>higgs_backup</tt> command)
 #
 # == safety level
 # === case of no backup
