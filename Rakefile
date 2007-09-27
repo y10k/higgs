@@ -1,6 +1,10 @@
 # for ident(1)
 CVS_ID = '$Id$'
 
+require 'lib/higgs/version'
+require 'rake/gempackagetask'
+require 'yaml'
+
 LIB_DIR = 'lib'
 TEST_DIR = 'test'
 RDOC_DIR = 'api'
@@ -12,6 +16,10 @@ def cd_v(dir)
   }
 end
 
+def load_rdoc_opts
+  YAML.load(IO.read('rdoc.yml'))
+end
+
 task :default
 
 task :test do
@@ -21,13 +29,10 @@ task :test do
 end
 
 task :rdoc do
-  cd_v(LIB_DIR) {
-    sh 'rdoc', '-SNa', '-i', '..', '-o', "../#{RDOC_DIR}", '-m', RDOC_MAIN
-  }
+  rdoc_opts = load_rdoc_opts
+  sh 'rdoc', *(rdoc_opts['CommonOptions'] + rdoc_opts['CommandLineOptions']).flatten
 end
 
-require 'rake/gempackagetask'
-require 'lib/higgs/version'
 spec = Gem::Specification.new{|s|
   s.name = 'higgs'
   s.version = Higgs::VERSION
@@ -38,6 +43,7 @@ spec = Gem::Specification.new{|s|
   s.files = Dir['{lib,test,misc,sample}/**/*.rb'] << 'ChangeLog' << 'LICENSE'
   s.test_files = [ 'test/run.rb' ]
   s.has_rdoc = true
+  s.rdoc_options = load_rdoc_opts['CommonOptions'].flatten
 }
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_zip = true

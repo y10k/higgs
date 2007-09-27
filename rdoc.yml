@@ -1,0 +1,12 @@
+CommonOptions:
+  - -SNa
+  - [ -i, . ]
+  - [ -m, Higgs ]
+
+CommandLineOptions:
+  - [ -i, lib ]
+  - [ -x, test ]
+  - [ -x, sample ]
+  - [ -x, misc ]
+  - [ -x, mkrdoc ]
+  - [ -o, api ]
