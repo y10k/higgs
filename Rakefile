@@ -41,7 +41,7 @@ spec = Gem::Specification.new{|s|
 }
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_zip = true
-  pkg.need_tar = true
+  pkg.need_tar_gz = true
 end
 
 task :gem_install => [ :gem ] do
