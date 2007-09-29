@@ -266,7 +266,7 @@ module Higgs
         unless (@read_only) then
           begin
             w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
-            @logger.info("create and get I/O handle for write: #{@tar_name}")
+            @logger.info("create and open I/O handle for write: #{@tar_name}")
           rescue Errno::EEXIST
             @logger.info("open I/O handle for write: #{@tar_name}")
             w_io = File.open(@tar_name, File::WRONLY, 0660)
