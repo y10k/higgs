@@ -75,7 +75,7 @@ module Higgs::Test
         FileUtils.touch(@start_latch)
         until (File.exist? @stop_latch)
           write_list = []
-          ope = [ :write, :system_properties, :custom_properties, :delete ][rand(3)]
+          ope = [ :write, :system_properties, :custom_properties, :delete ][rand(4)]
           key = rand(STORAGE_ITEMS)
           case (ope)
           when :write
