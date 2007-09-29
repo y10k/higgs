@@ -38,7 +38,7 @@ task :rdoc_clean do
 end
 
 task :rdoc_upload => [ :rdoc_clean, :rdoc ] do
-  sh 'scp', '-pr', RDOC_DIR, "rubyforge.org:/var/www/gforge-projects/higgs/."
+  sh 'scp', '-pr', RDOC_DIR, 'rubyforge.org:/var/www/gforge-projects/higgs/.'
 end
 
 spec = Gem::Specification.new{|s|
