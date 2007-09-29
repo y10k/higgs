@@ -1,5 +1,7 @@
 2007-09-29  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/version.rb: version 0.1.0.
+
 	* check ruby-1.8.6-p110
 	ruby 1.8.6 (2007-09-23 patchlevel 110) [i686-linux], OK.
 	ruby 1.8.6 (2007-09-23 patchlevel 110) [i386-cygwin], OK.
