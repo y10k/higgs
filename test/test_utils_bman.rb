@@ -29,7 +29,7 @@ module Higgs::Test
       FileUtils.mkdir_p(@from_dir)
       FileUtils.rm_rf(@to_dir)  # for debug
       FileUtils.mkdir_p(@to_dir)
-      @jlog_rotate_service_uri = 'druby://localhost:14142'
+      @jlog_rotate_service_uri = 'druby://localhost:17320'
       @from_st = Storage.new(@from,
                              :jlog_rotate_max => 0,
                              :jlog_rotate_service_uri => @jlog_rotate_service_uri,
