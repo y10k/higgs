@@ -33,6 +33,14 @@ task :rdoc do
   sh 'rdoc', *(rdoc_opts['CommonOptions'] + rdoc_opts['CommandLineOptions']).flatten
 end
 
+task :rdoc_clean do
+  rm_rf RDOC_DIR
+end
+
+task :rdoc_upload => [ :rdoc_clean, :rdoc ] do
+  sh 'scp', '-pr', RDOC_DIR, "rubyforge.org:/var/www/gforge-projects/higgs/."
+end
+
 spec = Gem::Specification.new{|s|
   s.name = 'higgs'
   s.version = Higgs::VERSION
@@ -54,9 +62,7 @@ task :gem_install => [ :gem ] do
   sh 'gem', 'install', "pkg/higgs-#{Higgs::VERSION}.gem"
 end
 
-task :clean => [ :clobber_package ] do
-  rm_rf RDOC_DIR
-end
+task :clean => [ :rdoc_clean, :clobber_package ]
 
 # Local Variables:
 # mode: Ruby
