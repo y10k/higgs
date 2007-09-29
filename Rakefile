@@ -23,9 +23,9 @@ end
 task :default
 
 task :test do
-  cd_v(TEST_DIR) {
+  cd_v TEST_DIR do
     sh 'rake'
-  }
+  end
 end
 
 task :rdoc do
@@ -47,9 +47,10 @@ spec = Gem::Specification.new{|s|
   s.summary = 'pure ruby transactional storage compatible with unix TAR format'
   s.author = 'TOKI Yoshinori'
   s.email = 'toki@freedom.ne.jp'
-  s.executables << 'higgs_dump_index' << 'higgs_dump_jlog' << 'higgs_verify' << 'higgs_backup'
-  s.files = Dir['{lib,test,misc,sample}/**/*.rb'] << 'ChangeLog' << 'LICENSE'
-  s.test_files = [ 'test/run.rb' ]
+  s.executables  = %w[ higgs_backup higgs_dump_index higgs_dump_jlog higgs_verify ]
+  s.files = Dir['**/{Rakefile,.strc,*.{rb,yml}}']
+  s.files += %w[ ChangeLog LICENSE README ]
+  s.test_files = %w[ test/run.rb ]
   s.has_rdoc = true
   s.rdoc_options = load_rdoc_opts['CommonOptions'].flatten
 }
@@ -62,7 +63,11 @@ task :gem_install => [ :gem ] do
   sh 'gem', 'install', "pkg/higgs-#{Higgs::VERSION}.gem"
 end
 
-task :clean => [ :rdoc_clean, :clobber_package ]
+task :clean => [ :rdoc_clean, :clobber_package ] do
+  cd_v 'misc/dbm_bench' do
+    sh 'rake', 'clean'
+  end
+end
 
 # Local Variables:
 # mode: Ruby
