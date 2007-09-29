@@ -75,10 +75,13 @@ module Higgs
     end
 
     def []=(key, value)
-      delete(key)
-      id = Index.create_id(key, @identities)
-      @identities[id] = key
-      @index[key] = [ id, value ]
+      if (i = @index[key]) then
+        i[1] = value
+      else
+        id = Index.create_id(key, @identities)
+        @identities[id] = key
+        @index[key] = [ id, value ]
+      end
       value
     end
 
