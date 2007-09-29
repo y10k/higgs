@@ -230,7 +230,7 @@ module Higgs
 
       @commit_lock = Mutex.new
       @state_lock = Mutex.new
-      @broken = false
+      @panic = false
       @shutdown = false
 
       init_options(options)
@@ -311,7 +311,7 @@ module Higgs
         if (init_completed) then
           @logger.info("completed storage open.")
         else
-          @broken = true
+          @panic = true
 
           if ($! && @logger) then
             begin
@@ -384,7 +384,7 @@ module Higgs
         if (@shutdown) then
           raise ShutdownException, 'storage shutdown'
         end
-        if (@broken) then
+        if (@panic) then
           raise PanicError, 'broken storage'
         end
       }
@@ -430,8 +430,8 @@ module Higgs
         recover_completed = true
       ensure
         unless (recover_completed) then
-          @state_lock.synchronize{ @broken = true }
-          @logger.error("BROKEN: failed to recover.")
+          @state_lock.synchronize{ @panic = true }
+          @logger.error("panic: failed to recover.")
           @logger.error($!) if $!
         end
       end
@@ -457,7 +457,7 @@ module Higgs
           end
 
           unless (@read_only) then
-            if (@broken) then
+            if (@panic) then
               @logger.warn("abort journal log: #{@jlog_name}")
               @jlog.close(false)
             else
@@ -466,7 +466,7 @@ module Higgs
             end
           end
 
-          if (! @broken && ! @read_only) then
+          if (! @panic && ! @read_only) then
             @logger.info("save index: #{@idx_name}")
             @index.save(@idx_name)
           end
@@ -568,8 +568,8 @@ module Higgs
           rotate_completed = true
         ensure
           unless (rotate_completed) then
-            @state_lock.synchronize{ @broken = true }
-            @logger.error("BROKEN: failed to rotate journal log.")
+            @state_lock.synchronize{ @panic = true }
+            @logger.error("panic: failed to rotate journal log.")
             @logger.error($!) if $!
           end
         end
@@ -764,8 +764,8 @@ module Higgs
           commit_completed = true
         ensure
           unless (commit_completed) then
-            @state_lock.synchronize{ @broken = true }
-            @logger.error("BROKEN: failed to commit.")
+            @state_lock.synchronize{ @panic = true }
+            @logger.error("panic: failed to commit.")
             @logger.error($!) if $!
           end
         end
@@ -954,8 +954,8 @@ module Higgs
             head_and_body = r_tar.fetch
           }
           unless (head_and_body) then
-            @state_lock.synchronize{ @broken = true }
-            @logger.error("BROKEN: failed to read record: #{key}")
+            @state_lock.synchronize{ @panic = true }
+            @logger.error("panic: failed to read record: #{key}")
             raise PanicError, "failed to read record: #{key}"
           end
         end
@@ -981,13 +981,13 @@ module Higgs
       head, body = value.split(/\n/, 2)
       cksum_type, cksum_value = head.sub(/^#\s+/, '').split(/\s+/, 2)
       if (cksum_type != PROPERTIES_CKSUM_TYPE) then
-        @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: unknown properties cksum type: #{cksum_type}")
+        @state_lock.synchronize{ @panic = true }
+        @logger.error("panic: unknown properties cksum type: #{cksum_type}")
         raise PanicError, "unknown properties cksum type: #{cksum_type}"
       end
       if (body.sum(PROPERTIES_CKSUM_BITS) != Integer(cksum_value)) then
-        @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: mismatch properties cksum at #{key}")
+        @state_lock.synchronize{ @panic = true }
+        @logger.error("panic: mismatch properties cksum at #{key}")
         raise PanicError, "mismatch properties cksum at #{key}"
       end
       YAML.load(body)
@@ -1008,20 +1008,20 @@ module Higgs
       check_panic
       value = read_record_body(key, :d) or return
       unless (properties = internal_fetch_properties(key)) then
-        @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: failed to read properties: #{key}")
+        @state_lock.synchronize{ @panic = true }
+        @logger.error("panic: failed to read properties: #{key}")
         raise PanicError, "failed to read properties: #{key}"
       end
       hash_type = properties['system_properties']['hash_type']
       unless (cksum_proc = DATA_HASH_BIN[hash_type]) then
-        @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: unknown data hash type: #{hash_type}")
+        @state_lock.synchronize{ @panic = true }
+        @logger.error("panic: unknown data hash type: #{hash_type}")
         raise PanicError, "unknown data hash type: #{hash_type}"
       end
       hash_value = cksum_proc.call(value)
       if (hash_value != properties['system_properties']['hash_value']) then
-        @state_lock.synchronize{ @broken = true }
-        @logger.error("BROKEN: mismatch hash value at #{key}")
+        @state_lock.synchronize{ @panic = true }
+        @logger.error("panic: mismatch hash value at #{key}")
         raise PanicError, "mismatch hash value at #{key}"
       end
       value
