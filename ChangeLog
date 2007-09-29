@@ -1,3 +1,9 @@
+2007-09-29  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* check ruby-1.8.6-p110
+	ruby 1.8.6 (2007-09-23 patchlevel 110) [i686-linux], OK.
+	ruby 1.8.6 (2007-09-23 patchlevel 110) [i386-cygwin], OK.
+
 2007-09-28  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* started subversion repository on rubyforge.org.
