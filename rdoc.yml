@@ -5,8 +5,9 @@ CommonOptions:
 
 CommandLineOptions:
   - [ -i, lib ]
-  - [ -x, test ]
-  - [ -x, sample ]
   - [ -x, misc ]
   - [ -x, mkrdoc ]
+  - [ -x, pkg ]
+  - [ -x, sample ]
+  - [ -x, test ]
   - [ -o, api ]
