@@ -843,7 +843,6 @@ module Higgs
         index = Index.new
         index.load(idx_name) if (File.exist? idx_name)
 
-        
         out << "recovery target: #{name}\n" if (out && verbose_level >= 1)
         for curr_name in rotate_entries(jlog_name)
           JournalLogger.each_log(curr_name) do |log|
