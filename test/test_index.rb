@@ -173,6 +173,8 @@ module Higgs::Test
     def test_identity
       @idx[:foo] = 0
       assert_equal('foo', @idx.identity(:foo))
+      @idx[:foo] = 1            # overwrite index entry
+      assert_equal('foo', @idx.identity(:foo))
     end
 
     def test_identity_not_defined
@@ -193,6 +195,8 @@ module Higgs::Test
       @idx['foo'] = 1
       @idx.delete(:foo)
       assert_equal(nil, @idx.identity(:foo))
+      assert_equal('foo.a', @idx.identity('foo'))
+      @idx['foo'] = 2           # overwrite index entry
       assert_equal('foo.a', @idx.identity('foo'))
     end
   end
@@ -248,6 +252,25 @@ module Higgs::Test
       assert_equal(512, i.free_fetch(512))
       assert_equal(0, i[:foo])
       assert_equal('foo', i.identity(:foo))
+    end
+
+    def test_migration_RuntimeError_unsupported_version
+      index_data_1_0 = {
+        :version => [ 1, 0 ],
+        :change_number => 0,
+        :eoa => 1024,
+        :free_lists => { 512 => [ 512 ] },
+        :index => { :foo => 0 }
+      }
+      File.open(@path, 'w') {|w|
+        w.binmode
+        Block.block_write(w, Index::MAGIC_SYMBOL, Marshal.dump(index_data_1_0))
+      }
+
+      i = Index.new
+      assert_raise(RuntimeError) {
+        i.load(@path)
+      }
     end
   end
 end

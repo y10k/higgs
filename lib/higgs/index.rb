@@ -147,7 +147,7 @@ module Higgs
         f.binmode
         index_data = Marshal.load(block_read(f, MAGIC_SYMBOL))
         migration_0_0_to_0_1(index_data)
-        if ((index_data[:version] <=> [ MAJOR_VERSION, MINOR_VERSION ]) > 0) then
+        if (index_data[:version] != [ MAJOR_VERSION, MINOR_VERSION ]) then
           raise "unsupported version: #{index_data[:version].join('.')}"
         end
         @change_number = index_data[:change_number]
