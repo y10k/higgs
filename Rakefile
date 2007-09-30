@@ -8,7 +8,6 @@ require 'yaml'
 LIB_DIR = 'lib'
 TEST_DIR = 'test'
 RDOC_DIR = 'api'
-RDOC_MAIN = 'Higgs'
 
 def cd_v(dir)
   cd(dir, :verbose => true) {
