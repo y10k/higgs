@@ -1,5 +1,8 @@
 2007-09-30  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb (Higgs::Storage class): fixed a bug of EOA
+	lost on recovery.
+
 	* lib/higgs/block.rb (Higgs::Block module): fixed a bug of
 	body_hash_type check leakage.
 

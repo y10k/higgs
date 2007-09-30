@@ -13,7 +13,7 @@ module Higgs::Test
     CVS_ID = '$Id$'
 
     def setup
-      srand(0)                  # preset for rand 
+      srand(0)                  # preset for rand
       @test_dir = 'st_test'
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
@@ -23,7 +23,7 @@ module Higgs::Test
         logger.level = Logger::DEBUG
         logger
       }
-      @st = Storage.new(@name, :data_cksum_type => :MD5, :logger => @logger)
+      @st = Storage.new(@name, :logger => @logger)
     end
 
     def teardown
@@ -43,54 +43,6 @@ module Higgs::Test
         [ :write, :foo, :data, 'foo', 0xFF.chr * 1024 ]
       ]
       @st.raw_write_and_commit(write_list)
-    end
-
-    def test_recover
-      @st.shutdown
-      @st = Storage.new(@name,
-                        :data_cksum_type => :MD5,
-                        :jlog_rotate_max => 0, # unlimited rotation
-                        :logger => @logger)
-
-      loop_count = 100
-      data_count = 10
-
-      loop_count.times do
-        write_list = []
-        ope = [ :write, :delete ][rand(2)]
-        key = rand(data_count)
-        case (ope)
-        when :write
-          type = [ :a, :b ][rand(2)]
-          value = rand(256).chr * rand(5120)
-          write_list << [ ope, key, type, key.to_s, value ]
-        when :delete
-          next unless (@st.key? key)
-          write_list << [ ope, key ]
-        else
-          raise "unknown operation: #{ope}"
-        end
-        @st.raw_write_and_commit(write_list)
-      end
-
-      3.times do
-        @st.rotate_journal_log(false)
-      end
-      3.times do
-        @st.rotate_journal_log(true)
-      end
-
-      @st.shutdown
-
-      other_name = File.join(@test_dir, 'bar')
-      for name in Storage.rotate_entries("#{@name}.jlog")
-        name =~ /\.jlog.*$/ or raise 'mismatch'
-        FileUtils.cp(name, other_name + $&)
-      end
-      Storage.recover(other_name)
-
-      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'tar')
-      assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"), 'idx')
     end
 
     def test_write_and_commit
@@ -401,6 +353,102 @@ module Higgs::Test
       }
       assert_raise(Storage::ShutdownException) { @st.write_and_commit([]) }
       assert_raise(Storage::ShutdownException) { @st.verify }
+    end
+  end
+
+  class StorageRecoveryTest < Test::Unit::TestCase
+    include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
+
+    def setup
+      srand(0)                  # preset for rand
+      @test_dir = 'st_test'
+      FileUtils.rm_rf(@test_dir) # for debug
+      FileUtils.mkdir_p(@test_dir)
+      @name = File.join(@test_dir, 'foo')
+      @logger = proc{|path|
+        logger = Logger.new(path, 1)
+        logger.level = Logger::DEBUG
+        logger
+      }
+      @st = Storage.new(@name,
+                        :jlog_rotate_max => 0, # unlimited rotation
+                        :logger => @logger)
+    end
+
+    def teardown
+      @st.shutdown unless @st.shutdown?
+      FileUtils.rm_rf(@test_dir) unless $DEBUG
+    end
+
+    def write_data(loop_count=100, data_count=10, data_max_size=1024*5)
+      loop_count.times do
+        write_list = []
+        ope = [ :write, :delete ][rand(2)]
+        key = rand(data_count)
+        case (ope)
+        when :write
+          type = [ :a, :b ][rand(2)]
+          value = rand(256).chr * rand(data_max_size)
+          write_list << [ ope, key, type, key.to_s, value ]
+        when :delete
+          next unless (@st.key? key)
+          write_list << [ ope, key ]
+        else
+          raise "unknown operation: #{ope}"
+        end
+        @st.raw_write_and_commit(write_list)
+      end
+    end
+    private :write_data
+
+    def test_manual_recovery
+      write_data
+
+      3.times do
+        @st.rotate_journal_log(false)
+      end
+      3.times do
+        @st.rotate_journal_log(true)
+      end
+
+      @st.shutdown
+
+      other_name = File.join(@test_dir, 'bar')
+      for name in Storage.rotate_entries("#{@name}.jlog")
+        name =~ /\.jlog.*$/ or raise 'mismatch'
+        FileUtils.cp(name, other_name + $&, :preserve => true)
+      end
+      Storage.recover(other_name)
+
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'tar')
+      assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"), 'idx')
+    end
+
+    def test_auto_recovery
+      write_data
+      @st.rotate_journal_log(true)
+
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
+      # write_data(10 * 10 * 256) < jlog_rotate_size(256 * 1024)
+      write_data(10, 10, 2560)
+
+      # not closed journal log for other storage.
+      FileUtils.cp("#{@name}.jlog", "#{other_name}.jlog", :preserve => true)
+
+      @st.shutdown
+
+      # auto-recovery for other storage
+      st2 = Storage.new(other_name, :logger => @logger)
+      st2.shutdown
+
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'tar')
+      assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"), 'idx')
     end
   end
 

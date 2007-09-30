@@ -431,6 +431,11 @@ module Higgs
           @logger.info("write eof mark to journal log.")
           JournalLogger.eof_mark(f)
         }
+
+        @logger.info("write EOA to storage: #{@index.eoa}")
+        @w_tar.seek(@index.eoa)
+        @w_tar.write_EOA
+
         recover_completed = true
       ensure
         unless (recover_completed) then
