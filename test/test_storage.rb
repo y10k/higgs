@@ -6,7 +6,7 @@ require 'logger'
 require 'test/unit'
 
 module Higgs::Test
-  class StorageTest < Test::Unit::TestCase
+  module StorageTestCase
     include Higgs
 
     # for ident(1)
@@ -23,13 +23,25 @@ module Higgs::Test
         logger.level = Logger::DEBUG
         logger
       }
-      @st = Storage.new(@name, :logger => @logger)
+      @st = new_storage
     end
 
     def teardown
       @st.shutdown unless @st.shutdown?
       FileUtils.rm_rf(@test_dir) unless $DEBUG
     end
+  end
+
+  class StorageTest < Test::Unit::TestCase
+    include StorageTestCase
+
+    # for ident(1)
+    CVS_ID = '$Id$'
+
+    def new_storage
+      Storage.new(@name, :logger => @logger)
+    end
+    private :new_storage
 
     def test_raw_write_and_commit
       write_list = [
@@ -357,31 +369,17 @@ module Higgs::Test
   end
 
   class StorageRecoveryTest < Test::Unit::TestCase
-    include Higgs
+    include StorageTestCase
 
     # for ident(1)
     CVS_ID = '$Id$'
 
-    def setup
-      srand(0)                  # preset for rand
-      @test_dir = 'st_test'
-      FileUtils.rm_rf(@test_dir) # for debug
-      FileUtils.mkdir_p(@test_dir)
-      @name = File.join(@test_dir, 'foo')
-      @logger = proc{|path|
-        logger = Logger.new(path, 1)
-        logger.level = Logger::DEBUG
-        logger
-      }
-      @st = Storage.new(@name,
-                        :jlog_rotate_max => 0, # unlimited rotation
-                        :logger => @logger)
+    def new_storage
+      Storage.new(@name,
+                  :jlog_rotate_max => 0, # unlimited rotation
+                  :logger => @logger)
     end
-
-    def teardown
-      @st.shutdown unless @st.shutdown?
-      FileUtils.rm_rf(@test_dir) unless $DEBUG
-    end
+    private :new_storage
 
     def write_data(loop_count=100, data_count=10, data_max_size=1024*5)
       loop_count.times do
@@ -457,6 +455,7 @@ module Higgs::Test
 
     # for ident(1)
     CVS_ID = '$Id$'
+
     def setup
       @test_dir = 'st_test'
       FileUtils.rm_rf(@test_dir) # for debug
