@@ -192,6 +192,20 @@ module Higgs::Test
         assert_equal(2, @calc_calls, "#{n}th")
       end
     end
+
+    def test_store
+      @cache[WORK_COUNT] = 0
+      assert_equal(0, @cache[WORK_COUNT])
+      assert_equal(0, @calc_calls, 'no call')
+    end
+
+    def test_store_overwrite
+      assert(@cache[WORK_COUNT] != 0)
+      assert_equal(1, @calc_calls)
+      @cache[WORK_COUNT] = 0
+      assert_equal(0, @cache[WORK_COUNT])
+      assert_equal(1, @calc_calls)
+    end
   end
 
   class SharedWorkCacheNoWorkBlockTest < Test::Unit::TestCase
