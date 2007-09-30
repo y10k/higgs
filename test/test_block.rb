@@ -154,6 +154,57 @@ module Higgs::Test
         block_read(@io, 'FOO')
       }
     end
+
+    def test_head_write_BrokenError_short_write
+      def @io.write(*args)
+        super
+        0
+      end
+
+      body = 'foo'
+      body_cksum_bin = Digest::SHA512.digest(body)
+      assert_raise(BrokenError) {
+        head_write(@io, 'FOO', body.length, 'SHA512', body_cksum_bin)
+      }
+    end
+
+    def test_block_write_body_BrokenError_short_write
+      def @io.write(*args)
+        @count = 0 unless @count
+        @count += 1
+        r = super(*args)
+        case (@count)
+        when 1
+          return r
+        else
+          return 0
+        end
+      end
+
+      body = 'foo'
+      assert_raise(BrokenError) {
+        block_write(@io, 'FOO', body)
+      }
+    end
+
+    def test_block_write_padding_BrokenError_short_write
+      def @io.write(*args)
+        @count = 0 unless @count
+        @count += 1
+        r = super(*args)
+        case (@count)
+        when 1, 2
+          return r
+        else
+          return 0
+        end
+      end
+
+      body = 'foo'
+      assert_raise(BrokenError) {
+        block_write(@io, 'FOO', body)
+      }
+    end
   end
 end
 
