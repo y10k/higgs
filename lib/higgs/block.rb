@@ -165,7 +165,8 @@ module Higgs
     module_function :block_read
 
     def block_write(io, magic_symbol, body, body_hash_type=:MD5)
-      hash_proc = BODY_HASH[body_hash_type.to_sym] or "unknown body hash type: #{body_hash_type}"
+      hash_proc = BODY_HASH[body_hash_type.to_sym] or
+        raise ArgumentError, "unknown body hash type: #{body_hash_type}"
       body_hash = hash_proc.call(body)
       head_write(io, magic_symbol, body.length, body_hash_type.to_s, body_hash)
 

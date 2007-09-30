@@ -205,6 +205,13 @@ module Higgs::Test
         block_write(@io, 'FOO', body)
       }
     end
+
+    def test_block_write_ArgumentError_unknown_body_hash_type
+      body = 'foo'
+      assert_raise(ArgumentError) {
+        block_write(@io, 'FOO', body, :UNKNWON)
+      }
+    end
   end
 end
 
