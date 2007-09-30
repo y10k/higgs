@@ -106,7 +106,7 @@ module Higgs
 
         @data_hash_type = options[:data_hash_type] || :MD5
         unless (DATA_HASH.key? @data_hash_type) then
-          raise "unknown data hash type: #{@data_hash_type}"
+          raise ArgumentError, "unknown data hash type: #{@data_hash_type}"
         end
 
         if (options.key? :jlog_sync) then
@@ -116,6 +116,10 @@ module Higgs
         end
 
         @jlog_hash_type = options[:jlog_hash_type] || :MD5
+        unless (Block::BODY_HASH.key? @jlog_hash_type) then
+          raise ArgumentError, "unknown journal log hash type: #{@jlog_hash_type}"
+        end
+
         @jlog_rotate_size = options[:jlog_rotate_size] || 1024 * 256
         @jlog_rotate_max = options[:jlog_rotate_max] || 1
         @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]

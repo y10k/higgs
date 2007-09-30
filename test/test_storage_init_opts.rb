@@ -17,6 +17,8 @@ module Higgs::Test
       assert_equal(2, @number_of_read_io)
       assert_equal(2, self.number_of_read_io)
       assert_instance_of(Higgs::LRUCache, @properties_cache) # auto: require 'higgs/cache'
+      assert_equal(:MD5, self.data_hash_type)
+      assert_equal(:MD5, @data_hash_type)
       assert_equal(false, @jlog_sync)
       assert_equal(false, self.jlog_sync)
       assert_equal(1024 * 256, @jlog_rotate_size)
@@ -51,6 +53,18 @@ module Higgs::Test
       assert_equal(:dummy_cache, @properties_cache)
     end
 
+    def test_data_hash_type
+      init_options(:data_hash_type => :SHA512)
+      assert_equal(:SHA512, @data_hash_type)
+      assert_equal(:SHA512, self.data_hash_type)
+    end
+
+    def test_data_hash_type_ArgumentError_unknown_data_hash_type
+      assert_raise(ArgumentError) {
+	init_options(:data_hash_type => :UNKNOWN)
+      }
+    end
+
     def test_jlog_sync_true
       init_options(:jlog_sync => true)
       assert_equal(true, @jlog_sync)
@@ -61,6 +75,18 @@ module Higgs::Test
       init_options(:jlog_sync => false)
       assert_equal(false, @jlog_sync)
       assert_equal(false, self.jlog_sync)
+    end
+
+    def test_jlog_hash_type
+      init_options(:jlog_hash_type => :SHA512)
+      assert_equal(:SHA512, @jlog_hash_type)
+      assert_equal(:SHA512, self.jlog_hash_type)
+    end
+
+    def test_jlog_hash_type_ArgumentError_unknown_journal_log_hash_type
+      assert_raise(ArgumentError) {
+	init_options(:jlog_hash_type => :UNKNOWN)
+      }
     end
 
     def test_jlog_rotate_size

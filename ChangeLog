@@ -1,3 +1,8 @@
+2007-09-30  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage::InitOptions module):
+	exceptions of the argument check are unified to ArgumentError.
+
 2007-09-29  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb: version 0.1.0.
