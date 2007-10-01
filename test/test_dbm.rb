@@ -65,6 +65,23 @@ module Higgs::Test
       }
     end
 
+    def test_update_no_use
+      @db.transaction{|tx|
+        tx['foo'] = ''
+      }
+
+      @db.transaction{|tx|
+        tx.update('foo') {|s|
+          assert_equal(true, s.frozen?)
+          assert_raise(TypeError) {
+            s << 'foo' << ',' << 'bar' << ',' << 'baz'
+          }
+        }
+
+        assert_equal('', tx['foo'], 'not updated')
+      }
+    end
+
     def test_rollback
       @db.transaction{|tx|
         tx['foo'] = 'apple'
