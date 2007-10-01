@@ -147,11 +147,9 @@ module Higgs::Test
       }
 
       @st.transaction{|tx|
-        fruits = tx[:foo]
-        assert_equal(%w[ apple banana orange ], fruits)
-        assert_equal('orange', fruits.pop)
-        assert_equal(%w[ apple banana ], fruits)
-        tx[:foo] = fruits
+        assert_equal(%w[ apple banana orange ], tx[:foo])
+        tx.update(:foo) {|fruits| fruits.pop }
+        assert_equal(%w[ apple banana ], tx[:foo])
         tx.rollback
         assert_equal(%w[ apple banana orange ], tx[:foo])
       }
@@ -201,6 +199,15 @@ module Higgs::Test
         end
         assert_equal([], expected_keys)
       }
+
+      @st.transaction{|tx|
+        expected_keys = [ :foo, :bar, :baz ]
+        tx.each_key do |key|
+          assert((expected_keys.include? key), key)
+          expected_keys.delete(key)
+        end
+        assert_equal([], expected_keys)
+      }
     end
   end
 
@@ -224,13 +231,13 @@ module Higgs::Test
     def test_open
       Store.open(@name) {|st|
         st.transaction{|tx|
-          tx[:foo] = :Apple
+          tx[:foo] = :apple
         }
       }
 
       Store.open(@name, :read_only => true) {|st|
         st.transaction{|tx|
-          assert_equal(:Apple, tx[:foo])
+          assert_equal(:apple, tx[:foo])
         }
       }
     end
