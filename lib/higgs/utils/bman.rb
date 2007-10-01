@@ -111,7 +111,7 @@ module Higgs
     # backuped storage is copied to the directory of <tt>DIR_TO_BACKUP</tt>.
     #
     # === option: <tt>--to-name=NAME_TO_BACKUP</tt>
-    # <tt>NAME_to_BACKUP</tt> is the name of backuped storage.
+    # <tt>NAME_TO_BACKUP</tt> is the name of backuped storage.
     # if this option is omitted then <tt>NAME_TO_BACKUP</tt> is the same
     # as <tt>BACKUP_TARGET_STORAGE</tt>.
     #
