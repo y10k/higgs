@@ -468,6 +468,40 @@ module Higgs::Test
       }
     end
 
+    def test_set_property_IndexError_not_exist_properties_at_key
+      @tman.transaction{|tx|
+        assert_raise(IndexError) {
+          tx.set_property(:foo, 'bar', 'baz')
+        }
+        assert_raise(IndexError) {
+          tx.delete_property(:foo, 'bar')
+        }
+        assert_raise(IndexError) {
+          tx.each_property(:foo) do |name, value|
+            flunk('not to reach.')
+          end
+        }
+      }
+    end
+
+    def test_property_TypeError_cant_convert_to_Symbol_or_String
+      @tman.transaction{|tx|
+        tx[:foo] = ''
+        assert_raise(TypeError) {
+          tx.property(:foo, 0)
+        }
+        assert_raise(TypeError) {
+          tx.set_property(:foo, 'a'..'z', 'bar')
+        }
+        assert_raise(TypeError) {
+          tx.delete_property(:foo, 3.141592)
+        }
+        assert_raise(TypeError) {
+          tx.property? :foo, /bar/
+        }
+      }
+    end
+
     def test_system_properties
       @tman.transaction{|tx|
         tx[:foo] = 'apple'
