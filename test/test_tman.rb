@@ -43,6 +43,32 @@ module Higgs::Test
       assert_equal(1, count)
     end
 
+    def test_transaction_RuntimeError_nested_transaction_forbidden
+      @tman.transaction(true) {|tx|
+        assert_raise(RuntimeError) {
+          @tman.transaction(true) {|tx2|
+            flunk('not to reach.')
+          }
+        }
+      }
+    end
+
+    def test_in_transaction?
+      assert_equal(false, TransactionManager.in_transaction?)
+      @tman.transaction{|tx|
+        assert_equal(true, TransactionManager.in_transaction?)
+      }
+      assert_equal(false, TransactionManager.in_transaction?)
+    end
+
+    def test_current_transaction
+      assert_equal(nil, TransactionManager.current_transaction)
+      @tman.transaction{|tx|
+        assert_equal(tx, TransactionManager.current_transaction)
+      }
+      assert_equal(nil, TransactionManager.current_transaction)
+    end
+
     def test_fetch_and_store
       @tman.transaction{|tx|
         assert_equal(nil, tx[:foo])
