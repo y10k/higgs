@@ -203,6 +203,38 @@ module Higgs::Test
       }
     end
   end
+
+  class StoreOpenTest < Test::Unit::TestCase
+    include Higgs
+
+    # for ident(1)
+    CVS_ID = '$Id$'
+
+    def setup
+      @test_dir = 'store_test'
+      FileUtils.rm_rf(@test_dir) # for debug
+      FileUtils.mkdir_p(@test_dir)
+      @name = File.join(@test_dir, 'foo')
+    end
+
+    def teardown
+      FileUtils.rm_rf(@test_dir) unless $DEBUG
+    end
+
+    def test_open
+      Store.open(@name) {|st|
+        st.transaction{|tx|
+          tx[:foo] = :Apple
+        }
+      }
+
+      Store.open(@name, :read_only => true) {|st|
+        st.transaction{|tx|
+          assert_equal(:Apple, tx[:foo])
+        }
+      }
+    end
+  end
 end
 
 # Local Variables:
