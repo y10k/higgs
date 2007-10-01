@@ -190,6 +190,33 @@ module Higgs
   # sample/count.rb
   #   :include: sample/count.rb
   #
+  # result of sample script.
+  #   % ruby count.rb
+  #   start - Tue Oct 02 00:50:14 +0900 2007
+  #   nil
+  #   
+  #   1
+  #   70
+  #   134
+  #   200
+  #   256
+  #   318
+  #   382
+  #   446
+  #   508
+  #   554
+  #   620
+  #   685
+  #   751
+  #   796
+  #   862
+  #   927
+  #   992
+  #   
+  #   last - Tue Oct 02 00:50:15 +0900 2007
+  #   1000
+  #   %
+  #
   class Store
     # for ident(1)
     CVS_ID = '$Id$'
