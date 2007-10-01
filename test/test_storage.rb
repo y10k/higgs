@@ -434,7 +434,7 @@ module Higgs::Test
       FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
 
       # write_data(10 * 10 * 256) < jlog_rotate_size(256 * 1024)
-      write_data(10, 10, 2560)
+      write_data(10, 10, 256)
 
       # not closed journal log for other storage.
       FileUtils.cp("#{@name}.jlog", "#{other_name}.jlog", :preserve => true)
@@ -447,6 +447,7 @@ module Higgs::Test
 
       assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'tar')
       assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"), 'idx')
+      assert(FileUtils.cmp("#{@name}.jlog", "#{other_name}.jlog"), 'jlog')
     end
   end
 
