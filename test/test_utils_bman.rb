@@ -119,7 +119,11 @@ module Higgs::Test
       assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
       assert_equal(3, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
 
-      @bman.clean_jlog
+      @bman.clean_jlog_from
+      assert_equal(0, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(3, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+
+      @bman.clean_jlog_to
       assert_equal(0, Storage.rotate_entries(@from + '.jlog').length)
       assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
     end
@@ -134,7 +138,11 @@ module Higgs::Test
       assert_equal(4, Storage.rotate_entries(@from + '.jlog').length)
       assert_equal(3, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
 
-      @bman.clean_jlog
+      @bman.clean_jlog_from
+      assert_equal(1, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(3, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+
+      @bman.clean_jlog_to
       assert_equal(1, Storage.rotate_entries(@from + '.jlog').length)
       assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
     end
@@ -147,7 +155,11 @@ module Higgs::Test
       assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
       assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
 
-      @bman.clean_jlog
+      @bman.clean_jlog_from
+      assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
+      assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
+
+      @bman.clean_jlog_to
       assert_equal(3, Storage.rotate_entries(@from + '.jlog').length)
       assert_equal(0, Storage.rotate_entries(File.join(@to_dir, @to_name + '.jlog')).length)
     end
@@ -200,7 +212,8 @@ module Higgs::Test
       @bman.backup_jlog
       @bman.recover
       @bman.verify
-      @bman.clean_jlog
+      @bman.clean_jlog_from
+      @bman.clean_jlog_to
 
       assert(FileUtils.cmp(@from + '.tar', File.join(@to_dir, @to_name + '.tar')))
       assert_equal(Index.new.load(@from + '.idx').to_h,

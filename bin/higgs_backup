@@ -15,7 +15,7 @@ command = :online_backup
 options = { :verbose => 0 }
 
 opts.on('--command=BACKUP_COMMAND',
-	[ :index, :data, :rotate, :jlog, :recover, :verify, :clean, :online_backup ]) {|value|
+	[ :index, :data, :rotate, :jlog, :recover, :verify, :clean_from, :clean_to, :online_backup ]) {|value|
   command = value
 }
 
@@ -60,8 +60,10 @@ when :recover
   bman.recover
 when :verify
   bman.verify
-when :clean
-  bman.clean_jlog
+when :clean_from
+  bman.clean_jlog_from
+when :clean_to
+  bman.clean_jlog_to
 else
   raise "unknown backup command: #{command}"
 end

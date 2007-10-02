@@ -31,22 +31,24 @@ module Higgs
     # simple online-backup is like this...
     #
     #   % higgs_backup -v -f foo -t backup_dir -u druby://localhost:17320
-    #   2007-09-23 03:00:08.925 [23706]: **** START BACKUP SCENARIO ****
-    #   2007-09-23 03:00:08.936 [23706]: start index backup.
-    #   2007-09-23 03:00:09.331 [23706]: completed index backup.
-    #   2007-09-23 03:00:09.333 [23706]: start data backup.
-    #   2007-09-23 03:09:16.663 [23706]: completed data backup.
-    #   2007-09-23 03:09:16.692 [23706]: start journal log rotation.
-    #   2007-09-23 03:09:17.153 [23706]: completed journal log rotation.
-    #   2007-09-23 03:09:17.154 [23706]: start journal logs backup.
-    #   2007-09-23 03:09:17.205 [23706]: completed journal logs backup.
-    #   2007-09-23 03:09:17.206 [23706]: start backup storage recovery.
-    #   2007-09-23 03:09:17.798 [23706]: completed backup storage recovery.
-    #   2007-09-23 03:09:17.799 [23706]: start backup storage verify.
-    #   2007-09-23 03:25:44.122 [23706]: completed backup storage verify.
-    #   2007-09-23 03:25:44.140 [23706]: start journal logs clean.
-    #   2007-09-23 03:25:44.541 [23706]: completed journal logs clean.
-    #   2007-09-23 03:25:44.542 [23706]: **** COMPLETED BACKUP SCENARIO ****
+    #   2007-10-03 00:32:58.117 [7558]: **** START BACKUP SCENARIO ****
+    #   2007-10-03 00:32:58.118 [7558]: start index backup.
+    #   2007-10-03 00:32:58.550 [7558]: completed index backup.
+    #   2007-10-03 00:32:58.551 [7558]: start data backup.
+    #   2007-10-03 00:42:00.637 [7558]: completed data backup.
+    #   2007-10-03 00:42:00.665 [7558]: start journal log rotation.
+    #   2007-10-03 00:42:00.907 [7558]: completed journal log rotation.
+    #   2007-10-03 00:42:00.909 [7558]: start journal logs backup.
+    #   2007-10-03 00:42:00.958 [7558]: completed journal logs backup.
+    #   2007-10-03 00:42:00.959 [7558]: start backup storage recovery.
+    #   2007-10-03 00:42:01.550 [7558]: completed backup storage recovery.
+    #   2007-10-03 00:42:01.552 [7558]: start backup storage verify.
+    #   2007-10-03 00:58:56.885 [7558]: completed backup storage verify.
+    #   2007-10-03 00:58:56.904 [7558]: start journal logs clean of from-storage.
+    #   2007-10-03 00:58:56.954 [7558]: completed jounal logs clean of from-storage.
+    #   2007-10-03 00:58:56.955 [7558]: start journal logs clean of to-storage.
+    #   2007-10-03 00:58:56.977 [7558]: completed jounal logs clean of to-storage.
+    #   2007-10-03 00:58:56.978 [7558]: **** COMPLETED BACKUP SCENARIO ****
     #
     # online-backup scenario includes these processes.
     #
@@ -56,7 +58,8 @@ module Higgs
     # 4. journal logs backup. see Higgs::Utils::BackupManager#backup_jlog.
     # 5. backup storage recovery. see Higgs::Utils::BackupManager#recover.
     # 6. backup storage verify. see Higgs::Utils::BackupManager#verify.
-    # 7. journal logs clean. see Higgs::Utils::BackupManager#clean_jlog.
+    # 7. journal logs clean of from-storage. see Higgs::Utils::BackupManager#clean_jlog_from.
+    # 8. journal logs clean of to-storage. see Higgs::Utils::BackupManager#clean_jlog_to.
     #
     # == restore from online-backup
     # === 0. situation
@@ -102,7 +105,8 @@ module Higgs
     # <tt>jlog</tt>:: journal logs backup. see Higgs::Utils::BackupManager#backup_jlog.
     # <tt>recover</tt>:: backup storage recovery. see Higgs::Utils::BackupManager#recover.
     # <tt>verify</tt>:: backup storage verify. see Higgs::Utils::BackupManager#verify.
-    # <tt>clean</tt>:: journal logs clean. see Higgs::Utils::BackupManager#clean_jlog.
+    # <tt>clean_from</tt>:: journal logs clean. see Higgs::Utils::BackupManager#clean_jlog_from.
+    # <tt>clean_to</tt>:: journal logs clean. see Higgs::Utils::BackupManager#clean_jlog_to.
     #
     # === option: <tt>--from=BACKUP_TARGET_STORAGE</tt>
     # <tt>BACKUP_TARGET_STORAGE</tt> is the name of backup target storage.
@@ -235,8 +239,8 @@ module Higgs
         nil
       end
 
-      def clean_jlog
-        @out << log('start journal logs clean.') if (@verbose >= 1)
+      def clean_jlog_from
+        @out << log('start journal logs clean of from-storage.') if (@verbose >= 1)
 
         unless (@from) then
           raise 'required from_storage'
@@ -254,11 +258,22 @@ module Higgs
           end
         end
 
+        @out << log('completed jounal logs clean of from-storage.') if (@verbose >= 1)
+        nil
+      end
+
+      def clean_jlog_to
+        @out << log('start journal logs clean of to-storage.') if (@verbose >= 1)
+
+        unless (@to) then
+          raise 'required to_storage'
+        end
+
         for to_jlog in Storage.rotate_entries("#{@to}.jlog")
           FileUtils.rm(to_jlog, :verbose => @verbose >= 2)
         end
 
-        @out << log('completed journal logs clean.') if (@verbose >= 1)
+        @out << log('completed jounal logs clean of to-storage.') if (@verbose >= 1)
         nil
       end
 
@@ -271,7 +286,8 @@ module Higgs
         backup_jlog
         recover
         verify
-        clean_jlog
+        clean_jlog_from
+        clean_jlog_to
         @out << log('**** COMPLETED BACKUP SCENARIO ****') if (@verbose >= 1)
         nil
       end
