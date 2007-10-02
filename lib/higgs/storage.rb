@@ -411,11 +411,11 @@ module Higgs
         File.open(@jlog_name, File::RDONLY) {|f|
           f.binmode
           begin
-            JournalLogger.scan_log(f) {|log|
+            JournalLogger.scan_log(f) do |log|
               change_number = log[0]
               @logger.info("apply journal log: #{change_number}")
               Storage.apply_journal(@w_tar, @index, log)
-            }
+            end
           rescue Block::BrokenError
             # nothing to do.
           end

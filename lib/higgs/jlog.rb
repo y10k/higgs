@@ -143,9 +143,9 @@ module Higgs
       def each_log(path)
         File.open(path, 'r') {|f|
           f.binmode
-          scan_log(f) {|log|
+          scan_log(f) do |log|
             yield(log)
-          }
+          end
         }
         nil
       end
