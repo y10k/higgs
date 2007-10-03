@@ -1,5 +1,8 @@
 2007-10-03  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb (Higgs::Storage::Export module): disable
+	verify method.
+
 	* lib/higgs/utils/bman.rb (Higgs::Utils::BackupManager class):
 	clean_jlog method is divided to clean_jlog_from method and
 	clean_jlog_to method.

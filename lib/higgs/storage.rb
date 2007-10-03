@@ -163,7 +163,6 @@ module Higgs
     # * Higgs::Storage#shutdown
     # * Higgs::Storage#shutdown?
     # * Higgs::Storage#rotate_journal_log
-    # * Higgs::Storage#verify
     #
     module Export
       extend Forwardable
@@ -180,7 +179,6 @@ module Higgs
       def_delegator :@storage, :shutdown
       def_delegator :@storage, :shutdown?
       def_delegator :@storage, :rotate_journal_log
-      def_delegator :@storage, :verify
     end
 
     def self.load_conf(path)
