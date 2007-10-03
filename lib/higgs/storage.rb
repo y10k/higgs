@@ -1065,7 +1065,13 @@ module Higgs
 
     def verify(out=nil, verbose_level=1)
       check_panic
-      @index.each_key do |key|
+
+      keys = @index.keys
+      keys.sort!{|a, b|
+        @index[a][:d][:pos] <=> @index[b][:d][:pos]
+      }
+
+      for key in keys
         if (out && verbose_level >= 1) then
           out << "check #{key}\n"
         end
@@ -1081,6 +1087,7 @@ module Higgs
           end
         end
       end
+
       nil
     end
   end
