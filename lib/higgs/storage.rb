@@ -63,8 +63,8 @@ module Higgs
     end
 
     DATA_HASH_BIN = {}
-    DATA_HASH.each do |cksum_symbol, cksum_proc|
-      DATA_HASH_BIN[cksum_symbol.to_s] = cksum_proc
+    DATA_HASH.each do |hash_symbol, hash_proc|
+      DATA_HASH_BIN[hash_symbol.to_s] = hash_proc
     end
 
     # options for Higgs::Storage
@@ -1022,12 +1022,12 @@ module Higgs
         raise PanicError, "failed to read properties: #{key}"
       end
       hash_type = properties['system_properties']['hash_type']
-      unless (cksum_proc = DATA_HASH_BIN[hash_type]) then
+      unless (hash_proc = DATA_HASH_BIN[hash_type]) then
         @state_lock.synchronize{ @panic = true }
         @logger.error("panic: unknown data hash type: #{hash_type}")
         raise PanicError, "unknown data hash type: #{hash_type}"
       end
-      hash_value = cksum_proc.call(value)
+      hash_value = hash_proc.call(value)
       if (hash_value != properties['system_properties']['hash_value']) then
         @state_lock.synchronize{ @panic = true }
         @logger.error("panic: mismatch hash value at #{key}")
