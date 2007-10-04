@@ -821,10 +821,10 @@ module Higgs
           when :succ
             index.succ!
             if (index.change_number != cmd[:cnum]) then
-              raise PanicError, 'lost journal log'
+              raise PanicError, "invalid journal log (succ: #{cmd[:cnum]})"
             end
           else
-            raise "unknown operation from #{curr_jlog_name}: #{cmd[:ope]}"
+            raise "unknown operation: #{cmd[:ope]}"
           end
         end
       end
