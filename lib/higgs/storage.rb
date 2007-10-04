@@ -854,10 +854,14 @@ module Higgs
         jlog_list = rotate_entries(jlog_name)
         jlog_list << jlog_name if (File.exist? jlog_name)
         for curr_name in jlog_list
-          JournalLogger.each_log(curr_name) do |log|
-            change_number = log[0]
-            out << "apply journal log: #{change_number}\n" if (out && verbose_level >= 1)
-            apply_journal(w_tar, index, log)
+          begin
+            JournalLogger.each_log(curr_name) do |log|
+              change_number = log[0]
+              out << "apply journal log: #{change_number}\n" if (out && verbose_level >= 1)
+              apply_journal(w_tar, index, log)
+            end
+          rescue Block::BrokenError
+            out << "warning: incompleted journal log and stopped at #{curr_name}\n" if out
           end
         end
         w_tar.seek(index.eoa)

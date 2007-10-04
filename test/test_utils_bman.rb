@@ -43,7 +43,8 @@ module Higgs::Test
                                        :to_dir => @to_dir,
                                        :to_name => @to_name,
                                        :jlog_rotate_service_uri => @jlog_rotate_service_uri,
-                                       :verbose => $DEBUG ? 2 : 0)
+                                       :verbose => $DEBUG ? 2 : 0,
+                                       :out => $DEBUG ? STDERR : '')
     end
 
     def teardown
@@ -254,6 +255,38 @@ module Higgs::Test
 
       @bman.backup_jlog
       FileUtils.cp("#{@from}.jlog", "#{@to}.jlog", :preserve => true)
+      @bman.recover
+      @from_st.shutdown
+
+      assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
+      assert_equal(Index.new.load("#{@from}.idx").to_h,
+                   Index.new.load("#{@to}.idx").to_h)
+      assert(! FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
+
+      st = Storage.new(@to)
+      st.shutdown
+
+      assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
+      assert_equal(Index.new.load("#{@from}.idx").to_h,
+                   Index.new.load("#{@to}.idx").to_h)
+      assert(FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
+    end
+
+    def test_online_backup_with_incompleted_journal_log
+      options = {
+        :end_of_warm_up => Latch.new,
+        :spin_lock => true
+      }
+      t = Thread.new{ update_storage(options) }
+
+      options[:end_of_warm_up].wait
+      @bman.online_backup
+      options[:spin_lock] = false
+      t.join
+
+      @bman.backup_jlog
+      FileUtils.cp("#{@from}.jlog", "#{@to}.jlog", :preserve => true)
+      File.truncate("#{@to}.jlog", File.stat("#{@to}.jlog").size + 1) # like incompleted
       @bman.recover
       @from_st.shutdown
 
