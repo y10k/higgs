@@ -449,6 +449,25 @@ module Higgs::Test
       assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"), 'idx')
       assert(FileUtils.cmp("#{@name}.jlog", "#{other_name}.jlog"), 'jlog')
     end
+
+    def test_lost_journal_log_error
+      write_data
+      @st.rotate_journal_log(true)
+
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
+      write_data
+      @st.rotate_journal_log(true)
+      write_data
+
+      FileUtils.cp("#{@name}.jlog", "#{other_name}.jlog", :preserve => true)
+
+      assert_raise(Storage::PanicError) {
+        st2 = Storage.new(other_name, :logger => @logger)
+      }
+    end
   end
 
   class ReadOnlyStorageFirstOpenTest < Test::Unit::TestCase
