@@ -76,10 +76,6 @@ module Higgs
     # Higgs::Storage applies last jounal log to a readable point at
     # the read-write open.
     #
-    # <em>WARNING.</em> Higgs::Storage is normal shutdown and last
-    # journal log is not broken. last journal log is not applied and
-    # storage data is old version. <em>this situation is inconsistent.</em>
-    #
     # == command-line options
     #
     #   % higgs_backup --help
