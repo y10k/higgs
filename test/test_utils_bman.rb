@@ -47,7 +47,7 @@ module Higgs::Test
     end
 
     def teardown
-      @from_st.shutdown
+      @from_st.shutdown unless @from_st.shutdown?
       DRb.stop_service          # Why cannot each service be stopped?
       FileUtils.rm_rf(@from_dir) unless $DEBUG
       FileUtils.rm_rf(@to_dir) unless $DEBUG
@@ -238,6 +238,37 @@ module Higgs::Test
       assert((File.file? "#{@to}.tar"))
       assert((File.file? "#{@to}.idx"))
       assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+    end
+
+    def test_online_backup_with_latest_journal_log
+      options = {
+        :end_of_warm_up => Latch.new,
+        :spin_lock => true
+      }
+      t = Thread.new{ update_storage(options) }
+
+      options[:end_of_warm_up].wait
+      @bman.online_backup
+      options[:spin_lock] = false
+      t.join
+
+      @bman.backup_jlog
+      FileUtils.cp("#{@from}.jlog", "#{@to}.jlog", :preserve => true)
+      @bman.recover
+      @from_st.shutdown
+
+      assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
+      assert_equal(Index.new.load("#{@from}.idx").to_h,
+                   Index.new.load("#{@to}.idx").to_h)
+      assert(! FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
+
+      st = Storage.new(@to)
+      st.shutdown
+
+      assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
+      assert_equal(Index.new.load("#{@from}.idx").to_h,
+                   Index.new.load("#{@to}.idx").to_h)
+      assert(FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
     end
   end
 end
