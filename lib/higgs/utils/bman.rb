@@ -305,7 +305,7 @@ module Higgs
         nil
       end
 
-      def restore_recovery
+      def restore_recover
         @out << log('start restored storage recovery.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
@@ -334,7 +334,7 @@ module Higgs
       def restore
         @out << log('**** START RESTORE SCENARIO ****') if (@verbose >= 1)
         restore_files
-        restore_recovery
+        restore_recover
         restore_verify
         @out << log('**** COMPLETED RESTORE SCENARIO ****') if (@verbose >= 1)
         nil

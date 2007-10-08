@@ -329,7 +329,7 @@ module Higgs::Test
              Index.new.load("#{@to}.idx").to_h)
     end
 
-    def test_restore_recovery_and_verify
+    def test_restore_recover_and_verify
       options = {
         :end_of_warm_up => Latch.new,
         :spin_lock => true
@@ -351,7 +351,7 @@ module Higgs::Test
       FileUtils.cp("#{@from}.idx", "#{@from}.idx.orig", :preserve => true)
 
       @bman.restore_files
-      @bman.restore_recovery
+      @bman.restore_recover
       @bman.restore_verify
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"))
