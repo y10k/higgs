@@ -1,5 +1,8 @@
 2007-10-08  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* bin/higgs_backup: changed command line syntax. added restore
+	commands.
+
 	* lib/higgs/utils/bman.rb: restore operations.
 
 2007-10-06  TOKI Yoshinori  <toki@freedom.ne.jp>

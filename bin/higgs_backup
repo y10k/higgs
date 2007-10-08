@@ -8,16 +8,30 @@ CVS_ID = '$Id$'
 
 STDOUT.sync = true
 
-opts = OptionParser.new
-opts.banner = "Usage: #{opts.program_name} [options]"
+COMMANDs = %w[
+  online_backup
+  index
+  data
+  rotate
+  jlog
+  recover
+  verify
+  clean_from
+  clean_to
+  restore
+  restore_files
+  restore_recover
+  restore_verify
+]
 
-command = :online_backup
+commands = %w[ online_backup ]
 options = { :verbose => 0 }
 
-opts.on('--command=BACKUP_COMMAND',
-	[ :index, :data, :rotate, :jlog, :recover, :verify, :clean_from, :clean_to, :online_backup ]) {|value|
-  command = value
-}
+opts = OptionParser.new
+opts.banner = "Usage: #{opts.program_name} [OPTIONs] [COMMANDs]\n"
+opts.banner << "COMMANDs:\n"
+opts.banner << COMMANDs.map{|s| opts.summary_indent + s }.join("\n") << "\n"
+opts.banner << "OPTIONs:\n"
 
 opts.on('-f', '--from=BACKUP_TARGET_STORAGE', String) {|value|
   options[:from] = value
@@ -41,29 +55,31 @@ opts.on('-v', '--verbose', '--[no-]verbose') {|value|
 opts.on('--verbose-level=LEVEL', Integer) {|value|
   options[:verbose] = value
 }
-
 opts.parse!
-bman = Higgs::Utils::BackupManager.new(options)
 
-case (command)
-when :online_backup
-  bman.online_backup
-when :index
-  bman.backup_index
-when :data
-  bman.backup_data
-when :rotate
-  bman.rotate_jlog
-when :jlog
-  bman.backup_jlog
-when :recover
-  bman.recover
-when :verify
-  bman.verify
-when :clean_from
-  bman.clean_jlog_from
-when :clean_to
-  bman.clean_jlog_to
-else
-  raise "unknown backup command: #{command}"
+unless (ARGV.empty?) then
+  count = 0
+  for cmd in ARGV
+    unless (COMMANDs.include? cmd) then
+      STDERR.puts "error: unknown command: #{cmd}"
+      count += 1
+    end
+  end
+  if (count > 0) then
+    exit 1
+  end
+  commands = ARGV
 end
+
+bman = Higgs::Utils::BackupManager.new(options)
+for cmd in commands
+  unless (bman.public_methods(false).include? cmd) then
+    raise "unknown command: #{cmd}"
+  end
+  bman.__send__(cmd)
+end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

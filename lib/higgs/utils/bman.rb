@@ -63,25 +63,44 @@ module Higgs
     # 8. journal logs clean of to-storage. see Higgs::Utils::BackupManager#clean_jlog_to.
     #
     # == restore from online-backup
-    # === 0. situation
-    # storage name is `foo' and backup directory is `backup_dir'.
     #
-    # === 1. recovery from last online-backup
-    # run these commands.
-    #   % cp -p backup_dir/foo.idx foo.idx
-    #   % cp -p backup_dir/foo.tar foo.tar
-    #   % higgs_backup -t . -n foo --command recover
+    # simple restore is like this...
     #
-    # === 2. apply last journal log
-    # if system is aborted then last journal log is broken.
-    # Higgs::Storage applies last jounal log to a readable point at
-    # the read-write open.
+    #   % higgs_backup -f images -t ~/misc/photon/dat/1 -v restore
+    #   2007-10-08 20:56:07.048 [18133]: **** START RESTORE SCENARIO ****
+    #   2007-10-08 20:56:07.066 [18133]: start storage files restore.
+    #   2007-10-08 21:09:49.614 [18133]: completed storage files restore.
+    #   2007-10-08 21:09:49.614 [18133]: start restored storage recovery.
+    #   2007-10-08 21:09:51.090 [18133]: completed restored storage recovery.
+    #   2007-10-08 21:09:51.093 [18133]: start restored storage verify.
+    #   2007-10-08 21:13:26.521 [18133]: completed restored storage verify.
+    #   2007-10-08 21:13:26.521 [18133]: **** COMPLETED RESTORE SCENARIO ****
+    #
+    # restore scenario includes these processes.
+    #
+    # 1. storage files restore. see Higgs::Utils::BackupManager#restore_files.
+    # 2. restored storage recovery. see Higgs::Utils::BackupManager#restore_recover.
+    # 3. restored storage verify. see Higgs::Utils::BackupManager#restore_verify.
     #
     # == command-line options
     #
     #   % higgs_backup --help
-    #   Usage: higgs_backup [options]
-    #           --command=BACKUP_COMMAND
+    #   Usage: higgs_backup [OPTIONs] [COMMANDs]
+    #   COMMANDs:
+    #       online_backup
+    #       index
+    #       data
+    #       rotate
+    #       jlog
+    #       recover
+    #       verify
+    #       clean_from
+    #       clean_to
+    #       restore
+    #       restore_files
+    #       restore_recover
+    #       restore_verify
+    #   OPTIONs:
     #       -f, --from=BACKUP_TARGET_STORAGE
     #       -t, --to-dir=DIR_TO_BACKUP
     #       -n, --to-name=NAME_TO_BACKUP
@@ -90,9 +109,9 @@ module Higgs
     #       -v, --verbose, --[no-]verbose
     #           --verbose-level=LEVEL
     #
-    # === option: <tt>--command=BACKUP_COMMAND</tt>
+    # === COMMANDs
     # select a process of online-backup.
-    # <tt>BACKUP_COMMAND</tt>s are these.
+    # COMMANDs for online-backup are these.
     #
     # <tt>online_backup</tt>:: default. run online-backup scenario.
     #                          see Higgs::Utils::BackupManager#online_backup.
@@ -105,26 +124,36 @@ module Higgs
     # <tt>clean_from</tt>:: journal logs clean. see Higgs::Utils::BackupManager#clean_jlog_from.
     # <tt>clean_to</tt>:: journal logs clean. see Higgs::Utils::BackupManager#clean_jlog_to.
     #
-    # === option: <tt>--from=BACKUP_TARGET_STORAGE</tt>
+    # COMMANDs for restore are these.
+    #
+    # <tt>restore</tt>:: run restore scenario. see Higgs::Utils::BackupManager#restore.
+    # <tt>restore_files</tt>:: storage files restore.
+    #                          see Higgs::Utils::BackupManager#restore_files.
+    # <tt>restore_recover</tt>:: restored storage recovery.
+    #                            see Higgs::Utils::BackupManager#restore_recover.
+    # <tt>restore_verify</tt>:: restored storage verify.
+    #                           see Higgs::Utils::BackupManager#restore_verify.
+    #
+    # === OPTION: <tt>--from=BACKUP_TARGET_STORAGE</tt>
     # <tt>BACKUP_TARGET_STORAGE</tt> is the name of backup target storage.
     #
-    # === option: <tt>--to-dir=DIR_TO_BACKUP</tt>
+    # === OPTION: <tt>--to-dir=DIR_TO_BACKUP</tt>
     # backuped storage is copied to the directory of <tt>DIR_TO_BACKUP</tt>.
     #
-    # === option: <tt>--to-name=NAME_TO_BACKUP</tt>
+    # === OPTION: <tt>--to-name=NAME_TO_BACKUP</tt>
     # <tt>NAME_TO_BACKUP</tt> is the name of backuped storage.
     # if this option is omitted then <tt>NAME_TO_BACKUP</tt> is the same
     # as <tt>BACKUP_TARGET_STORAGE</tt>.
     #
-    # === option: <tt>--jlog-rotate-service-uri=URI</tt>
+    # === OPTION: <tt>--jlog-rotate-service-uri=URI</tt>
     # access point journal log rotation remote service.
     # <tt>URI</tt> is the same as <tt>:jlog_rotate_service_uri</tt>
     # when Higgs::Storage is opened.
     #
-    # === option: <tt>--verbose</tt>
+    # === OPTION: <tt>--verbose</tt>
     # verbose level up.
     #
-    # === option: <tt>--verbose-level=LEVEL</tt>
+    # === OPTION: <tt>--verbose-level=LEVEL</tt>
     # set verbose level to <tt>LEVEL</tt>.
     #
     class BackupManager
@@ -222,7 +251,7 @@ module Higgs
       end
 
       def verify
-        @out << log('start backup storage verification.') if (@verbose >= 1)
+        @out << log('start backup storage verify.') if (@verbose >= 1)
         unless (@to) then
           raise 'required to_storage'
         end
@@ -232,7 +261,7 @@ module Higgs
         ensure
           st.shutdown
         end
-        @out << log('completed backup storage verification.') if (@verbose >= 1)
+        @out << log('completed backup storage verify.') if (@verbose >= 1)
         nil
       end
 
@@ -316,7 +345,7 @@ module Higgs
       end
 
       def restore_verify
-        @out << log('start restored storage verification.') if (@verbose >= 1)
+        @out << log('start restored storage verify.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
@@ -326,7 +355,7 @@ module Higgs
         ensure
           st.shutdown
         end
-        @out << log('completed restored storage verification.') if (@verbose >= 1)
+        @out << log('completed restored storage verify.') if (@verbose >= 1)
         nil
       end
 
