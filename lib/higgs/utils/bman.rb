@@ -10,6 +10,7 @@
 
 require 'drb'
 require 'fileutils'
+require 'higgs/flock'
 require 'higgs/storage'
 
 module Higgs
@@ -201,7 +202,7 @@ module Higgs
         unless (@to) then
           raise 'required to_storage'
         end
-        for path in Storage.rotate_entries(@from + '.jlog')
+        for path in Storage.rotate_entries("#{@from}.jlog")
           path =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
           ext = $&
           FileUtils.cp(path, "#{@to}#{ext}", :preserve => true, :verbose => @verbose >= 2)
@@ -221,7 +222,7 @@ module Higgs
       end
 
       def verify
-        @out << log('start backup storage verify.') if (@verbose >= 1)
+        @out << log('start backup storage verification.') if (@verbose >= 1)
         unless (@to) then
           raise 'required to_storage'
         end
@@ -231,7 +232,7 @@ module Higgs
         ensure
           st.shutdown
         end
-        @out << log('completed backup storage verify.') if (@verbose >= 1)
+        @out << log('completed backup storage verification.') if (@verbose >= 1)
         nil
       end
 
@@ -285,6 +286,57 @@ module Higgs
         clean_jlog_from
         clean_jlog_to
         @out << log('**** COMPLETED BACKUP SCENARIO ****') if (@verbose >= 1)
+        nil
+      end
+
+      def restore_files
+        @out << log('start storage files restore.') if (@verbose >= 1)
+        unless (@from) then
+          raise 'required from_storage'
+        end
+        unless (@to) then
+          raise 'required to_storage'
+        end
+        FileLock.new("#{@from}.lock").synchronize{
+          FileUtils.cp("#{@to}.idx", "#{@from}.idx", :preserve => true, :verbose => @verbose >= 2)
+          FileUtils.cp("#{@to}.tar", "#{@from}.tar", :preserve => true, :verbose => @verbose >= 2)
+        }
+        @out << log('completed storage files restore.') if (@verbose >= 1)
+        nil
+      end
+
+      def restore_recovery
+        @out << log('start restored storage recovery.') if (@verbose >= 1)
+        unless (@from) then
+          raise 'required from_storage'
+        end
+        Storage.recover(@from, @out, @verbose - 1)
+        @out << log('completed restored storage recovery.') if (@verbose >= 1)
+        nil
+      end
+
+      def restore_verify
+        @out << log('start restored storage verification.') if (@verbose >= 1)
+        unless (@from) then
+          raise 'required from_storage'
+        end
+        st = Storage.new(@from)   # read-write open for recovery
+        begin
+          st.verify(@out, @verbose - 1)
+        ensure
+          st.shutdown
+        end
+        @out << log('completed restored storage verification.') if (@verbose >= 1)
+        nil
+      end
+
+      # run restore scenario
+      def restore
+        @out << log('**** START RESTORE SCENARIO ****') if (@verbose >= 1)
+        restore_files
+        restore_recovery
+        restore_verify
+        @out << log('**** COMPLETED RESTORE SCENARIO ****') if (@verbose >= 1)
         nil
       end
     end

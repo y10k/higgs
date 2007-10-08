@@ -1,3 +1,7 @@
+2007-10-08  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/utils/bman.rb: restore operations.
+
 2007-10-06  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* check ruby-1.8.6-p111

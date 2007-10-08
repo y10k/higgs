@@ -303,6 +303,89 @@ module Higgs::Test
                    Index.new.load("#{@to}.idx").to_h)
       assert(FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
     end
+
+    def test_restore_files
+      options = {
+        :end_of_warm_up => Latch.new,
+        :spin_lock => true
+      }
+      t = Thread.new{ update_storage(options) }
+
+      options[:end_of_warm_up].wait
+      @bman.online_backup
+      options[:spin_lock] = false
+      t.join
+
+      @from_st.shutdown
+
+      assert(! FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
+      assert(Index.new.load("#{@from}.idx").to_h != 
+             Index.new.load("#{@to}.idx").to_h)
+
+      @bman.restore_files
+
+      assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@to}.idx").to_h)
+    end
+
+    def test_restore_recovery_and_verify
+      options = {
+        :end_of_warm_up => Latch.new,
+        :spin_lock => true
+      }
+      t = Thread.new{ update_storage(options) }
+
+      options[:end_of_warm_up].wait
+      @bman.online_backup
+      options[:spin_lock] = false
+      t.join
+
+      @from_st.shutdown
+
+      assert(! FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
+      assert(Index.new.load("#{@from}.idx").to_h != 
+             Index.new.load("#{@to}.idx").to_h)
+
+      FileUtils.cp("#{@from}.tar", "#{@from}.tar.orig", :preserve => true)
+      FileUtils.cp("#{@from}.idx", "#{@from}.idx.orig", :preserve => true)
+
+      @bman.restore_files
+      @bman.restore_recovery
+      @bman.restore_verify
+
+      assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"))
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@from}.idx.orig").to_h)
+    end
+
+    def test_restore
+      options = {
+        :end_of_warm_up => Latch.new,
+        :spin_lock => true
+      }
+      t = Thread.new{ update_storage(options) }
+
+      options[:end_of_warm_up].wait
+      @bman.online_backup
+      options[:spin_lock] = false
+      t.join
+
+      @from_st.shutdown
+
+      assert(! FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
+      assert(Index.new.load("#{@from}.idx").to_h != 
+             Index.new.load("#{@to}.idx").to_h)
+
+      FileUtils.cp("#{@from}.tar", "#{@from}.tar.orig", :preserve => true)
+      FileUtils.cp("#{@from}.idx", "#{@from}.idx.orig", :preserve => true)
+
+      @bman.restore
+
+      assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"))
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@from}.idx.orig").to_h)
+    end
   end
 end
 
