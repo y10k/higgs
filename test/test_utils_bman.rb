@@ -218,8 +218,8 @@ module Higgs::Test
       @bman.clean_jlog_to
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
-      assert_equal(Index.new.load("#{@from}.idx").to_h,
-                   Index.new.load("#{@to}.idx").to_h)
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@to}.idx").to_h)
       assert_equal(0, Storage.rotate_entries("#{@from}.jlog").length)
       assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
     end
@@ -259,16 +259,16 @@ module Higgs::Test
       @from_st.shutdown
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
-      assert_equal(Index.new.load("#{@from}.idx").to_h,
-                   Index.new.load("#{@to}.idx").to_h)
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@to}.idx").to_h)
       assert(! FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
 
       st = Storage.new(@to)
       st.shutdown
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
-      assert_equal(Index.new.load("#{@from}.idx").to_h,
-                   Index.new.load("#{@to}.idx").to_h)
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@to}.idx").to_h)
       assert(FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
     end
 
@@ -291,16 +291,16 @@ module Higgs::Test
       @from_st.shutdown
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
-      assert_equal(Index.new.load("#{@from}.idx").to_h,
-                   Index.new.load("#{@to}.idx").to_h)
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@to}.idx").to_h)
       assert(! FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
 
       st = Storage.new(@to)
       st.shutdown
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
-      assert_equal(Index.new.load("#{@from}.idx").to_h,
-                   Index.new.load("#{@to}.idx").to_h)
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@to}.idx").to_h)
       assert(FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"))
     end
 
@@ -319,7 +319,7 @@ module Higgs::Test
       @from_st.shutdown
 
       assert(! FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
-      assert(Index.new.load("#{@from}.idx").to_h != 
+      assert(Index.new.load("#{@from}.idx").to_h !=
              Index.new.load("#{@to}.idx").to_h)
 
       @bman.restore_files
@@ -342,11 +342,6 @@ module Higgs::Test
       t.join
 
       @from_st.shutdown
-
-      assert(! FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
-      assert(Index.new.load("#{@from}.idx").to_h != 
-             Index.new.load("#{@to}.idx").to_h)
-
       FileUtils.cp("#{@from}.tar", "#{@from}.tar.orig", :preserve => true)
       FileUtils.cp("#{@from}.idx", "#{@from}.idx.orig", :preserve => true)
 
@@ -372,11 +367,41 @@ module Higgs::Test
       t.join
 
       @from_st.shutdown
+      FileUtils.cp("#{@from}.tar", "#{@from}.tar.orig", :preserve => true)
+      FileUtils.cp("#{@from}.idx", "#{@from}.idx.orig", :preserve => true)
 
-      assert(! FileUtils.cmp("#{@from}.tar", "#{@to}.tar"))
-      assert(Index.new.load("#{@from}.idx").to_h != 
-             Index.new.load("#{@to}.idx").to_h)
+      @bman.restore
 
+      assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"))
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@from}.idx.orig").to_h)
+    end
+
+    def test_incremental_backup_with_recovery_and_restore
+      options = {
+        :end_of_warm_up => Latch.new,
+        :spin_lock => true
+      }
+      t = Thread.new{ update_storage(options) }
+
+      options[:end_of_warm_up].wait
+
+      # first step: full backup
+      @bman.online_backup
+
+      @bman.rotate_jlog
+
+      # incremental backup
+      @bman.backup_jlog
+      @bman.recover
+      @bman.verify
+      @bman.clean_jlog_from
+      @bman.clean_jlog_to
+
+      options[:spin_lock] = false
+      t.join
+
+      @from_st.shutdown
       FileUtils.cp("#{@from}.tar", "#{@from}.tar.orig", :preserve => true)
       FileUtils.cp("#{@from}.idx", "#{@from}.idx.orig", :preserve => true)
 
