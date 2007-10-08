@@ -146,7 +146,7 @@ module Higgs
     # as <tt>BACKUP_TARGET_STORAGE</tt>.
     #
     # === OPTION: <tt>--jlog-rotate-service-uri=URI</tt>
-    # access point journal log rotation remote service.
+    # access point for journal log rotation remote service.
     # <tt>URI</tt> is the same as <tt>:jlog_rotate_service_uri</tt>
     # when Higgs::Storage is opened.
     #
