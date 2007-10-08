@@ -1,5 +1,7 @@
 2007-10-08  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/version.rb: version 0.1.1.
+
 	* lib/higgs/utils/bman.rb: added variation of incremental backup.
 
 	* bin/higgs_backup: changed command line syntax. added restore
