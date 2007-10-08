@@ -329,6 +329,11 @@ module Higgs
         FileLock.new("#{@from}.lock").synchronize{
           FileUtils.cp("#{@to}.idx", "#{@from}.idx", :preserve => true, :verbose => @verbose >= 2)
           FileUtils.cp("#{@to}.tar", "#{@from}.tar", :preserve => true, :verbose => @verbose >= 2)
+          for path in Storage.rotate_entries("#{@to}.jlog")
+            path =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
+            ext = $&
+            FileUtils.cp(path, "#{@from}#{ext}", :preserve => true, :verbose => @verbose >= 2)
+          end
         }
         @out << log('completed storage files restore.') if (@verbose >= 1)
         nil

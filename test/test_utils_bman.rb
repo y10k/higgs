@@ -173,7 +173,7 @@ module Higgs::Test
         options[:end_of_warm_up].start if (count == WARM_START_ITEMS)
 
         write_list = []
-        ope = [ :write, :system_properties, :custom_properties, :delete ][rand(3)]
+        ope = [ :write, :system_properties, :custom_properties, :delete ][rand(4)]
         key = rand(STORAGE_ITEMS)
         case (ope)
         when :write
@@ -391,12 +391,44 @@ module Higgs::Test
 
       @bman.rotate_jlog
 
-      # incremental backup
+      # incremental backup with recovery
       @bman.backup_jlog
       @bman.recover
       @bman.verify
       @bman.clean_jlog_from
       @bman.clean_jlog_to
+
+      options[:spin_lock] = false
+      t.join
+
+      @from_st.shutdown
+      FileUtils.cp("#{@from}.tar", "#{@from}.tar.orig", :preserve => true)
+      FileUtils.cp("#{@from}.idx", "#{@from}.idx.orig", :preserve => true)
+
+      @bman.restore
+
+      assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"))
+      assert(Index.new.load("#{@from}.idx").to_h ==
+             Index.new.load("#{@from}.idx.orig").to_h)
+    end
+
+    def test_incremental_backup_without_recovery_and_restore
+      options = {
+        :end_of_warm_up => Latch.new,
+        :spin_lock => true
+      }
+      t = Thread.new{ update_storage(options) }
+
+      options[:end_of_warm_up].wait
+
+      # first step: full backup
+      @bman.online_backup
+
+      @bman.rotate_jlog
+
+      # incremental backup without recovery
+      @bman.backup_jlog
+      @bman.clean_jlog_from
 
       options[:spin_lock] = false
       t.join
