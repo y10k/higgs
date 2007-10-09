@@ -837,41 +837,41 @@ module Higgs
       jlog_name = "#{name}.jlog"
       lock_name = "#{name}.lock"
 
-      flock = FileLock.new(lock_name)
-      flock.synchronize{
-        begin
-          w_io = File.open(tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
-        rescue Errno::EEXIST
-          w_io = File.open(tar_name, File::WRONLY, 0660)
-        end
-        w_io.binmode
-        w_tar = Tar::ArchiveWriter.new(w_io)
-
-        index = Index.new
-        index.load(idx_name) if (File.exist? idx_name)
-
-        out << "recovery target: #{name}\n" if (out && verbose_level >= 1)
-        jlog_list = rotate_entries(jlog_name)
-        jlog_list << jlog_name if (File.exist? jlog_name)
-        for curr_name in jlog_list
+      FileLock.open(lock_name) {|flock|
+        flock.synchronize{
           begin
-            JournalLogger.each_log(curr_name) do |log|
-              change_number = log[0]
-              out << "apply journal log: #{change_number}\n" if (out && verbose_level >= 1)
-              apply_journal(w_tar, index, log)
-            end
-          rescue Block::BrokenError
-            out << "warning: incompleted journal log and stopped at #{curr_name}\n" if out
+            w_io = File.open(tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
+          rescue Errno::EEXIST
+            w_io = File.open(tar_name, File::WRONLY, 0660)
           end
-        end
-        w_tar.seek(index.eoa)
-        w_tar.write_EOA
+          w_io.binmode
+          w_tar = Tar::ArchiveWriter.new(w_io)
 
-        index.save(idx_name)
-        w_tar.fsync
-        w_tar.close(false)
+          index = Index.new
+          index.load(idx_name) if (File.exist? idx_name)
+
+          out << "recovery target: #{name}\n" if (out && verbose_level >= 1)
+          jlog_list = rotate_entries(jlog_name)
+          jlog_list << jlog_name if (File.exist? jlog_name)
+          for curr_name in jlog_list
+            begin
+              JournalLogger.each_log(curr_name) do |log|
+                change_number = log[0]
+                out << "apply journal log: #{change_number}\n" if (out && verbose_level >= 1)
+                apply_journal(w_tar, index, log)
+              end
+            rescue Block::BrokenError
+              out << "warning: incompleted journal log and stopped at #{curr_name}\n" if out
+            end
+          end
+          w_tar.seek(index.eoa)
+          w_tar.write_EOA
+
+          index.save(idx_name)
+          w_tar.fsync
+          w_tar.close(false)
+        }
       }
-      flock.close
 
       nil
     end

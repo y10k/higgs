@@ -68,6 +68,16 @@ module Higgs
 
       r
     end
+
+    def self.open(*args)
+      flock = new(*args)
+      begin
+        r = yield(flock)
+      ensure
+        flock.close
+      end
+      r
+    end
   end
 end
 

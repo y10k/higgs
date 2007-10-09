@@ -1,3 +1,12 @@
+2007-10-10  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage class),
+	lib/higgs/utils/bman.rb (Higgs::Utils::BackupManager class): fixed
+	some close leakage bugs of file lock in the error case of
+	recovery.
+
+	* lib/higgs/flock.rb (Higgs::FileLock class): open with block.
+
 2007-10-08  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb: version 0.1.1.
