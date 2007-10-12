@@ -143,9 +143,9 @@ module Higgs::Test
         Storage.recover(@restore_name)
 
         # recovered files are same as original files.
-        assert(FileUtils.cmp("#{@backup_name}.tar", "#{@restore_name}.tar"), 'tar')
+        assert(FileUtils.cmp("#{@backup_name}.tar", "#{@restore_name}.tar"), 'data')
         assert_equal(Index.new.load("#{@backup_name}.idx").to_h,
-                     Index.new.load("#{@restore_name}.idx").to_h, 'idx')
+                     Index.new.load("#{@restore_name}.idx").to_h, 'index')
       ensure
         FileUtils.touch(@stop_latch)
         FileUtils.touch(@end_latch)

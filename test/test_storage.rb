@@ -421,8 +421,9 @@ module Higgs::Test
       end
       Storage.recover(other_name)
 
-      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'tar')
-      assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"), 'idx')
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'data')
+      assert(Index.new.load("#{@name}.idx").to_h ==
+             Index.new.load("#{other_name}.idx").to_h, 'index')
     end
 
     def test_auto_recovery
@@ -445,9 +446,10 @@ module Higgs::Test
       st2 = Storage.new(other_name, :logger => @logger)
       st2.shutdown
 
-      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'tar')
-      assert(FileUtils.cmp("#{@name}.idx", "#{other_name}.idx"), 'idx')
-      assert(FileUtils.cmp("#{@name}.jlog", "#{other_name}.jlog"), 'jlog')
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'data')
+      assert(Index.new.load("#{@name}.idx").to_h ==
+             Index.new.load("#{other_name}.idx").to_h)
+      assert(FileUtils.cmp("#{@name}.jlog", "#{other_name}.jlog"), 'index')
     end
 
     def test_lost_journal_log_error
