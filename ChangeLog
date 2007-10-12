@@ -1,3 +1,7 @@
+2007-10-12  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/version.rb: version 0.1.2.
+
 2007-10-10  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/storage.rb (Higgs::Storage class),
