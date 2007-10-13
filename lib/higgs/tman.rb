@@ -467,7 +467,6 @@ module Higgs
           case (ope)
           when :write
             @master_cache.delete(key)
-            @secondary_cache[key] = value
           when :delete
             @master_cache.delete(key)
             @secondary_cache.delete(key)

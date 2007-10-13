@@ -1,3 +1,7 @@
+2007-10-13  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/tman.rb: fixed a bug of wrong key of secondary cache.
+
 2007-10-12  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb: version 0.1.2.
