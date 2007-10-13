@@ -95,8 +95,8 @@ module Higgs
       @storage = storage
       init_options(options)
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
-        (id = @storage.identity(key) and @secondary_cache[id]) or
-          (value = @storage.fetch(key) and @secondary_cache[@storage.identity(key)] = value.freeze)
+        (id = @storage.unique_data_id(key) and @secondary_cache[id]) or
+          (value = @storage.fetch(key) and @secondary_cache[@storage.unique_data_id(key)] = value.freeze)
       }
     end
 
@@ -330,6 +330,12 @@ module Higgs
       if (@ope_map[key] != :delete) then
         if (properties = @local_properties_cache[key]) then
           case (name)
+          when :identity
+            @storage.identity(key)
+          when :data_change_number
+            @storage.data_change_number(key)
+          when :properties_change_number
+            @storage.properties_change_number(key)
           when Symbol
             properties['system_properties'][name.to_s]
           when String
@@ -384,6 +390,12 @@ module Higgs
 
       if (self.key? key) then   # lock
         case (name)
+        when :identity
+          return @storage.identity(key) != nil
+        when :data_change_number
+          return @storage.data_change_number(key) != nil
+        when :properties_change_number
+          return @storage.properties_change_number(key) != nil
         when Symbol
           return (@local_properties_cache[key]['system_properties'].key? name.to_s)
         when String
@@ -398,6 +410,15 @@ module Higgs
     def each_property(key)      # :yields: name, value
       unless (self.key? key) then # lock
         raise IndexError, "not exist properties at key: #{key}"
+      end
+      if (value = @storage.identity(key)) then
+        yield(:identity, value)
+      end
+      if (value = @storage.data_change_number(key)) then
+        yield(:data_change_number, value)
+      end
+      if (value = @storage.properties_change_number(key)) then
+        yield(:properties_change_number, value)
       end
       @local_properties_cache[key]['system_properties'].each_pair do |name, value|
         yield(name.to_sym, value)

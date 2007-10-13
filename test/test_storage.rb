@@ -224,6 +224,36 @@ module Higgs::Test
       assert_raise(IndexError) { @st.string_only('foo') }
     end
 
+    def test_change_number_and_unique_data_id
+      assert_equal(nil, @st.data_change_number(:foo))
+      assert_equal(nil, @st.properties_change_number(:foo))
+      assert_equal(nil, @st.unique_data_id(:foo))
+
+      @st.write_and_commit([ [ :write, :foo, 'apple' ] ])
+
+      assert_equal(1, @st.data_change_number(:foo))
+      assert_equal(1, @st.properties_change_number(:foo))
+      assert_equal("foo\t1", @st.unique_data_id(:foo))
+
+      @st.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'banana' } ] ])
+
+      assert_equal(1, @st.data_change_number(:foo))
+      assert_equal(2, @st.properties_change_number(:foo))
+      assert_equal("foo\t1", @st.unique_data_id(:foo))
+
+      @st.write_and_commit([ [ :write, :foo, 'orange' ] ])
+
+      assert_equal(3, @st.data_change_number(:foo))
+      assert_equal(3, @st.properties_change_number(:foo))
+      assert_equal("foo\t3", @st.unique_data_id(:foo))
+
+      @st.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
+
+      assert_equal(3, @st.data_change_number(:foo))
+      assert_equal(4, @st.properties_change_number(:foo))
+      assert_equal("foo\t3", @st.unique_data_id(:foo))
+    end
+
     def test_key
       assert_equal(false, (@st.key? 'foo'))
       @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])

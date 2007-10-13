@@ -599,6 +599,10 @@ module Higgs
         eoa = @index.eoa
 
         begin
+          @index.succ!
+          @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
+          commit_log << { :ope => :succ, :cnum => @index.change_number }
+
           for ope, key, type, name, value in write_list
             case (ope)
             when :write
@@ -636,11 +640,12 @@ module Higgs
                     @index.free_store(j[:pos], j[:siz])
                     j[:pos] = pos
                     j[:siz] = blocked_size
+                    j[:cnum] = @index.change_number
                   else
-                    i[type] = { :pos => pos, :siz => blocked_size }
+                    i[type] = { :pos => pos, :siz => blocked_size, :cnum => @index.change_number }
                   end
                 else
-                  @index[key] = { type => { :pos => pos, :siz => blocked_size } }
+                  @index[key] = { type => { :pos => pos, :siz => blocked_size, :cnum => @index.change_number } }
                 end
                 next
               end
@@ -659,6 +664,7 @@ module Higgs
                       :nam => name,
                       :val => value
                     }
+                    j[:cnum] = @index.change_number
                     if (j[:siz] > blocked_size) then
                       commit_log << {
                         :ope => :free_store,
@@ -697,11 +703,12 @@ module Higgs
                   @index.free_store(j[:pos], j[:siz])
                   j[:pos] = eoa
                   j[:siz] = blocked_size
+                  j[:cnum] = @index.change_number
                 else
-                  i[type] = { :pos => eoa, :siz => blocked_size }
+                  i[type] = { :pos => eoa, :siz => blocked_size, :cnum => @index.change_number }
                 end
               else
-                @index[key] = { type => { :pos => eoa, :siz => blocked_size } }
+                @index[key] = { type => { :pos => eoa, :siz => blocked_size, :cnum => @index.change_number } }
               end
               eoa += blocked_size
               commit_log << {
@@ -729,10 +736,6 @@ module Higgs
               raise ArgumentError, "unknown operation: #{cmd[:ope]}"
             end
           end
-
-          @index.succ!
-          @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
-          commit_log << { :ope => :succ, :cnum => @index.change_number }
 
           @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
           @jlog.write([ @index.change_number, commit_log ])
@@ -801,11 +804,12 @@ module Higgs
               if (j = i[cmd[:typ]]) then
                 j[:pos] = cmd[:pos]
                 j[:siz] = blocked_size
+                j[:cnum] = index.change_number
               else
-                i[cmd[:typ]] = { :pos => cmd[:pos], :siz => blocked_size }
+                i[cmd[:typ]] = { :pos => cmd[:pos], :siz => blocked_size, :cnum => index.change_number }
               end
             else
-              index[cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size } }
+              index[cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size, :cnum => index.change_number } }
             end
           when :delete
             index.delete(cmd[:key])
@@ -1046,6 +1050,20 @@ module Higgs
     end
 
     def_delegator :@index, :identity
+
+    def data_change_number(key)
+      i = @index[key] and i[:d][:cnum]
+    end
+
+    def properties_change_number(key)
+      i = @index[key] and i[:p][:cnum]
+    end
+
+    def unique_data_id(key)
+      id = identity(key) or return
+      cnum = data_change_number(key) or return
+      "#{id}\t#{cnum}"
+    end
 
     def key?(key)
       check_panic
