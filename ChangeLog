@@ -1,5 +1,8 @@
 2007-10-13  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb (Higgs::Storage class): write EOA to
+	storage at each applying journal log.
+
 	* lib/higgs/storage.rb (Higgs::Storage class),
 	lib/higgs/tman.rb (Higgs::TransactionManager class,
 	Higgs::TransactionContext class): unique data id for secondary cache.

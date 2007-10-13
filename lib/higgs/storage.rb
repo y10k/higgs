@@ -430,10 +430,6 @@ module Higgs
           JournalLogger.eof_mark(f)
         }
 
-        @logger.info("write EOA to storage: #{@index.eoa}")
-        @w_tar.seek(@index.eoa)
-        @w_tar.write_EOA
-
         recover_completed = true
       ensure
         unless (recover_completed) then
@@ -516,7 +512,7 @@ module Higgs
     end
 
     def internal_rotate_journal_log(save_index)
-      @logger.info("start journal log rotation...")
+      @logger.info("start journal log rotation.")
 
       commit_log = []
       while (File.exist? "#{@jlog_name}.#{@index.change_number}")
@@ -822,6 +818,8 @@ module Higgs
             w_tar.write_header(:name => name, :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
           when :eoa
             index.eoa = cmd[:pos]
+            w_tar.seek(cmd[:pos])
+            w_tar.write_EOA
           when :succ
             index.succ!
             if (index.change_number != cmd[:cnum]) then
@@ -868,8 +866,6 @@ module Higgs
               out << "warning: incompleted journal log and stopped at #{curr_name}\n" if out
             end
           end
-          w_tar.seek(index.eoa)
-          w_tar.write_EOA
 
           index.save(idx_name)
           w_tar.fsync
