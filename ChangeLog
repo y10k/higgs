@@ -1,3 +1,8 @@
+2007-10-14  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage class): enabled to apply
+	journal log to online storage.
+
 2007-10-13  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/storage.rb (Higgs::Storage class): write EOA to

@@ -792,6 +792,7 @@ module Higgs
         for cmd in commit_log
           case (cmd[:ope])
           when :write
+            yield(cmd[:key]) if block_given?
             name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
             w_tar.seek(cmd[:pos])
             w_tar.add(cmd[:nam], cmd[:val], :mtime => cmd[:mod])
@@ -808,6 +809,7 @@ module Higgs
               index[cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size, :cnum => index.change_number } }
             end
           when :delete
+            yield(cmd[:key]) if block_given?
             index.delete(cmd[:key])
           when :free_fetch
             index.free_fetch_at(cmd[:pos], cmd[:siz])
@@ -871,6 +873,48 @@ module Higgs
           w_tar.fsync
           w_tar.close(false)
         }
+      }
+
+      nil
+    end
+
+    def apply_journal_log(path)
+      @commit_lock.synchronize{
+        @logger.info("start to apply journal log.")
+
+        check_panic
+        if (@read_only) then
+          raise NotWritableError, 'failed to write to read only storage'
+        end
+
+        apply_completed = false
+        begin
+          JournalLogger.each_log(path) do |log|
+            change_number = log[0]
+
+            @logger.debug("apply journal log: #{change_number}") if @logger.debug?
+            Storage.apply_journal(@w_tar, @index, log) {|key|
+              @properties_cache.delete(key)
+            }
+
+            @logger.debug("write journal log: #{change_number}") if @logger.debug?
+            @jlog.write(log)
+
+            if (@jlog_rotate_size > 0 && @jlog.size >= @jlog_rotate_size) then
+              internal_rotate_journal_log(true)
+            end
+          end
+
+          apply_completed = true
+        ensure
+          unless (apply_completed) then
+            @state_lock.synchronize{ @panic = true }
+            @logger.error("panic: failed to apply journal log.")
+            @logger.error($!) if $!
+          end
+        end
+
+        @logger.info("completed to apply journal log.")
       }
 
       nil

@@ -500,6 +500,61 @@ module Higgs::Test
         st2 = Storage.new(other_name, :logger => @logger)
       }
     end
+
+    def test_apply_journal_log
+      write_data
+      @st.rotate_journal_log(true)
+      @st.shutdown
+
+      other_name = File.join(@test_dir, 'bar')
+      st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
+      begin
+        for path in Storage.rotate_entries("#{@name}.jlog")
+          st2.apply_journal_log(path)
+        end
+      ensure
+        st2.shutdown
+      end
+
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'DATA should be same.')
+      assert(Index.new.load("#{@name}.idx").to_h ==
+             Index.new.load("#{other_name}.idx").to_h, 'INDEX should be same.')
+    end
+
+    def test_apply_journal_log_from_online_backup
+      write_data
+      @st.rotate_journal_log(true)
+
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
+      other_name = File.join(@test_dir, 'bar')
+      for name in Storage.rotate_entries("#{@name}.jlog")
+        name =~ /\.jlog.*$/ or raise 'mismatch'
+        FileUtils.cp(name, other_name + $&, :preserve => true)
+        FileUtils.rm(name)
+      end
+      Storage.recover(other_name)
+
+      write_data
+      @st.rotate_journal_log(true)
+      @st.shutdown
+
+      other_name = File.join(@test_dir, 'bar')
+      st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
+      begin
+        for path in Storage.rotate_entries("#{@name}.jlog")
+          st2.apply_journal_log(path)
+        end
+      ensure
+        st2.shutdown
+      end
+
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'DATA should be same.')
+      assert(Index.new.load("#{@name}.idx").to_h ==
+             Index.new.load("#{other_name}.idx").to_h, 'INDEX should be same.')
+    end
   end
 
   class ReadOnlyStorageFirstOpenTest < Test::Unit::TestCase
