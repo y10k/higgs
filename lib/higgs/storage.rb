@@ -891,17 +891,22 @@ module Higgs
         begin
           JournalLogger.each_log(path) do |log|
             change_number = log[0]
+            if (change_number - 1 < @index.change_number) then
+              # skip old jounal log
+            elsif (change_number - 1 > @index.change_number) then
+              raise PanicError, "lost journal log (cnum: #{index.change_number + 1})"
+            else # if (change_number - 1 == index.change_number) then
+              @logger.debug("write journal log: #{change_number}") if @logger.debug?
+              @jlog.write(log)
 
-            @logger.debug("apply journal log: #{change_number}") if @logger.debug?
-            Storage.apply_journal(@w_tar, @index, log) {|key|
-              @properties_cache.delete(key)
-            }
+              @logger.debug("apply journal log: #{change_number}") if @logger.debug?
+              Storage.apply_journal(@w_tar, @index, log) {|key|
+                @properties_cache.delete(key)
+              }
 
-            @logger.debug("write journal log: #{change_number}") if @logger.debug?
-            @jlog.write(log)
-
-            if (@jlog_rotate_size > 0 && @jlog.size >= @jlog_rotate_size) then
-              internal_rotate_journal_log(true)
+              if (@jlog_rotate_size > 0 && @jlog.size >= @jlog_rotate_size) then
+                internal_rotate_journal_log(true)
+              end
             end
           end
 
