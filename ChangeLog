@@ -26,9 +26,10 @@
 	* lib/higgs/storage.rb (Higgs::Storage class): write EOA to
 	storage at each applying journal log.
 
-	* lib/higgs/storage.rb (Higgs::Storage class),
-	lib/higgs/tman.rb (Higgs::TransactionManager class,
-	Higgs::TransactionContext class): unique data id for secondary cache.
+	* lib/higgs/storage.rb (Higgs::Storage class), lib/higgs/tman.rb
+	(Higgs::TransactionManager class, Higgs::TransactionContext
+	class): unique data id for secondary cache. index structure
+	changed a little.
 
 	* lib/higgs/tman.rb: fixed a bug of wrong key of secondary cache.
 
