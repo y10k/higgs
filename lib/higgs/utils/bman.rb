@@ -18,11 +18,11 @@ module Higgs
     # = backup manager
     # == requirements for online-backup
     #
-    # these parameters should be required when Higgs::Storage is opened.
+    # these parameters should be required when Higgs::StorageManager is opened.
     #
     # [<tt>:jlog_rotate_max</tt>] value is <tt>0</tt>. rotated journal logs shuold be preserved.
-    # [<tt>:jlog_rotate_service_uri</tt>] value is <tt>"druby://localhost:<em>appropriate_port_number</em>"</tt>.
-    #                                     journal log rotation remote service should be enabled.
+    # [<tt>:remote_services_uri</tt>] value is <tt>"druby://<em>host</em>:<em>port</em>"</tt>.
+    #                                 journal log rotation remote service should be enabled.
     #
     # == online-backup
     #
@@ -104,8 +104,7 @@ module Higgs
     #       -f, --from=BACKUP_TARGET_STORAGE
     #       -t, --to-dir=DIR_TO_BACKUP
     #       -n, --to-name=NAME_TO_BACKUP
-    #       -u=URI
-    #           --jlog-rotate-service-uri
+    #       -U, --remote-services-uri=URI
     #       -v, --verbose, --[no-]verbose
     #           --verbose-level=LEVEL
     #
@@ -145,10 +144,10 @@ module Higgs
     # if this option is omitted then <tt>NAME_TO_BACKUP</tt> is the same
     # as <tt>BACKUP_TARGET_STORAGE</tt>.
     #
-    # === OPTION: <tt>--jlog-rotate-service-uri=URI</tt>
+    # === OPTION: <tt>--remote-services-uri=URI</tt>
     # access point for journal log rotation remote service.
-    # <tt>URI</tt> is the same as <tt>:jlog_rotate_service_uri</tt>
-    # when Higgs::Storage is opened.
+    # <tt>URI</tt> is the same as <tt>:remote_services_uri</tt>
+    # when Higgs::StorageManager is opened.
     #
     # === OPTION: <tt>--verbose</tt>
     # verbose level up.
@@ -165,7 +164,7 @@ module Higgs
         to_dir = options[:to_dir]
         to_name = options[:to_name] || (@from && File.basename(@from))
         @to = File.join(to_dir, to_name) if (to_dir && to_name)
-        @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
+        @remote_services_uri = options[:remote_services_uri]
         @verbose = options[:verbose] || 0
         @out = options[:out] || STDOUT
       end
@@ -179,11 +178,13 @@ module Higgs
       private :log
 
       def connect_service
-        unless (@jlog_rotate_service_uri) then
-          raise 'required jlog_rotate_service_uri'
+        unless (@remote_services_uri) then
+          raise 'required remote_services_uri'
         end
-        @out << log("connect to jlog_rotate_service: #{@jlog_rotate_service_uri}") if (@verbose >= 2)
-        @jlog_rotate_service = DRbObject.new_with_uri(@jlog_rotate_service_uri)
+        @out << log("connect to remote services: #{@remote_services_uri}") if (@verbose >= 2)
+        @services = DRbObject.new_with_uri(@remote_services_uri)
+        @jlog_rotate_service = @services[:jlog_rotate_service_v1] or
+          raise "not provided remote service: jlog_rotate_service_v1"
       end
       private :connect_service
 

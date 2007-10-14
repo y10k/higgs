@@ -3,6 +3,7 @@
 require 'drb'
 require 'fileutils'
 require 'higgs/index'
+require 'higgs/services'
 require 'higgs/storage'
 require 'logger'
 require 'test/unit'
@@ -45,7 +46,7 @@ module Higgs::Test
       FileUtils.rm_rf(@restore_dir) # for debug
       FileUtils.mkdir_p(@restore_dir)
 
-      @jlog_rotate_service_uri = 'druby://localhost:14142'
+      @remote_services_uri = 'druby://localhost:14142'
 
       @start_latch = File.join(@backup_dir, '.start')
       @stop_latch = File.join(@backup_dir, '.stop')
@@ -59,17 +60,18 @@ module Higgs::Test
     end
 
     def run_backup_storage
-      # step 0: storage starts with jlog_rotate_service_uri option
-      # (jlog_rotate_service_uri option is disabled by default)
       st = Storage.new(@backup_name,
                        :jlog_rotate_max => 0,
                        :jlog_rotate_size => COMMIT_ITEMS * MAX_ITEM_BYTES * LEAST_COMMITS_PER_ROTATION,
-                       :jlog_rotate_service_uri => @jlog_rotate_service_uri,
                        :logger => proc{|path|
                          logger = Logger.new(path, 1)
                          logger.level = Logger::DEBUG
                          logger
                        })
+
+      # step 0: storage starts with remote services.
+      sv = RemoteServices.new(:remote_services_uri => @remote_services_uri,
+                              :storage => st)
 
       begin
         FileUtils.touch(@start_latch)
@@ -103,6 +105,7 @@ module Higgs::Test
         st.verify
       ensure
         st.shutdown
+        sv.shutdown
       end
     end
     private :run_backup_storage
@@ -113,7 +116,8 @@ module Higgs::Test
         until (File.exist? @start_latch)
           # spin lock
         end
-        jlog_rotate_service = DRbObject.new_with_uri(@jlog_rotate_service_uri)
+        sv = DRbObject.new_with_uri(@remote_services_uri)
+        jlog_rotate_service = sv[:jlog_rotate_service_v1]
         sleep(UPTIME_SECONDS)
 
         # step 1: backup index

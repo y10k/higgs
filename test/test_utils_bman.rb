@@ -1,6 +1,8 @@
 #!/usr/local/bin/ruby
 
 require 'fileutils'
+require 'higgs/services'
+require 'higgs/storage'
 require 'higgs/thread'
 require 'higgs/utils/bman'
 require 'logger'
@@ -30,25 +32,27 @@ module Higgs::Test
       FileUtils.mkdir_p(@from_dir)
       FileUtils.rm_rf(@to_dir)  # for debug
       FileUtils.mkdir_p(@to_dir)
-      @jlog_rotate_service_uri = 'druby://localhost:17320'
+      @remote_services_uri = 'druby://localhost:17320'
       @from_st = Storage.new(@from,
                              :jlog_rotate_max => 0,
-                             :jlog_rotate_service_uri => @jlog_rotate_service_uri,
                              :logger => proc{|path|
                                logger = Logger.new(path, 1)
                                logger.level = Logger::DEBUG
                                logger
                              })
+      @services = RemoteServices.new(:remote_services_uri => @remote_services_uri,
+                                     :storage => @from_st)
       @bman = Utils::BackupManager.new(:from => @from,
                                        :to_dir => @to_dir,
                                        :to_name => @to_name,
-                                       :jlog_rotate_service_uri => @jlog_rotate_service_uri,
+                                       :remote_services_uri => @remote_services_uri,
                                        :verbose => $DEBUG ? 2 : 0,
                                        :out => $DEBUG ? STDERR : '')
     end
 
     def teardown
       @from_st.shutdown unless @from_st.shutdown?
+      @services.shutdown
       DRb.stop_service          # Why cannot each service be stopped?
       FileUtils.rm_rf(@from_dir) unless $DEBUG
       FileUtils.rm_rf(@to_dir) unless $DEBUG

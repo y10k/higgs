@@ -1,5 +1,23 @@
 2007-10-14  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/sman.rb (Higgs::StorageManager class): base class of
+	Higgs::Store and Higgs::DBM. this class integrates Higgs::Storage,
+	Higgs::TransactionManager, and Higgs::RemoteServices and is those
+	front end.
+
+	* bin/higgs_backup: obsolete `--jlog-rotate-service-uri=URI'
+	option, new `--remote-services-uri=URI' option.
+
+	* lib/higgs/utils/bman.rb: obsolete `:jlog_rotate_service_uri'
+	option, new `:remote_services_uri' option.
+
+	* lib/higgs/storage.rb (Higgs::Storage class): obsolete
+	`:jlog_rotate_service_uri' option. this remote service is
+	integrated to Higgs::RemoteServices.
+
+	* lib/higgs/services.rb (Higgs::RemoteServices class): class to
+	integrate remote services.
+
 	* lib/higgs/storage.rb (Higgs::Storage class): enabled to apply
 	journal log to online storage.
 

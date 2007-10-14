@@ -8,7 +8,6 @@
 #   :include:LICENSE
 #
 
-require 'forwardable'
 require 'higgs/cache'
 require 'higgs/exceptions'
 require 'higgs/lock'
@@ -77,19 +76,6 @@ module Higgs
       attr_reader :read_only
     end
     include InitOptions
-
-    # export Higgs::TransactionManager methods from <tt>@tman</tt> instance variable.
-    #
-    # these methods are delegated.
-    # * Higgs::TransactionManager#read_only
-    # * Higgs::TransactionManager#transaction
-    #
-    module Export
-      extend Forwardable
-
-      def_delegator :@tman, :read_only
-      def_delegator :@tman, :transaction
-    end
 
     def initialize(storage, options={})
       @storage = storage

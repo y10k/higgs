@@ -89,14 +89,6 @@ module Higgs::Test
       assert_equal(0, options[:jlog_rotate_max])
     end
 
-    def test_jlog_rotate_service_uri
-      File.open(@conf_path, 'w') {|w|
-	w << "jlog_rotate_service_uri: druby://localhost:14142\n"
-      }
-      options = Storage.load_conf(@conf_path)
-      assert_equal('druby://localhost:14142', options[:jlog_rotate_service_uri])
-    end
-
     def test_properties_cache_limit_size
       File.open(@conf_path, 'w') {|w|
 	w << "properties_cache_limit_size: 256\n"

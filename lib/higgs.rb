@@ -37,9 +37,9 @@ require 'higgs/version'
 #
 # === case of online backup
 #
-# [REQUIREMENTS] open with parameters:
+# [REQUIREMENTS] open Higgs::StorageManager with these parameters:
 #                <tt>jlog_rotate_max => 0</tt>,
-#                <tt>jlog_rotate_service_uri => "druby://localhost:<em>appropriate_port_number</em>"</tt>,
+#                <tt>remtoe_services_uri => "druby://<em>host</em>:<em>port</em>"</tt>,
 #                and execute <tt>higgs_backup</tt> (see Higgs::Utils::BackupManager)
 # [NORMAL SHUTDOWN] OK, no recovery
 # [PROCESS ABORT] OK, automatic recovery on read-write open

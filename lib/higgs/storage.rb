@@ -84,9 +84,6 @@ module Higgs
       #                             if <tt>:jlog_rotate_max</tt> is <tt>0</tt>, old journal log is
       #                             not deleted. if online-backup is used, <tt>:jlog_rotate_max</tt>
       #                             should be <tt>0</tt>. default is <tt>1</tt>.
-      # [<tt>:jlog_rotate_service_uri</tt>] URI for DRb remote call to switch journal log to a new file.
-      #                                     if online-backup is used, <tt>:jlog_rotate_service_uri</tt>
-      #                                     should be defined. default is not defined.
       # [<tt>:logger</tt>] procedure to create a logger. default is a procedure to create a new
       #                    instance of Logger with logging level <tt>Logger::WARN</tt>.
       def init_options(options)
@@ -122,7 +119,6 @@ module Higgs
 
         @jlog_rotate_size = options[:jlog_rotate_size] || 1024 * 256
         @jlog_rotate_max = options[:jlog_rotate_max] || 1
-        @jlog_rotate_service_uri = options[:jlog_rotate_service_uri]
 
         if (options.key? :logger) then
           @Logger = options[:logger]
@@ -144,42 +140,8 @@ module Higgs
       attr_reader :jlog_hash_type
       attr_reader :jlog_rotate_size
       attr_reader :jlog_rotate_max
-      attr_reader :jlog_rotate_service_uri
     end
     include InitOptions
-
-    # export Higgs::Storage methods from <tt>@storage</tt> instance variable.
-    #
-    # these methods are delegated.
-    # * Higgs::Storage#name
-    # * Higgs::Storage#read_only
-    # * Higgs::Storage#number_of_read_io
-    # * Higgs::Storage#data_hash_type
-    # * Higgs::Storage#jlog_sync
-    # * Higgs::Storage#jlog_hash_type
-    # * Higgs::Storage#jlog_rotate_size
-    # * Higgs::Storage#jlog_rotate_max
-    # * Higgs::Storage#jlog_rotate_service_uri
-    # * Higgs::Storage#shutdown
-    # * Higgs::Storage#shutdown?
-    # * Higgs::Storage#rotate_journal_log
-    #
-    module Export
-      extend Forwardable
-
-      def_delegator :@storage, :name
-      def_delegator :@storage, :read_only
-      def_delegator :@storage, :number_of_read_io
-      def_delegator :@storage, :data_hash_type
-      def_delegator :@storage, :jlog_sync
-      def_delegator :@storage, :jlog_hash_type
-      def_delegator :@storage, :jlog_rotate_size
-      def_delegator :@storage, :jlog_rotate_max
-      def_delegator :@storage, :jlog_rotate_service_uri
-      def_delegator :@storage, :shutdown
-      def_delegator :@storage, :shutdown?
-      def_delegator :@storage, :rotate_journal_log
-    end
 
     def self.load_conf(path)
       conf = YAML.load(IO.read(path))
@@ -297,15 +259,6 @@ module Higgs
           @logger.info("journal log sync mode: #{@jlog_sync}")
           @logger.info("open journal log for write: #{@jlog_name}")
           @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_hash_type)
-        end
-
-        if (@jlog_rotate_service_uri) then
-          @logger.info("start journal log rotation service: #{@jlog_rotate_service_uri}")
-          require 'drb'
-          @jlog_rotate_service = DRb::DRbServer.new(@jlog_rotate_service_uri,
-                                                    method(:rotate_journal_log))
-        else
-          @jlog_rotate_service = nil
         end
 
         init_completed = true

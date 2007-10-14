@@ -42,8 +42,8 @@ opts.on('-t', '--to-dir=DIR_TO_BACKUP', String) {|value|
 opts.on('-n', '--to-name=NAME_TO_BACKUP', String) {|value|
   options[:to_name] = value
 }
-opts.on('-u', '--jlog-rotate-service-uri=URI', String) {|value|
-  options[:jlog_rotate_service_uri] = value
+opts.on('-U', '--remote-services-uri=URI', String) {|value|
+  options[:remote_services_uri] = value
 }
 opts.on('-v', '--verbose', '--[no-]verbose') {|value|
   if (value) then

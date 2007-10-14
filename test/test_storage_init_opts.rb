@@ -25,8 +25,6 @@ module Higgs::Test
       assert_equal(1024 * 256, self.jlog_rotate_size)
       assert_equal(1, @jlog_rotate_max)
       assert_equal(1, self.jlog_rotate_max)
-      assert_equal(nil, @jlog_rotate_service_uri)
-      assert_equal(nil, self.jlog_rotate_service_uri)
       assert_instance_of(Proc, @Logger)
     end
 
@@ -99,12 +97,6 @@ module Higgs::Test
       init_options(:jlog_rotate_max => 100)
       assert_equal(100, @jlog_rotate_max)
       assert_equal(100, self.jlog_rotate_max)
-    end
-
-    def test_jlog_rotate_service_uri
-      init_options(:jlog_rotate_service_uri => 'druby://localhost:14142')
-      assert_equal('druby://localhost:14142', @jlog_rotate_service_uri)
-      assert_equal('druby://localhost:14142', self.jlog_rotate_service_uri)
     end
 
     def test_logger
