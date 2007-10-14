@@ -1,5 +1,9 @@
 2007-10-14  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb, lib/higgs/tman.rb: obsolete
+	Higgs::Storage::Export module, obsolete
+	Higgs::TransactionManager::Export module.
+
 	* lib/higgs/sman.rb (Higgs::StorageManager class): base class of
 	Higgs::Store and Higgs::DBM. this class integrates Higgs::Storage,
 	Higgs::TransactionManager, and Higgs::RemoteServices and is those
