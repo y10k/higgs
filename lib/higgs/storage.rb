@@ -1050,11 +1050,11 @@ module Higgs
     def_delegator :@index, :identity
 
     def data_change_number(key)
-      i = @index[key] and i[:d][:cnum]
+      i = @index[key] and i[:d][:cnum] || -1
     end
 
     def properties_change_number(key)
-      i = @index[key] and i[:p][:cnum]
+      i = @index[key] and i[:p][:cnum] || -1
     end
 
     def unique_data_id(key)
