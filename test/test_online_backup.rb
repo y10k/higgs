@@ -112,12 +112,17 @@ module Higgs::Test
 
     def test_online_backup
       pid = fork{ run_backup_storage }
+      DRb.start_service
       begin
         until (File.exist? @start_latch)
           # spin lock
         end
         sv = DRbObject.new_with_uri(@remote_services_uri)
-        jlog_rotate_service = sv[:jlog_rotate_service_v1]
+        localhost_check_service = sv[:localhost_check_service_v1] or flunk
+        localhost_check_service.call('foo') {|check|
+          check.call
+        }
+        jlog_rotate_service = sv[:jlog_rotate_service_v1] or flunk
         sleep(UPTIME_SECONDS)
 
         # step 1: backup index
@@ -154,6 +159,7 @@ module Higgs::Test
         FileUtils.touch(@stop_latch)
         FileUtils.touch(@end_latch)
         Process.waitpid(pid)
+        DRb.stop_service
       end
       assert_equal(0, $?.exitstatus)
 

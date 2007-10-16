@@ -183,8 +183,15 @@ module Higgs
         end
         @out << log("connect to remote services: #{@remote_services_uri}") if (@verbose >= 2)
         @services = DRbObject.new_with_uri(@remote_services_uri)
+
+        localhost_check_service = @services[:localhost_check_service_v1] or
+          raise 'not provided remote service: localhost_check_service_v1'
+        localhost_check_service.call($$.to_s) {|localhost_check|
+          localhost_check.call
+        }
+
         @jlog_rotate_service = @services[:jlog_rotate_service_v1] or
-          raise "not provided remote service: jlog_rotate_service_v1"
+          raise 'not provided remote service: jlog_rotate_service_v1'
       end
       private :connect_service
 

@@ -1112,6 +1112,54 @@ module Higgs
 
       nil
     end
+
+    class ClientSideLocalhostCheckHandler
+      def initialize(path, messg)
+        @path = File.expand_path(path)
+        @messg = messg
+      end
+
+      def call
+        unless (File.exist? @path) then
+          raise 'client should exist in localhost.'
+        end
+
+        File.open(@path, 'r') {|f|
+          f.binmode
+          if (f.read != @messg) then
+            raise 'client should exist in localhost.'
+          end
+        }
+        nil
+      end
+    end
+
+    # check that client exists in localhost.
+    def localhost_check(messg)
+      base_dir = File.dirname(@name)
+      tmp_fname = File.join(base_dir, ".localhost_check.#{$$}")
+
+      begin
+        f = File.open(tmp_fname, File::WRONLY | File::CREAT | File::EXCL, 0644)
+      rescue Errno::EEXIST
+        tmp_fname.succ!
+        retry
+      end
+
+      begin
+        begin
+          f.binmode
+          f.write(messg)
+        ensure
+          f.close
+        end
+        yield(ClientSideLocalhostCheckHandler.new(tmp_fname, messg))
+      ensure
+        File.unlink(tmp_fname) if (File.exist? tmp_fname)
+      end
+
+      nil
+    end
   end
 end
 

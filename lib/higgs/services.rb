@@ -28,6 +28,7 @@ module Higgs
 
       @service_map = {}
       if (@storage) then
+        @service_map[:localhost_check_service_v1] = @storage.method(:localhost_check)
         @service_map[:jlog_rotate_service_v1] = @storage.method(:rotate_journal_log)
       end
 
