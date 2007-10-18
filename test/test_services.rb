@@ -66,7 +66,7 @@ module Higgs::Test
     def test_localhost_check_service_v1
       Dir.chdir('/') {
 	localhost_check_service = @services[:localhost_check_service_v1] or flunk
-	localhost_check_service.call('foo') {|localhost_check|
+	localhost_check_service.call{|localhost_check|
 	  localhost_check.call
 	}
       }
@@ -75,14 +75,14 @@ module Higgs::Test
     def test_localhost_check_service_v1_exists_tmpfile
       localhost_check_service = @services[:localhost_check_service_v1] or flunk
       FileUtils.touch(@localhost_check_tmpfile)
-      localhost_check_service.call('foo') {|localhost_check|
+      localhost_check_service.call{|localhost_check|
 	localhost_check.call
       }
     end
 
     def test_localhost_check_service_v1_RuntimeError_not_found_tmpfile
       localhost_check_service = @services[:localhost_check_service_v1] or flunk
-      localhost_check_service.call('foo') {|localhost_check|
+      localhost_check_service.call{|localhost_check|
 	FileUtils.rm_rf(@localhost_check_tmpfile)
 	assert_raise(RuntimeError) { localhost_check.call }
       }
@@ -90,7 +90,7 @@ module Higgs::Test
 
     def test_localhost_check_service_v1_RuntimeError_mismatch_message
       localhost_check_service = @services[:localhost_check_service_v1] or flunk
-      localhost_check_service.call('foo') {|localhost_check|
+      localhost_check_service.call{|localhost_check|
 	File.open(@localhost_check_tmpfile, 'w') {|f|
 	  f.binmode
 	  f << 'bar'

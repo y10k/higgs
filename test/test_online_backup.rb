@@ -119,7 +119,7 @@ module Higgs::Test
         end
         sv = DRbObject.new_with_uri(@remote_services_uri)
         localhost_check_service = sv[:localhost_check_service_v1] or flunk
-        localhost_check_service.call('foo') {|check|
+        localhost_check_service.call{|check|
           check.call
         }
         jlog_rotate_service = sv[:jlog_rotate_service_v1] or flunk

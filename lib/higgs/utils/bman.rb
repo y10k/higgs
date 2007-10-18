@@ -191,7 +191,7 @@ module Higgs
 
         localhost_check_service = @services[:localhost_check_service_v1] or
           raise 'not provided remote service: localhost_check_service_v1'
-        localhost_check_service.call($$.to_s) {|localhost_check|
+        localhost_check_service.call{|localhost_check|
           localhost_check.call
         }
 

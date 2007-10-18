@@ -1135,9 +1135,10 @@ module Higgs
     end
 
     # check that client exists in localhost.
-    def localhost_check(messg)
+    def localhost_check
       base_dir = File.dirname(@name)
       tmp_fname = File.join(base_dir, ".localhost_check.#{$$}")
+      messg = (0...8).map{ rand(64) }.pack("C*").tr("\x00-\x3f", "A-Za-z0-9./")
 
       begin
         f = File.open(tmp_fname, File::WRONLY | File::CREAT | File::EXCL, 0644)
