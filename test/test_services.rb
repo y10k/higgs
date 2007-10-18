@@ -60,7 +60,6 @@ module Higgs::Test
     def teardown
       FileUtils.touch(@stop_latch)
       Process.waitpid(@pid)
-      DRb.stop_service
       FileUtils.rm_rf(@storage_dir) unless $DEBUG
     end
 

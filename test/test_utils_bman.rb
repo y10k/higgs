@@ -53,7 +53,7 @@ module Higgs::Test
     def teardown
       @from_st.shutdown unless @from_st.shutdown?
       @services.shutdown
-      DRb.stop_service          # Why cannot each service be stopped?
+      DRb.stop_service
       FileUtils.rm_rf(@from_dir) unless $DEBUG
       FileUtils.rm_rf(@to_dir) unless $DEBUG
     end

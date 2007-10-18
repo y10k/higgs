@@ -159,7 +159,6 @@ module Higgs::Test
         FileUtils.touch(@stop_latch)
         FileUtils.touch(@end_latch)
         Process.waitpid(pid)
-        DRb.stop_service
       end
       assert_equal(0, $?.exitstatus)
 

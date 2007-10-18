@@ -18,11 +18,16 @@ module Higgs
     # = backup manager
     # == requirements for online-backup
     #
-    # these parameters should be required when Higgs::StorageManager is opened.
+    # these parameters should be required when Higgs::StorageManager
+    # of backup target is opened.
     #
     # [<tt>:jlog_rotate_max</tt>] value is <tt>0</tt>. rotated journal logs shuold be preserved.
     # [<tt>:remote_services_uri</tt>] value is <tt>"druby://<em>host</em>:<em>port</em>"</tt>.
     #                                 journal log rotation remote service should be enabled.
+    #
+    # DRb service should be started.
+    #
+    #   DRb.start_service
     #
     # == online-backup
     #
