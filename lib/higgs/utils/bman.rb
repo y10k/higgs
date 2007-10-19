@@ -25,7 +25,7 @@ module Higgs
     # [<tt>:remote_services_uri</tt>] value is <tt>"druby://<em>host</em>:<em>port</em>"</tt>.
     #                                 journal log rotation remote service should be enabled.
     #
-    # DRb service should be started.
+    # DRb service should be started before Higgs::BackupManager is used.
     #
     #   DRb.start_service
     #
