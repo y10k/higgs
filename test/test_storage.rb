@@ -433,6 +433,10 @@ module Higgs::Test
     private :write_data
 
     def test_manual_recovery
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
       write_data
 
       3.times do
@@ -444,7 +448,6 @@ module Higgs::Test
 
       @st.shutdown
 
-      other_name = File.join(@test_dir, 'bar')
       for name in Storage.rotate_entries("#{@name}.jlog")
         name =~ /\.jlog.*$/ or raise 'mismatch'
         FileUtils.cp(name, other_name + $&, :preserve => true)
@@ -502,11 +505,14 @@ module Higgs::Test
     end
 
     def test_apply_journal_log
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
       write_data
       @st.rotate_journal_log(true)
       @st.shutdown
 
-      other_name = File.join(@test_dir, 'bar')
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
       begin
         for path in Storage.rotate_entries("#{@name}.jlog")

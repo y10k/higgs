@@ -246,12 +246,14 @@ module Higgs::Test
       }
 
       i = Index.new
+      i.storage_id = '68c6b76688d84b4d72856d8f589a5551'
       i.load(@path)
       assert_equal(0, i.change_number)
       assert_equal(1024, i.eoa)
       assert_equal(512, i.free_fetch(512))
       assert_equal(0, i[:foo])
       assert_equal('foo', i.identity(:foo))
+      assert_equal('68c6b76688d84b4d72856d8f589a5551', i.storage_id)
     end
 
     def test_migration_RuntimeError_unsupported_version

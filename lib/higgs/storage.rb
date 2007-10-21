@@ -251,6 +251,13 @@ module Higgs
         if (File.exist? @idx_name) then
           @logger.info("load index: #{@idx_name}")
           @index.load(@idx_name)
+          unless (@index.storage_id) then # for migration to new index format of version 0.2 from old version
+            @index.storage_id = create_storage_id
+            @index.save(@idx_name)
+          end
+        else
+          @index.storage_id = create_storage_id
+          @index.save(@idx_name)
         end
         if (JournalLogger.need_for_recovery? @jlog_name) then
           recover
@@ -333,6 +340,21 @@ module Higgs
         end
       end
     end
+
+    def create_storage_id
+      require 'digest/md5'
+      hash = Digest::MD5.new
+      now = Time.now
+      hash.update(now.to_s)
+      hash.update(String(now.usec))
+      hash.update(String(rand(0)))
+      hash.update(String($$))
+      hash.update(CVS_ID)
+      hash.update(@name)
+      hash.update('toki')
+      hash.hexdigest
+    end
+    private :create_storage_id
 
     def check_panic
       @state_lock.synchronize{

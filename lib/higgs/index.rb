@@ -22,7 +22,7 @@ module Higgs
 
     MAGIC_SYMBOL = 'HIGGS_INDEX'
     MAJOR_VERSION = 0
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
 
     def initialize
       @change_number = 0
@@ -30,10 +30,12 @@ module Higgs
       @free_lists = {}
       @index = {}
       @identities = {}
+      @storage_id = nil
     end
 
     attr_reader :change_number
     attr_accessor :eoa
+    attr_accessor :storage_id
 
     def succ!
       @change_number = @change_number.succ
@@ -104,7 +106,8 @@ module Higgs
         :eoa => @eoa,
         :free_lists => @free_lists,
         :index => @index,
-        :identities => @identities
+        :identities => @identities,
+        :storage_id => @storage_id
       }
     end
 
@@ -130,6 +133,21 @@ module Higgs
     end
     private :migration_0_0_to_0_1
 
+    def migration_0_1_to_0_2(index_data)
+      if ((index_data[:version] <=> [ 0, 1 ]) > 0) then
+        return
+      end
+      if ((index_data[:version] <=> [ 0, 1 ]) < 0) then
+        raise "unexpected index format version: #{index_data[:version].join('.')}"
+      end
+
+      index_data[:storage_id] = @storage_id
+      index_data[:version] = [ 0, 2 ]
+
+      index_data
+    end
+    private :migration_0_1_to_0_2
+
     def save(path)
       tmp_path = "#{path}.tmp.#{$$}"
       File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
@@ -147,6 +165,7 @@ module Higgs
         f.binmode
         index_data = Marshal.load(block_read(f, MAGIC_SYMBOL))
         migration_0_0_to_0_1(index_data)
+        migration_0_1_to_0_2(index_data)
         if (index_data[:version] != [ MAJOR_VERSION, MINOR_VERSION ]) then
           raise "unsupported version: #{index_data[:version].join('.')}"
         end
@@ -155,6 +174,7 @@ module Higgs
         @free_lists = index_data[:free_lists]
         @index = index_data[:index]
         @identities = index_data[:identities]
+        @storage_id = index_data[:storage_id]
       }
       self
     end
