@@ -12,55 +12,68 @@ module Higgs::Test
     # for ident(1)
     CVS_ID = '$Id$'
 
-    def setup
-      @storage_dir = 'remote_storage'
-      @storage_name = File.join(@storage_dir, 'foo')
-      FileUtils.rm_rf(@storage_dir) # for debug
-      FileUtils.mkdir_p(@storage_dir)
+    STORAGE_DIR = 'remote_storage'
+    REMOTE_SERVICES_URI = 'druby://localhost:31415'
 
-      @remote_services_uri = 'druby://localhost:31415'
-      @start_latch = File.join(@storage_dir, '.start')
-      @stop_latch = File.join(@storage_dir, '.stop')
+    class << self
+      include Higgs
 
-      @pid = fork{
-	require 'higgs/services'
-	require 'logger'
+      def start_services
+	return if @pid
 
-	st = Storage.new(@storage_name,
-			 :jlog_rotate_max => 0,
-			 :logger => proc{|path|
-			   logger = Logger.new(path, 1)
-			   logger.level = Logger::DEBUG
-			   logger
-			 })
+	storage_name = File.join(STORAGE_DIR, 'foo')
+	FileUtils.rm_rf(STORAGE_DIR) unless $DEBUG
+	FileUtils.mkdir_p(STORAGE_DIR)
 
-	sv = RemoteServices.new(:remote_services_uri => @remote_services_uri,
-				:storage => st)
+	start_latch = File.join(STORAGE_DIR, '.start')
+	stop_latch = File.join(STORAGE_DIR, '.stop')
+	@pid = fork{
+	  begin
+	    require 'higgs/services'
+	    require 'logger'
 
-	begin
-	  FileUtils.touch(@start_latch)
-	  until (File.exist? @stop_latch)
-	    # spin lock
+	    st = Storage.new(storage_name,
+			     :jlog_rotate_max => 0,
+			     :logger => proc{|path|
+			       logger = Logger.new(path, 1)
+			       logger.level = Logger::DEBUG
+			       logger
+			     })
+
+	    sv = RemoteServices.new(:remote_services_uri => REMOTE_SERVICES_URI,
+				    :storage => st)
+
+	    FileUtils.touch(start_latch)
+	    until (File.exist? stop_latch)
+	      sleep(0.001)	# spin lock
+	    end
+	  ensure
+	    st.shutdown if st
+	    sv.shutdown if sv
+	    FileUtils.rm_rf(STORAGE_DIR) unless $DEBUG
 	  end
-	ensure
-	  st.shutdown
-	  sv.shutdown
-	end
-      }
+	}
 
-      until (File.exist? @start_latch)
-	# spin lock
+	until (File.exist? start_latch)
+	  # spin lock
+	end
+
+	at_exit{
+	  FileUtils.touch(stop_latch)
+	  Process.waitpid(@pid)
+	}
+
+	nil
       end
 
-      DRb.start_service
-      @services = DRbObject.new_with_uri(@remote_services_uri)
-      @localhost_check_tmpfile = File.join(@storage_dir, ".localhost_check.#{@pid}")
+      attr_reader :pid
     end
 
-    def teardown
-      FileUtils.touch(@stop_latch)
-      Process.waitpid(@pid)
-      FileUtils.rm_rf(@storage_dir) unless $DEBUG
+    def setup
+      RemoteServicesTest.start_services
+      DRb.start_service
+      @services = DRbObject.new_with_uri(REMOTE_SERVICES_URI)
+      @localhost_check_tmpfile = File.join(STORAGE_DIR, ".localhost_check.#{RemoteServicesTest.pid}")
     end
 
     def test_localhost_check_service_v1
@@ -75,15 +88,19 @@ module Higgs::Test
     def test_localhost_check_service_v1_exists_tmpfile
       localhost_check_service = @services[:localhost_check_service_v1] or flunk
       FileUtils.touch(@localhost_check_tmpfile)
-      localhost_check_service.call{|localhost_check|
-	localhost_check.call
-      }
+      begin
+	localhost_check_service.call{|localhost_check|
+	  localhost_check.call
+	}
+      ensure
+	FileUtils.rm(@localhost_check_tmpfile, :force => true)
+      end
     end
 
     def test_localhost_check_service_v1_RuntimeError_not_found_tmpfile
       localhost_check_service = @services[:localhost_check_service_v1] or flunk
       localhost_check_service.call{|localhost_check|
-	FileUtils.rm_rf(@localhost_check_tmpfile)
+	FileUtils.rm(@localhost_check_tmpfile, :force => true)
 	assert_raise(RuntimeError) { localhost_check.call }
       }
     end
