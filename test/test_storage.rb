@@ -225,33 +225,35 @@ module Higgs::Test
     end
 
     def test_change_number_and_unique_data_id
+      # first data change number (1) is used to write storage information (`.higgs').
+
       assert_equal(nil, @st.data_change_number(:foo))
       assert_equal(nil, @st.properties_change_number(:foo))
       assert_equal(nil, @st.unique_data_id(:foo))
 
       @st.write_and_commit([ [ :write, :foo, 'apple' ] ])
 
-      assert_equal(1, @st.data_change_number(:foo))
-      assert_equal(1, @st.properties_change_number(:foo))
-      assert_equal("foo\t1", @st.unique_data_id(:foo))
+      assert_equal(2, @st.data_change_number(:foo))
+      assert_equal(2, @st.properties_change_number(:foo))
+      assert_equal("foo\t2", @st.unique_data_id(:foo))
 
       @st.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'banana' } ] ])
 
-      assert_equal(1, @st.data_change_number(:foo))
-      assert_equal(2, @st.properties_change_number(:foo))
-      assert_equal("foo\t1", @st.unique_data_id(:foo))
+      assert_equal(2, @st.data_change_number(:foo))
+      assert_equal(3, @st.properties_change_number(:foo))
+      assert_equal("foo\t2", @st.unique_data_id(:foo))
 
       @st.write_and_commit([ [ :write, :foo, 'orange' ] ])
 
-      assert_equal(3, @st.data_change_number(:foo))
-      assert_equal(3, @st.properties_change_number(:foo))
-      assert_equal("foo\t3", @st.unique_data_id(:foo))
+      assert_equal(4, @st.data_change_number(:foo))
+      assert_equal(4, @st.properties_change_number(:foo))
+      assert_equal("foo\t4", @st.unique_data_id(:foo))
 
       @st.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
 
-      assert_equal(3, @st.data_change_number(:foo))
-      assert_equal(4, @st.properties_change_number(:foo))
-      assert_equal("foo\t3", @st.unique_data_id(:foo))
+      assert_equal(4, @st.data_change_number(:foo))
+      assert_equal(5, @st.properties_change_number(:foo))
+      assert_equal("foo\t4", @st.unique_data_id(:foo))
     end
 
     def test_key
@@ -502,11 +504,16 @@ module Higgs::Test
     end
 
     def test_apply_journal_log
+      @st.rotate_journal_log(true)
+
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
       write_data
       @st.rotate_journal_log(true)
       @st.shutdown
 
-      other_name = File.join(@test_dir, 'bar')
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
       begin
         for path in Storage.rotate_entries("#{@name}.jlog")

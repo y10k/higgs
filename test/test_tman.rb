@@ -401,6 +401,7 @@ module Higgs::Test
         assert_equal(nil, tx[:foo])
         assert_equal(nil, tx[:bar])
         assert_equal(nil, tx[:baz])
+        assert((tx.key? '.higgs'), 'not deleted storage information')
       }
 
       assert_equal(nil, @st.fetch(:foo))
@@ -411,6 +412,7 @@ module Higgs::Test
         assert_equal(nil, tx[:foo])
         assert_equal(nil, tx[:bar])
         assert_equal(nil, tx[:baz])
+        assert((tx.key? '.higgs'), 'not deleted storage information')
       }
     end
 
@@ -432,8 +434,8 @@ module Higgs::Test
 
         tx.commit
         assert_equal('foo', tx.property(:foo, :identity))
-        assert_equal(1, tx.property(:foo, :data_change_number))
-        assert_equal(1, tx.property(:foo, :properties_change_number))
+        assert_equal(2, tx.property(:foo, :data_change_number))
+        assert_equal(2, tx.property(:foo, :properties_change_number))
         assert_instance_of(Time, tx.property(:foo, :created_time))
         assert_instance_of(Time, tx.property(:foo, :changed_time))
         assert_instance_of(Time, tx.property(:foo, :modified_time))
@@ -453,8 +455,8 @@ module Higgs::Test
       }
 
       assert_equal('foo', @st.identity(:foo))
-      assert_equal(1, @st.data_change_number(:foo))
-      assert_equal(1, @st.properties_change_number(:foo))
+      assert_equal(2, @st.data_change_number(:foo))
+      assert_equal(2, @st.properties_change_number(:foo))
       assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['created_time'])
       assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['changed_time'])
       assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['modified_time'])
@@ -469,8 +471,8 @@ module Higgs::Test
 
       @tman.transaction{|tx|
         assert_equal('foo', tx.property(:foo, :identity))
-        assert_equal(1, tx.property(:foo, :data_change_number))
-        assert_equal(1, tx.property(:foo, :properties_change_number))
+        assert_equal(2, tx.property(:foo, :data_change_number))
+        assert_equal(2, tx.property(:foo, :properties_change_number))
         assert_instance_of(Time, tx.property(:foo, :created_time))
         assert_instance_of(Time, tx.property(:foo, :changed_time))
         assert_instance_of(Time, tx.property(:foo, :modified_time))
@@ -586,8 +588,8 @@ module Higgs::Test
         tx.commit
 
         assert_equal('foo', tx.property(:foo, :identity))
-        assert_equal(1, tx.property(:foo, :data_change_number))
-        assert_equal(1, tx.property(:foo, :properties_change_number))
+        assert_equal(2, tx.property(:foo, :data_change_number))
+        assert_equal(2, tx.property(:foo, :properties_change_number))
         assert_equal(false, tx.property(:foo, :string_only))
 
         cre_time = tx.property(:foo, :created_time)
@@ -599,8 +601,8 @@ module Higgs::Test
         tx.commit
 
         assert_equal('foo', tx.property(:foo, :identity))
-        assert_equal(2, tx.property(:foo, :data_change_number))
-        assert_equal(2, tx.property(:foo, :properties_change_number))
+        assert_equal(3, tx.property(:foo, :data_change_number))
+        assert_equal(3, tx.property(:foo, :properties_change_number))
         assert_equal(false, tx.property(:foo, :string_only))
 
         assert_equal(cre_time, tx.property(:foo, :created_time))
@@ -613,8 +615,8 @@ module Higgs::Test
         tx.commit
 
         assert_equal('foo', tx.property(:foo, :identity))
-        assert_equal(2, tx.property(:foo, :data_change_number))
-        assert_equal(3, tx.property(:foo, :properties_change_number))
+        assert_equal(3, tx.property(:foo, :data_change_number))
+        assert_equal(4, tx.property(:foo, :properties_change_number))
         assert_equal(false, tx.property(:foo, :string_only))
 
         assert_equal(cre_time, tx.property(:foo, :created_time))
