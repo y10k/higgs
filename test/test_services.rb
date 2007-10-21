@@ -63,6 +63,8 @@ module Higgs::Test
 	  Process.waitpid(@pid)
 	}
 
+	DRb.start_service
+
 	nil
       end
 
@@ -71,7 +73,6 @@ module Higgs::Test
 
     def setup
       RemoteServicesTest.start_services
-      DRb.start_service
       @services = DRbObject.new_with_uri(REMOTE_SERVICES_URI)
       @localhost_check_tmpfile = File.join(STORAGE_DIR, ".localhost_check.#{RemoteServicesTest.pid}")
     end
