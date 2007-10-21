@@ -248,6 +248,16 @@ module Higgs::Test
       i = Index.new
       i.storage_id = '68c6b76688d84b4d72856d8f589a5551'
       i.load(@path)
+
+      h = i.to_h
+      assert_equal([ Index::MAJOR_VERSION, Index::MINOR_VERSION ], h[:version])
+      assert_equal(0, h[:change_number])
+      assert_equal(1024, h[:eoa])
+      assert_equal({ 512 => [ 512 ] }, h[:free_lists])
+      assert_equal({ :foo => [ 'foo', 0 ] }, h[:index], 'index format version: 0.1')
+      assert_equal({ 'foo' => :foo }, h[:identities], 'index format version: 0.1')
+      assert_equal('68c6b76688d84b4d72856d8f589a5551', h[:storage_id], 'index format version: 0.2')
+
       assert_equal(0, i.change_number)
       assert_equal(1024, i.eoa)
       assert_equal(512, i.free_fetch(512))
