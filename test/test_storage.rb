@@ -459,6 +459,32 @@ module Higgs::Test
              Index.new.load("#{other_name}.idx").to_h, 'INDEX should be same.')
     end
 
+    def test_recovery_PanicError_unexpected_storage_id
+      other_name = File.join(@test_dir, 'bar')
+      st2 = Storage.new(other_name)
+      st2.shutdown
+
+      write_data
+
+      3.times do
+        @st.rotate_journal_log(false)
+      end
+      3.times do
+        @st.rotate_journal_log(true)
+      end
+
+      @st.shutdown
+
+      for name in Storage.rotate_entries("#{@name}.jlog")
+        name =~ /\.jlog.*$/ or raise 'mismatch'
+        FileUtils.cp(name, other_name + $&, :preserve => true)
+      end
+
+      assert_raise(Storage::PanicError) {
+        Storage.recover(other_name)
+      }
+    end
+
     def test_auto_recovery
       write_data
       @st.rotate_journal_log(true)
@@ -485,7 +511,7 @@ module Higgs::Test
       assert(FileUtils.cmp("#{@name}.jlog", "#{other_name}.jlog"), 'JOURNAL LOG should be same.')
     end
 
-    def test_lost_journal_log_error
+    def test_recovery_PanicError_lost_journal_log_error
       write_data
       @st.rotate_journal_log(true)
 
@@ -525,6 +551,50 @@ module Higgs::Test
       assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'DATA should be same.')
       assert(Index.new.load("#{@name}.idx").to_h ==
              Index.new.load("#{other_name}.idx").to_h, 'INDEX should be same.')
+    end
+
+    def test_apply_journal_log_PanicError_unexpected_storage_id
+      write_data
+      @st.rotate_journal_log(true)
+      @st.shutdown
+
+      other_name = File.join(@test_dir, 'bar')
+      st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
+      begin
+        for path in Storage.rotate_entries("#{@name}.jlog")
+          assert_raise(Storage::PanicError) {
+            st2.apply_journal_log(path)
+          }
+        end
+      ensure
+        st2.shutdown
+      end
+    end
+
+    def test_apply_journal_log_PanicError_lost_journal_log
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
+      write_data
+      write_data
+      write_data
+      @st.rotate_journal_log(true)
+      @st.shutdown
+
+      st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
+      first = true
+      begin
+        entries = Storage.rotate_entries("#{@name}.jlog")
+        entries.shift           # skip first journal log
+        for path in entries
+          assert_raise(Storage::PanicError) {
+            st2.apply_journal_log(path)
+          }
+        end
+      ensure
+        st2.shutdown
+      end
     end
 
     def test_apply_journal_log_from_online_backup

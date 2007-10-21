@@ -497,7 +497,7 @@ module Higgs
       end
       unless (commit_log.empty?) then
         @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
-        @jlog.write([ @index.change_number, commit_log ])
+        @jlog.write([ @index.change_number, commit_log, @index.storage_id ])
       end
       rot_jlog_name = "#{@jlog_name}.#{@index.change_number}"
 
@@ -709,7 +709,7 @@ module Higgs
           end
 
           @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
-          @jlog.write([ @index.change_number, commit_log ])
+          @jlog.write([ @index.change_number, commit_log, @index.storage_id ])
 
           for cmd in commit_log
             case (cmd[:ope])
@@ -758,7 +758,14 @@ module Higgs
     end
 
     def self.apply_journal(w_tar, index, log)
-      change_number, commit_log = log
+      change_number, commit_log, storage_id = log
+
+      if (storage_id) then # check for backward compatibility
+        if (storage_id != index.storage_id) then
+          raise PanicError, "unexpected storage id: expected <#{index.storage_id}> but was <#{storage_id}>"
+        end
+      end
+
       if (change_number - 1 < index.change_number) then
         # skip old jounal log
       elsif (change_number - 1 > index.change_number) then
@@ -807,6 +814,7 @@ module Higgs
           end
         end
       end
+
       nil
     end
 
@@ -865,12 +873,19 @@ module Higgs
         apply_completed = false
         begin
           JournalLogger.each_log(path) do |log|
-            change_number = log[0]
+            change_number, commit_log, storage_id = log
+
+            if (storage_id) then # check for backward compatibility
+              if (storage_id != @index.storage_id) then
+                raise PanicError, "unexpected storage id: expected <#{@index.storage_id}> but was <#{storage_id}>"
+              end
+            end
+
             if (change_number - 1 < @index.change_number) then
               # skip old jounal log
             elsif (change_number - 1 > @index.change_number) then
-              raise PanicError, "lost journal log (cnum: #{index.change_number + 1})"
-            else # if (change_number - 1 == index.change_number) then
+              raise PanicError, "lost journal log (cnum: #{@index.change_number + 1})"
+            else # if (change_number - 1 == @index.change_number) then
               @logger.debug("write journal log: #{change_number}") if @logger.debug?
               @jlog.write(log)
 

@@ -1,5 +1,8 @@
 2007-10-21  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb (Higgs::Storage class): storage id
+	consistency check on applying journal log.
+
 	* lib/higgs/index.rb (Higgs::Index class),
 	lib/higgs/storage.rb (Higgs::Storage class): storage id.
 
