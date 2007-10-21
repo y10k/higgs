@@ -173,9 +173,6 @@ module Higgs
       options
     end
 
-    MAJOR_VERSION = 0
-    MINOR_VERSION = 0
-
     # <tt>name</tt> is storage name.
     # see Higgs::Storage::InitOptions for <tt>options</tt>.
     #
@@ -262,42 +259,6 @@ module Higgs
           @logger.info("journal log sync mode: #{@jlog_sync}")
           @logger.info("open journal log for write: #{@jlog_name}")
           @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_hash_type)
-        end
-
-        if (@index.key? '.higgs') then
-          value = fetch('.higgs') or raise PanicError, "not found storage information (name: #{@name})"
-          storage_information = YAML.load(value)
-          @storage_id = storage_information['id'] or raise PanicError, "not found storage-id (name: #{@name})"
-        else
-          if (@read_only) then
-            raise NotWritableError, 'failed to write to read only storage'
-          end
-
-          created_time = Time.now
-
-          require 'digest/md5'
-          hash = Digest::MD5.new
-          hash.update(created_time.to_s)
-          hash.update(String(created_time.usec))
-          hash.update(String(rand(0)))
-          hash.update(String($$))
-          hash.update(CVS_ID)
-          hash.update(@name)
-          hash.update('foobar')
-          @storage_id = hash.hexdigest
-
-          storage_information = {
-            'version' => {
-              'major' => MAJOR_VERSION,
-              'minor' => MINOR_VERSION
-            },
-            'cvs_id' => CVS_ID,
-            'created_time' => created_time,
-            'id' => @storage_id
-          }
-
-          value = storage_information.to_yaml
-          write_and_commit([ [ :write, '.higgs', value ] ], created_time)
         end
 
         init_completed = true
@@ -1110,7 +1071,6 @@ module Higgs
     def each_key
       check_panic
       @index.each_key do |key|
-        next if (key == '.higgs')
         yield(key)
       end
       self
