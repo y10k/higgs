@@ -115,6 +115,14 @@ module Higgs
       }
       r
     end
+
+    def exclusive
+      r = nil
+      @rw_lock.write_lock.synchronize{
+        r = yield
+      }
+      r
+    end
   end
 
   class FineGrainLockManager < LockManager
@@ -123,6 +131,7 @@ module Higgs
 
     def initialize(*args)
       super
+      @tx_lock = ReadWriteLock.new
       @cache = SharedWorkCache.new{|key| ReadWriteLock.new }
     end
 
@@ -171,13 +180,26 @@ module Higgs
       else
         lock_handler = ReadWriteLockHandler.new(self, @cache)
       end
-      begin
-        r = yield(lock_handler)
-      ensure
-        for lock in lock_handler.lock_list
-          lock.unlock
+
+      r = nil
+      @tx_lock.read_lock.synchronize{
+        begin
+          r = yield(lock_handler)
+        ensure
+          for lock in lock_handler.lock_list
+            lock.unlock
+          end
         end
-      end
+      }
+
+      r
+    end
+
+    def exclusive
+      r = nil
+      @tx_lock.write_lock.synchronize{
+        r = yield
+      }
       r
     end
   end

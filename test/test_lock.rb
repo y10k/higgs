@@ -118,6 +118,93 @@ module Higgs::Test
       end
       assert_equal(THREAD_COUNT * WORK_COUNT, count)
     end
+
+    def test_exclusive_single_thread
+      v = "foo"
+      WORK_COUNT.times do
+        @lock_manager.exclusive{
+          assert_equal("foo", v)
+        }
+      end
+    end
+
+    def test_exclusive_multithread
+      count = 0
+      th_grp = ThreadGroup.new
+      barrier = Barrier.new(THREAD_COUNT + 1)
+
+      THREAD_COUNT.times do
+        th_grp.add Thread.new{
+          barrier.wait
+          WORK_COUNT.times do
+            @lock_manager.exclusive{
+              count += 1
+            }
+          end
+        }
+      end
+
+      barrier.wait
+      for t in th_grp.list
+        t.join
+      end
+      assert_equal(THREAD_COUNT * WORK_COUNT, count)
+    end
+
+    def test_read_write_exclusive_multithread
+      v = 'foo'
+      count = 0
+      th_grp = ThreadGroup.new
+      barrier = Barrier.new(THREAD_COUNT * 3 + 1)
+
+      THREAD_COUNT.times{|i|
+        th_grp.add Thread.new{
+          barrier.wait
+          WORK_COUNT.times do |j|
+            @lock_manager.transaction(true) {|lock_handler|
+              lock_handler.lock(:foo)
+              assert_equal('foo', v, "read transaction: #{i}.#{j}")
+            }
+          end
+        }
+      }
+
+      THREAD_COUNT.times{|i|
+        th_grp.add Thread.new{
+          barrier.wait
+          WORK_COUNT.times do |j|
+            @lock_manager.transaction{|lock_handler|
+              lock_handler.lock(:foo)
+              assert_equal('foo', v, "write transaction: #{i}.#{j}")
+              v = 'bar'
+              v = 'foo'
+              count += 1
+            }
+          end
+        }
+      }
+
+      THREAD_COUNT.times{|i|
+        th_grp.add Thread.new{
+          barrier.wait
+          WORK_COUNT.times do |j|
+            @lock_manager.exclusive{
+              assert_equal('foo', v, "exclusive: #{i}.#{j}")
+              v = 'baz'
+              v = 'foo'
+              count += 1
+            }
+          end
+        }
+      }
+
+      barrier.wait
+      for t in th_grp.list
+        t.join
+      end
+      assert_equal('foo', v)
+      assert_equal(THREAD_COUNT * WORK_COUNT * 2, count)
+    end
   end
 
   class GiantLockManagerTest < Test::Unit::TestCase
