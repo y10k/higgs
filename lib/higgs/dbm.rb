@@ -61,6 +61,7 @@ module Higgs
 
     # see Higgs::StorageManager.new for <tt>name</tt> and <tt>options</tt>.
     def initialize(name, options={})
+      options = options.dup
       options[:decode] = DECODE
       options[:encode] = ENCODE
       super(name, options)

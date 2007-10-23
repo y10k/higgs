@@ -51,6 +51,7 @@ module Higgs
     def initialize(name, options={})
       @storage = Storage.new(name, options)
       @tman = TransactionManager.new(@storage, options)
+      options = options.dup
       options[:storage] = @storage
       options[:transaction_manager] = @tman
       @services = RemoteServices.new(options)
