@@ -449,7 +449,7 @@ module Higgs::Test
 
       @st.shutdown
 
-      for name in Storage.rotate_entries("#{@name}.jlog")
+      for name in Storage.rotated_entries("#{@name}.jlog")
         name =~ /\.jlog.*$/ or raise 'mismatch'
         FileUtils.cp(name, other_name + $&, :preserve => true)
       end
@@ -476,7 +476,7 @@ module Higgs::Test
 
       @st.shutdown
 
-      for name in Storage.rotate_entries("#{@name}.jlog")
+      for name in Storage.rotated_entries("#{@name}.jlog")
         name =~ /\.jlog.*$/ or raise 'mismatch'
         FileUtils.cp(name, other_name + $&, :preserve => true)
       end
@@ -542,7 +542,7 @@ module Higgs::Test
 
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
       begin
-        for path in Storage.rotate_entries("#{@name}.jlog")
+        for path in Storage.rotated_entries("#{@name}.jlog")
           st2.apply_journal_log(path)
         end
       ensure
@@ -562,7 +562,7 @@ module Higgs::Test
       other_name = File.join(@test_dir, 'bar')
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
       begin
-        for path in Storage.rotate_entries("#{@name}.jlog")
+        for path in Storage.rotated_entries("#{@name}.jlog")
           assert_raise(Storage::PanicError) {
             st2.apply_journal_log(path)
           }
@@ -586,7 +586,7 @@ module Higgs::Test
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
       first = true
       begin
-        entries = Storage.rotate_entries("#{@name}.jlog")
+        entries = Storage.rotated_entries("#{@name}.jlog")
         entries.shift           # skip first journal log
         for path in entries
           assert_raise(Storage::PanicError) {
@@ -607,7 +607,7 @@ module Higgs::Test
       FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
 
       other_name = File.join(@test_dir, 'bar')
-      for name in Storage.rotate_entries("#{@name}.jlog")
+      for name in Storage.rotated_entries("#{@name}.jlog")
         name =~ /\.jlog.*$/ or raise 'mismatch'
         FileUtils.cp(name, other_name + $&, :preserve => true)
         FileUtils.rm(name)
@@ -621,7 +621,7 @@ module Higgs::Test
       other_name = File.join(@test_dir, 'bar')
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
       begin
-        for path in Storage.rotate_entries("#{@name}.jlog")
+        for path in Storage.rotated_entries("#{@name}.jlog")
           st2.apply_journal_log(path)
         end
       ensure

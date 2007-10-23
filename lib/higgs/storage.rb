@@ -465,7 +465,7 @@ module Higgs
       @state_lock.synchronize{ @shutdown }
     end
 
-    def self.rotate_entries(name)
+    def self.rotated_entries(name)
       rotate_list = Dir["#{name}.*"].map{|nm|
         n = Integer(nm[(name.length + 1)..-1])
         [ nm, n ]
@@ -510,7 +510,7 @@ module Higgs
       @logger.info("rename journal log: #{@jlog_name} -> #{rot_jlog_name}")
       File.rename(@jlog_name, rot_jlog_name)
       if (@jlog_rotate_max > 0) then
-        rotate_list = Storage.rotate_entries(@jlog_name)
+        rotate_list = Storage.rotated_entries(@jlog_name)
         while (rotate_list.length > @jlog_rotate_max)
           unlink_jlog_name = rotate_list.shift
           @logger.info("unlink old journal log: #{unlink_jlog_name}")
@@ -829,7 +829,7 @@ module Higgs
           index.load(idx_name) if (File.exist? idx_name)
 
           out << "recovery target: #{name}\n" if (out && verbose_level >= 1)
-          jlog_list = rotate_entries(jlog_name)
+          jlog_list = rotated_entries(jlog_name)
           jlog_list << jlog_name if (File.exist? jlog_name)
           for curr_name in jlog_list
             begin

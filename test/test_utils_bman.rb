@@ -69,43 +69,43 @@ module Higgs::Test
     end
 
     def test_rotate_jlog_0
-      assert_equal(0, Storage.rotate_entries("#{@from}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@from}.jlog").length)
     end
 
     def test_rotate_jlog_1
       @bman.rotate_jlog
-      assert_equal(1, Storage.rotate_entries("#{@from}.jlog").length)
+      assert_equal(1, Storage.rotated_entries("#{@from}.jlog").length)
     end
 
     def test_rotate_jlog_2
       @bman.rotate_jlog
       @bman.rotate_jlog
-      assert_equal(2, Storage.rotate_entries("#{@from}.jlog").length)
+      assert_equal(2, Storage.rotated_entries("#{@from}.jlog").length)
     end
 
     def test_rotate_jlog_10
       10.times do
         @bman.rotate_jlog
       end
-      assert_equal(10, Storage.rotate_entries("#{@from}.jlog").length)
+      assert_equal(10, Storage.rotated_entries("#{@from}.jlog").length)
     end
 
     def test_backup_jlog_0
       @bman.backup_jlog
-      assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def test_backup_jlog_1
       @bman.rotate_jlog
       @bman.backup_jlog
-      assert_equal(1, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(1, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def test_backup_jlog_2
       @bman.rotate_jlog
       @bman.rotate_jlog
       @bman.backup_jlog
-      assert_equal(2, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(2, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def test_backup_jlog_10
@@ -113,7 +113,7 @@ module Higgs::Test
         @bman.rotate_jlog
       end
       @bman.backup_jlog
-      assert_equal(10, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(10, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def test_clean_jlog
@@ -122,16 +122,16 @@ module Higgs::Test
       @bman.rotate_jlog
       @bman.backup_jlog
 
-      assert_equal(3, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(3, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(3, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(3, Storage.rotated_entries("#{@to}.jlog").length)
 
       @bman.clean_jlog_from
-      assert_equal(0, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(3, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(3, Storage.rotated_entries("#{@to}.jlog").length)
 
       @bman.clean_jlog_to
-      assert_equal(0, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def test_clean_jlog_delete_backup
@@ -141,16 +141,16 @@ module Higgs::Test
       @bman.backup_jlog
       @bman.rotate_jlog
 
-      assert_equal(4, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(3, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(4, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(3, Storage.rotated_entries("#{@to}.jlog").length)
 
       @bman.clean_jlog_from
-      assert_equal(1, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(3, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(1, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(3, Storage.rotated_entries("#{@to}.jlog").length)
 
       @bman.clean_jlog_to
-      assert_equal(1, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(1, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def test_clean_jlog_no_backup_no_delete
@@ -158,16 +158,16 @@ module Higgs::Test
       @bman.rotate_jlog
       @bman.rotate_jlog
 
-      assert_equal(3, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(3, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
 
       @bman.clean_jlog_from
-      assert_equal(3, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(3, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
 
       @bman.clean_jlog_to
-      assert_equal(3, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(3, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def update_storage(options)
@@ -224,8 +224,8 @@ module Higgs::Test
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"), 'DATA should be same.')
       assert(Index.new.load("#{@from}.idx").to_h ==
              Index.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
-      assert_equal(0, Storage.rotate_entries("#{@from}.jlog").length)
-      assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@from}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def test_online_backup
@@ -242,7 +242,7 @@ module Higgs::Test
 
       assert((File.file? "#{@to}.tar"))
       assert((File.file? "#{@to}.idx"))
-      assert_equal(0, Storage.rotate_entries("#{@to}.jlog").length)
+      assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
     end
 
     def test_online_backup_with_latest_journal_log

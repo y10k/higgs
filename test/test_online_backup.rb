@@ -143,7 +143,7 @@ module Higgs::Test
         jlog_rotate_service.call(true)
 
         # step 4: backup old journal logs
-        for path in Storage.rotate_entries("#{@backup_name}.jlog")
+        for path in Storage.rotated_entries("#{@backup_name}.jlog")
           FileUtils.cp(path, File.join(@restore_dir, File.basename(path)))
           FileUtils.rm(path)
         end

@@ -244,7 +244,7 @@ module Higgs
         unless (@to) then
           raise 'required to_storage'
         end
-        for path in Storage.rotate_entries("#{@from}.jlog")
+        for path in Storage.rotated_entries("#{@from}.jlog")
           path =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
           ext = $&
           FileUtils.cp(path, "#{@to}#{ext}", :preserve => true, :verbose => @verbose >= 2)
@@ -288,7 +288,7 @@ module Higgs
           raise 'required to_storage'
         end
 
-        for to_jlog in Storage.rotate_entries("#{@to}.jlog")
+        for to_jlog in Storage.rotated_entries("#{@to}.jlog")
           to_jlog =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{to_jlog}"
           ext = $&
           from_jlog = @from + ext
@@ -308,7 +308,7 @@ module Higgs
           raise 'required to_storage'
         end
 
-        for to_jlog in Storage.rotate_entries("#{@to}.jlog")
+        for to_jlog in Storage.rotated_entries("#{@to}.jlog")
           FileUtils.rm(to_jlog, :verbose => @verbose >= 2)
         end
 
@@ -343,7 +343,7 @@ module Higgs
           flock.synchronize{
             FileUtils.cp("#{@to}.idx", "#{@from}.idx", :preserve => true, :verbose => @verbose >= 2)
             FileUtils.cp("#{@to}.tar", "#{@from}.tar", :preserve => true, :verbose => @verbose >= 2)
-            for path in Storage.rotate_entries("#{@to}.jlog")
+            for path in Storage.rotated_entries("#{@to}.jlog")
               path =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
               ext = $&
               FileUtils.cp(path, "#{@from}#{ext}", :preserve => true, :verbose => @verbose >= 2)
