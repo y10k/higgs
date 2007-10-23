@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby
 
-require 'digest/sha2'
+require 'digest'
 require 'fileutils'
 require 'higgs/block'
 require 'test/unit'

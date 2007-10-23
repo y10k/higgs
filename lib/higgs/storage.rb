@@ -8,6 +8,7 @@
 #   :include:LICENSE
 #
 
+require 'digest'
 require 'forwardable'
 require 'higgs/block'
 require 'higgs/cache'
@@ -44,26 +45,17 @@ module Higgs
     PROPERTIES_CKSUM_BITS = 16
 
     DATA_HASH = {}
-    [ [ :SUM16,  proc{|s| s.sum(16).to_s              },  nil            ],
-      [ :MD5,    proc{|s| Digest::MD5.hexdigest(s)    }, 'digest/md5'    ],
-      [ :RMD160, proc{|s| Digest::RMD160.hexdigest(s) }, 'digest/rmd160' ],
-      [ :SHA1,   proc{|s| Digest::SHA1.hexdigest(s)   }, 'digest/sha1'   ],
-      [ :SHA256, proc{|s| Digest::SHA256.hexdigest(s) }, 'digest/sha2'   ],
-      [ :SHA384, proc{|s| Digest::SHA384.hexdigest(s) }, 'digest/sha2'   ],
-      [ :SHA512, proc{|s| Digest::SHA512.hexdigest(s) }, 'digest/sha2'   ]
-    ].each do |hash_symbol, hash_proc, hash_lib|
-      if (hash_lib) then
-        begin
-          require(hash_lib)
-        rescue LoadError
-          next
-        end
-      end
-      DATA_HASH[hash_symbol] = hash_proc
-    end
-
     DATA_HASH_BIN = {}
-    DATA_HASH.each do |hash_symbol, hash_proc|
+
+    [ [ :SUM16,  proc{|s| s.sum(16).to_s              } ],
+      [ :MD5,    proc{|s| Digest::MD5.hexdigest(s)    } ],
+      [ :RMD160, proc{|s| Digest::RMD160.hexdigest(s) } ],
+      [ :SHA1,   proc{|s| Digest::SHA1.hexdigest(s)   } ],
+      [ :SHA256, proc{|s| Digest::SHA256.hexdigest(s) } ],
+      [ :SHA384, proc{|s| Digest::SHA384.hexdigest(s) } ],
+      [ :SHA512, proc{|s| Digest::SHA512.hexdigest(s) } ]
+    ].each do |hash_symbol, hash_proc|
+      DATA_HASH[hash_symbol] = hash_proc
       DATA_HASH_BIN[hash_symbol.to_s] = hash_proc
     end
 
@@ -342,7 +334,6 @@ module Higgs
     end
 
     def create_storage_id
-      require 'digest/md5'
       hash = Digest::MD5.new
       now = Time.now
       hash.update(now.to_s)

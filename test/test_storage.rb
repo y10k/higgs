@@ -1,5 +1,6 @@
 #!/usr/local/bin/ruby
 
+require 'digest'
 require 'fileutils'
 require 'higgs/storage'
 require 'logger'
