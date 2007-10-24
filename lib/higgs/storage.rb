@@ -387,6 +387,9 @@ module Higgs
         }
         @logger.info("last safe point of journal log: #{safe_pos}")
 
+        @logger.info("flush storage.")
+        @w_tar.flush
+
         File.open(@jlog_name, File::WRONLY, 0660) {|f|
           f.binmode
           @logger.info("shrink journal log to erase last broken segment.")
@@ -873,7 +876,7 @@ module Higgs
             end
 
             if (change_number - 1 < @index.change_number) then
-              # skip old jounal log
+              @logger.debug("skip journal log: #{change_number}")
             elsif (change_number - 1 > @index.change_number) then
               raise PanicError, "lost journal log (cnum: #{@index.change_number + 1})"
             else # if (change_number - 1 == @index.change_number) then
@@ -883,6 +886,7 @@ module Higgs
               @logger.debug("apply journal log: #{change_number}") if @logger.debug?
               Storage.apply_journal(@w_tar, @index, log) {|key|
                 @properties_cache.delete(key)
+                yield(key) if block_given?
               }
 
               if (@jlog_rotate_size > 0 && @jlog.size >= @jlog_rotate_size) then
@@ -890,6 +894,9 @@ module Higgs
               end
             end
           end
+
+          @logger.debug("flush storage.")
+          @w_tar.flush
 
           apply_completed = true
         ensure

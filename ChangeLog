@@ -1,3 +1,8 @@
+2007-10-25  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage class): fixed a bug, buffer
+	flush of write I/O handle is not done.
+
 2007-10-24  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/storage.rb (Higgs::Storage class): renamed from
