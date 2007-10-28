@@ -71,10 +71,6 @@ module Higgs
 
     class << self
       def has_eof_mark?(path)
-        unless (File.exist? path) then
-          return true
-        end
-
         File.open(path, 'r') {|f|
           f.binmode
           fsiz = f.stat.size
@@ -98,7 +94,7 @@ module Higgs
       end
 
       def need_for_recovery?(path)
-        ! (has_eof_mark? path)
+        (File.exist? path) && ! (has_eof_mark? path)
       end
 
       def open(path, *args)

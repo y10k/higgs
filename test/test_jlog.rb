@@ -110,7 +110,9 @@ module Higgs::Test
 
     def test_eof_mark_no_file
       assert_equal(false, (File.exist? @path))
-      assert_equal(true, (JournalLogger.has_eof_mark? @path))
+      assert_raise(Errno::ENOENT) {
+        JournalLogger.has_eof_mark? @path
+      }
     end
 
     def test_eof_mark_empty_file
