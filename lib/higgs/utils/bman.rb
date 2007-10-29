@@ -247,10 +247,11 @@ module Higgs
         end
         for path in Storage.rotated_entries("#{@from}.jlog")
           path =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
-          if (JournalLogger.has_eof_mark? path) then
-            ext = $&
-            FileUtils.cp(path, "#{@to}#{ext}", :preserve => true, :verbose => @verbose >= 2)
+          unless (JournalLogger.has_eof_mark? path) then
+            raise "broken journal log: #{path}"
           end
+          ext = $&
+          FileUtils.cp(path, "#{@to}#{ext}", :preserve => true, :verbose => @verbose >= 2)
         end
         @out << log('completed journal logs backup.') if (@verbose >= 1)
         nil
