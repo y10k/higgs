@@ -19,7 +19,12 @@ module Higgs::Test
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
       @name = File.join(@test_dir, 'foo')
-      @st = Storage.new(@name)
+      @logger = proc{|path|
+        logger = Logger.new(path, 1)
+        logger.level = Logger::DEBUG
+        logger
+      }
+      @st = Storage.new(@name, :logger => @logger)
       @tman = TransactionManager.new(@st)
     end
 
