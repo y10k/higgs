@@ -77,7 +77,7 @@ module Higgs
 
     def initialize(cache={}, &work)
       unless (work) then
-        raise 'required work block'
+        raise ArgumentError, 'required work block'
       end
       @work = work
       @lock = Mutex.new

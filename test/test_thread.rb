@@ -221,7 +221,7 @@ module Higgs::Test
     end
 
     def test_no_work_block
-      assert_raise(RuntimeError) { SharedWork.new }
+      assert_raise(ArgumentError) { SharedWork.new }
     end
 
     def test_set_result

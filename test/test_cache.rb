@@ -215,7 +215,7 @@ module Higgs::Test
     CVS_ID = '$Id$'
 
     def test_no_work_block
-      assert_raise(RuntimeError) {
+      assert_raise(ArgumentError) {
         SharedWorkCache.new
       }
     end

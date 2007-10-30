@@ -1,3 +1,9 @@
+2007-10-31  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/thread.rb (Higgs::SharedWork class),
+	lib/higgs/cache.rb (Higgs::SharedWorkCache class): ArgumentError
+	for no block argument.
+
 2007-10-28  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/utils/bman.rb (Higgs::Utils::BackupManager class):
