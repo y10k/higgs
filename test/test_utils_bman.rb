@@ -188,7 +188,7 @@ module Higgs::Test
           write_list << [ ope, key, { 'string_only' => [ true, false ][rand(2)] } ]
         when :custom_properties
           next unless (@from_st.key? key)
-          value = ITEM_CHARS[rand(ITEM_CHARS.size)] * rand(MAX_ITEM_BYTES)
+          value = ITEM_CHARS[rand(ITEM_CHARS.length)] * rand(MAX_ITEM_BYTES)
           write_list << [ ope, key, { 'foo' => value } ]
         when :delete
           next unless (@from_st.key? key)
