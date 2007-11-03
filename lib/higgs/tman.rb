@@ -71,6 +71,7 @@ module Higgs
         @lock_manager = options[:lock_manager] || GiantLockManager.new
         @master_cache = options[:master_cache] || LRUCache.new
         @secondary_cache = options[:secondary_cache] || PseudoSecondaryCache.instance
+        @jlog_apply_dir = options[:jlog_apply_dir] || nil
       end
 
       attr_reader :read_only
@@ -80,6 +81,9 @@ module Higgs
     def initialize(storage, options={})
       @storage = storage
       init_options(options)
+      if (@read_only == :standby && ! @jlog_apply_dir) then
+        raise ArgumentError, "need for `:jlog_apply_dir' parameter in standby mode"
+      end
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
         (id = @storage.unique_data_id(key) and @secondary_cache[id]) or
           (value = @storage.fetch(key) and @secondary_cache[@storage.unique_data_id(key)] = value.freeze)
@@ -119,6 +123,32 @@ module Higgs
 
     def self.current_transaction
       Thread.current[:higgs_current_transaction]
+    end
+
+    def apply_journal_log(not_delete=false)
+      @lock_manager.exclusive{
+        if (@read_only != :standby) then
+          raise "not standby mode: #{@read_only}"
+        end
+        name = File.join(@jlog_apply_dir, File.basename(@storage.name))
+        for jlog_path in Storage.rotated_entries("#{name}.jlog")
+          @storage.apply_journal_log(jlog_path) {|key|
+            @master_cache.delete(key)
+          }
+          File.unlink(jlog_path) unless not_delete
+        end
+      }
+      nil
+    end
+
+    def switch_to_write
+      @lock_manager.exclusive{
+        if (@read_only != :standby) then
+          raise "not standby mode: #{@read_only}"
+        end
+        @read_only = false
+      }
+      nil
     end
   end
 

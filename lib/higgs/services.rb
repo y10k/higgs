@@ -31,6 +31,10 @@ module Higgs
         @service_map[:localhost_check_service_v1] = @storage.method(:localhost_check)
         @service_map[:jlog_rotate_service_v1] = @storage.method(:rotate_journal_log)
       end
+      if (@tman) then
+        @service_map[:jlog_apply_v1] = @tman.method(:apply_journal_log)
+        @service_map[:switch_to_write_v1] = @tman.method(:switch_to_write)
+      end
 
       @service_map.extend(DRb::DRbUndumped)
       @service_map.freeze

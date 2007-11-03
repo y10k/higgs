@@ -34,6 +34,8 @@ module Higgs
   # these methods are delegated to Higgs::TransactionManager.
   # * Higgs::TransactionManager#read_only
   # * Higgs::TransactionManager#transaction
+  # * Higgs::TransactionManager#apply_journal_log
+  # * Higgs::TransactionManager#switch_to_write
   #
   # these methods are delegated to Higgs::RemoteServices.
   # * Higgs::RemoteServices#remote_services_uri
@@ -49,7 +51,9 @@ module Higgs
     # Higgs::TransactionManager::InitOptions and
     # Higgs::RemoteServices.new for <tt>options</tt>.
     def initialize(name, options={})
-      @storage = Storage.new(name, options)
+      read_only = options[:read_only]
+      read_only = false if (read_only == :standby)
+      @storage = Storage.new(name, options.dup.update(:read_only => read_only))
       @tman = TransactionManager.new(@storage, options)
       options = options.dup
       options[:storage] = @storage
@@ -68,6 +72,8 @@ module Higgs
     def_delegator :@storage, :rotate_journal_log
     def_delegator :@tman, :read_only
     def_delegator :@tman, :transaction
+    def_delegator :@tman, :apply_journal_log
+    def_delegator :@tman, :switch_to_write
     def_delegator :@services, :remote_services_uri
 
     def shutdown
@@ -87,3 +93,8 @@ module Higgs
     end
   end
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:
