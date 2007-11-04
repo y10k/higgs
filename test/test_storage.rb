@@ -142,6 +142,15 @@ module Higgs::Test
       }
     end
 
+    def test_write_and_commit_standby_NotWritableError
+      @st.shutdown
+      @st = nil
+      @st = Storage.new(@name, :read_only => :standby, :logger => @logger)
+      assert_raise(Storage::NotWritableError) {
+        @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      }
+    end
+
     def test_write_and_commit_IndexError_not_exist_properties
       assert_raise(IndexError) {
         @st.write_and_commit([ [ :system_properties, 'foo', {} ] ])
@@ -273,6 +282,16 @@ module Higgs::Test
       assert_equal(false, (@st.key? 'bar'))
     end
 
+    def test_key_standby
+      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      @st.shutdown
+      @st = nil
+      @st = Storage.new(@name, :read_only => :standby, :logger => @logger)
+
+      assert_equal(true, (@st.key? 'foo'))
+      assert_equal(false, (@st.key? 'bar'))
+    end
+
     def test_each_key
       @st.each_key do |key|
         flunk('not to reach')
@@ -306,6 +325,22 @@ module Higgs::Test
       @st.shutdown
       @st = nil
       @st = Storage.new(@name, :read_only => true, :logger => @logger)
+
+      expected_keys = %w[ foo bar baz ]
+      @st.each_key do |key|
+        assert(expected_keys.delete(key), "each_key do |#{key}|")
+      end
+      assert(expected_keys.empty?)
+    end
+
+    def test_each_key_standby
+      @st.write_and_commit([ [ :write, 'foo', 'one' ],
+                             [ :write, 'bar', 'two' ],
+                             [ :write, 'baz', 'three' ]
+                           ])
+      @st.shutdown
+      @st = nil
+      @st = Storage.new(@name, :read_only => :standby, :logger => @logger)
 
       expected_keys = %w[ foo bar baz ]
       @st.each_key do |key|
@@ -512,6 +547,56 @@ module Higgs::Test
       assert(FileUtils.cmp("#{@name}.jlog", "#{other_name}.jlog"), 'JOURNAL LOG should be same.')
     end
 
+    def test_auto_recovery_on_standby_mode
+      write_data
+      @st.rotate_journal_log(true)
+
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
+      # write_data(10 * 10 * 256) < jlog_rotate_size(256 * 1024)
+      write_data(10, 10, 256)
+
+      # not closed journal log for other storage.
+      FileUtils.cp("#{@name}.jlog", "#{other_name}.jlog", :preserve => true)
+
+      @st.shutdown
+
+      # auto-recovery for other storage
+      st2 = Storage.new(other_name, :logger => @logger, :read_only => :standby)
+      st2.shutdown
+
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'DATA should be same.')
+      assert(Index.new.load("#{@name}.idx").to_h ==
+             Index.new.load("#{other_name}.idx").to_h, 'INDEX should be same.')
+      assert(FileUtils.cmp("#{@name}.jlog", "#{other_name}.jlog"), 'JOURNAL LOG should be same.')
+    end
+
+    def test_auto_recovery_NotWritableError
+      write_data
+      @st.rotate_journal_log(true)
+
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
+      # write_data(10 * 10 * 256) < jlog_rotate_size(256 * 1024)
+      write_data(10, 10, 256)
+
+      # not closed journal log for other storage.
+      FileUtils.cp("#{@name}.jlog", "#{other_name}.jlog", :preserve => true)
+
+      @st.shutdown
+
+      # auto-recovery for other storage
+      assert_raise(Higgs::Storage::NotWritableError) {
+        st2 = Storage.new(other_name, :logger => @logger, :read_only => true)
+        st2.shutdown
+        flunk('not to reach')
+      }
+    end
+
     def test_recovery_PanicError_lost_journal_log_error
       write_data
       @st.rotate_journal_log(true)
@@ -541,6 +626,29 @@ module Higgs::Test
       @st.shutdown
 
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
+      begin
+        for path in Storage.rotated_entries("#{@name}.jlog")
+          st2.apply_journal_log(path)
+        end
+      ensure
+        st2.shutdown
+      end
+
+      assert(FileUtils.cmp("#{@name}.tar", "#{other_name}.tar"), 'DATA should be same.')
+      assert(Index.new.load("#{@name}.idx").to_h ==
+             Index.new.load("#{other_name}.idx").to_h, 'INDEX should be same.')
+    end
+
+    def test_apply_journal_log_on_standby_mode
+      other_name = File.join(@test_dir, 'bar')
+      FileUtils.cp("#{@name}.tar", "#{other_name}.tar", :preserve => true)
+      FileUtils.cp("#{@name}.idx", "#{other_name}.idx", :preserve => true)
+
+      write_data
+      @st.rotate_journal_log(true)
+      @st.shutdown
+
+      st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8, :read_only => :standby)
       begin
         for path in Storage.rotated_entries("#{@name}.jlog")
           st2.apply_journal_log(path)
