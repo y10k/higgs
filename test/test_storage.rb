@@ -460,7 +460,7 @@ module Higgs::Test
 
     for name in instance_methods(true)
       case (name)
-      when /read_only/, /standby/
+      when /^test_.*read_only/, /^test_.*standby/
         undef_method name
       end
     end
