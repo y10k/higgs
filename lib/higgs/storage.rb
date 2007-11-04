@@ -889,7 +889,7 @@ module Higgs
             end
 
             if (change_number - 1 < @index.change_number) then
-              @logger.debug("skip journal log: #{change_number}")
+              @logger.debug("skip journal log: #{change_number}") if @logger.debug?
             elsif (change_number - 1 > @index.change_number) then
               raise PanicError, "lost journal log (cnum: #{@index.change_number + 1})"
             else # if (change_number - 1 == @index.change_number) then
