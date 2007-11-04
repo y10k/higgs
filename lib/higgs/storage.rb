@@ -246,10 +246,12 @@ module Higgs
           @index.load(@idx_name)
           unless (@index.storage_id) then # for migration to new index format of version 0.2 from old version
             @index.storage_id = create_storage_id
+            @logger.info("save storage id: #{@index.storage_id}")
             @index.save(@idx_name)
           end
         else
           @index.storage_id = create_storage_id
+          @logger.info("save storage id: #{@index.storage_id}")
           @index.save(@idx_name)
         end
         if (JournalLogger.need_for_recovery? @jlog_name) then
