@@ -42,7 +42,6 @@ module Higgs::Test
     def new_storage
       Storage.new(@name, :logger => @logger)
     end
-    private :new_storage
 
     def test_raw_write_and_commit
       write_list = [
@@ -432,6 +431,39 @@ module Higgs::Test
       assert_raise(Storage::ShutdownException) { @st.write_and_commit([]) }
       assert_raise(Storage::ShutdownException) { @st.verify }
     end
+
+    def test_switch_to_write_RuntimeError_not_standby_mode
+      assert_equal(false, @st.read_only)
+      assert_raise(RuntimeError) {
+        @st.switch_to_write
+      }
+    end
+
+    def test_switch_to_write_RuntimeError_not_standby_mode_on_read_only_mode
+      @st.shutdown
+      @st = nil
+      @st = Storage.new(@name, :read_only => true, :logger => @logger)
+
+      assert_equal(true, @st.read_only)
+      assert_raise(RuntimeError) {
+        @st.switch_to_write
+      }
+    end
+  end
+
+  class StorageSwitchToWriteTest < StorageTest
+    def new_storage
+      st = Storage.new(@name, :logger => @logger, :read_only => :standby)
+      st.switch_to_write
+      st
+    end
+
+    for name in instance_methods(true)
+      case (name)
+      when /read_only/, /standby/
+        undef_method name
+      end
+    end
   end
 
   class StorageRecoveryTest < Test::Unit::TestCase
@@ -445,7 +477,6 @@ module Higgs::Test
                   :jlog_rotate_max => 0, # unlimited rotation
                   :logger => @logger)
     end
-    private :new_storage
 
     def write_data(loop_count=100, data_count=10, data_max_size=1024*5)
       loop_count.times do
