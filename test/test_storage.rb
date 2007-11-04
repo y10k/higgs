@@ -634,7 +634,7 @@ module Higgs::Test
     end
   end
 
-  class ReadOnlyStorageFirstOpenTest < Test::Unit::TestCase
+  class ReadOnlyStorageFirstOpenErrorTest < Test::Unit::TestCase
     include Higgs
 
     # for ident(1)
@@ -656,7 +656,7 @@ module Higgs::Test
       FileUtils.rm_rf(@test_dir) unless $DEBUG
     end
 
-    def test_read_only_first_open
+    def test_read_only_first_open_error
       assert_raise(Errno::ENOENT) {
         Storage.new(@name, :read_only => true, :logger => @logger)
       }
