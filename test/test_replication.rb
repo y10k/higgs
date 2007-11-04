@@ -76,7 +76,7 @@ module Higgs::Test
         assert(tx.empty?)
       }
 
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       @dst.apply_journal_log
 
@@ -95,7 +95,7 @@ module Higgs::Test
         assert(! (tx.property? :foo, 'bar'))
       }
 
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       @dst.apply_journal_log
 
@@ -114,7 +114,7 @@ module Higgs::Test
         assert_equal('Banana', tx.property(:foo, 'bar'))
       }
 
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       @dst.apply_journal_log
 
@@ -133,7 +133,7 @@ module Higgs::Test
         assert_equal('Orange', tx.property(:foo, 'bar'))
       }
 
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       @dst.apply_journal_log
 
@@ -152,7 +152,7 @@ module Higgs::Test
         assert_equal("Hello world.\n", tx[:foo])
       }
 
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       @dst.apply_journal_log
 
@@ -173,7 +173,7 @@ module Higgs::Test
         assert_equal('Apple', tx[:foo])
       }
 
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       @dst.apply_journal_log
 
@@ -269,7 +269,7 @@ module Higgs::Test
       options[:spin_lock] = false
       t.join
 
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       @dst.apply_journal_log
 
@@ -296,7 +296,7 @@ module Higgs::Test
 
       # replication enabled
       test_update_source_storage
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       @dst.apply_journal_log
 
@@ -316,7 +316,7 @@ module Higgs::Test
 
       # replication disabled
       test_update_source_storage
-      rotate_journal_log
+      src_rotate_journal_log
       move_jlog
       assert_raise(RuntimeError) {
         @dst.apply_journal_log
@@ -365,7 +365,7 @@ module Higgs::Test
       @dst_st.shutdown if (@dst_st && ! @dst_st.shutdown?)
     end
 
-    def rotate_journal_log
+    def src_rotate_journal_log
       @src_st.rotate_journal_log
     end
   end
@@ -401,7 +401,7 @@ module Higgs::Test
       @dst.shutdown if (@dst && ! @dst.shutdown?)
     end
 
-    def rotate_journal_log
+    def src_rotate_journal_log
       @src.rotate_journal_log
     end
   end
@@ -437,7 +437,7 @@ module Higgs::Test
       @dst.shutdown if (@dst && ! @dst.shutdown?)
     end
 
-    def rotate_journal_log
+    def src_rotate_journal_log
       @src.rotate_journal_log
     end
   end
