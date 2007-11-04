@@ -147,6 +147,7 @@ module Higgs
           raise "not standby mode: #{@read_only}"
         end
         @read_only = false
+        @storage.switch_to_write
       }
       nil
     end

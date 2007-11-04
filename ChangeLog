@@ -1,5 +1,7 @@
 2007-11-04  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/storage.rb (Higgs::Storage class): standby mode check.
+
 	* lib/higgs/tman.rb (Higgs::TransactionManager class),
 	lib/higgs/services.rb (Higgs::RemoteServices class),
 	lib/higgs/sman.rb (Higgs::StorageManager class):

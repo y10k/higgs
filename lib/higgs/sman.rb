@@ -51,9 +51,7 @@ module Higgs
     # Higgs::TransactionManager::InitOptions and
     # Higgs::RemoteServices.new for <tt>options</tt>.
     def initialize(name, options={})
-      read_only = options[:read_only]
-      read_only = false if (read_only == :standby)
-      @storage = Storage.new(name, options.dup.update(:read_only => read_only))
+      @storage = Storage.new(name, options)
       @tman = TransactionManager.new(@storage, options)
       options = options.dup
       options[:storage] = @storage

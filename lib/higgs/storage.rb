@@ -192,9 +192,10 @@ module Higgs
       init_options(options)
 
       init_completed = false
+      read_only = @read_only && @read_only != :standby
       begin
-        @flock = FileLock.new(@lock_name, @read_only)
-        if (@read_only) then
+        @flock = FileLock.new(@lock_name, read_only)
+        if (read_only) then
           @flock.read_lock
         else
           @flock.write_lock
@@ -202,7 +203,7 @@ module Higgs
 
         @logger = @Logger.call(@log_name)
         @logger.info("storage open start...")
-        if (@read_only) then
+        if (read_only) then
           @logger.info("get file lock for read")
         else
           @logger.info("get file lock for write")
@@ -219,7 +220,7 @@ module Higgs
           value = read_record_body(key, :p) and decode_properties(key, value)
         }
 
-        unless (@read_only) then
+        unless (read_only) then
           begin
             w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
             @logger.info("create and open I/O handle for write: #{@tar_name}")
@@ -254,7 +255,7 @@ module Higgs
         if (JournalLogger.need_for_recovery? @jlog_name) then
           recover
         end
-        unless (@read_only) then
+        unless (read_only) then
           @logger.info("journal log sync mode: #{@jlog_sync}")
           @logger.info("open journal log for write: #{@jlog_name}")
           @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_hash_type)
@@ -283,7 +284,7 @@ module Higgs
             end
           end
 
-          unless (@read_only) then
+          unless (read_only) then
             if (@jlog) then
               begin
                 @jlog.close(false)
@@ -303,7 +304,7 @@ module Higgs
             }
           end
 
-          unless (@read_only) then
+          unless (read_only) then
             if (@w_tar) then
               begin
                 @w_tar.close(false)
@@ -348,26 +349,46 @@ module Higgs
     private :create_storage_id
 
     def check_panic
+      if (@shutdown) then
+        raise ShutdownException, 'storage shutdown'
+      end
+      if (@panic) then
+        raise PanicError, 'broken storage'
+      end
+    end
+    private :check_panic
+
+    def check_read
       @state_lock.synchronize{
-        if (@shutdown) then
-          raise ShutdownException, 'storage shutdown'
-        end
-        if (@panic) then
-          raise PanicError, 'broken storage'
+        check_panic
+      }
+    end
+    private :check_read
+
+    def check_standby
+      @state_lock.synchronize{
+        check_panic
+        if (@read_only && @read_only != :standby) then
+          raise NotWritableError, 'failed to write to read only storage'
         end
       }
     end
-    private :check_panic
+    private :check_standby
+
+    def check_read_write
+      @state_lock.synchronize{
+        check_panic
+        if (@read_only) then
+          raise NotWritableError, 'failed to write to read only storage'
+        end
+      }
+    end
+    private :check_read_write
 
     def recover
       @logger.warn('incompleted storage and recover from journal log...')
 
-      check_panic
-      if (@read_only) then
-        @logger.warn('read only storage is not recoverable.')
-        raise NotWritableError, 'need for recovery'
-      end
-
+      check_standby
       recover_completed = false
       begin
         safe_pos = 0
@@ -417,6 +438,8 @@ module Higgs
     def shutdown
       @commit_lock.synchronize{
         @state_lock.synchronize{
+          read_only = @read_only && @read_only != :standby
+
           if (@shutdown) then
             raise ShutdownException, 'storage shutdown'
           end
@@ -428,7 +451,7 @@ module Higgs
             @jlog_rotate_service.stop_service
           end
 
-          unless (@read_only) then
+          unless (read_only) then
             if (@panic) then
               @logger.warn("abort journal log: #{@jlog_name}")
               @jlog.close(false)
@@ -438,7 +461,7 @@ module Higgs
             end
           end
 
-          if (! @panic && ! @read_only) then
+          if (! @panic && ! read_only) then
             @logger.info("save index: #{@idx_name}")
             @index.save(@idx_name)
           end
@@ -447,7 +470,7 @@ module Higgs
             @logger.info("close I/O handle for read: #{@tar_name}")
             r_tar.close
           }
-          unless (@read_only) then
+          unless (read_only) then
             @logger.info("sync write data: #{@tar_name}")
             @w_tar.fsync
             @logger.info("close I/O handle for write: #{@tar_name}")
@@ -529,11 +552,7 @@ module Higgs
 
     def rotate_journal_log(save_index=true)
       @commit_lock.synchronize{
-        check_panic
-        if (@read_only) then
-          raise NotWritableError, 'failed to write to read only storage'
-        end
-
+        check_read_write
         rotate_completed = false
         begin
           internal_rotate_journal_log(save_index)
@@ -554,11 +573,7 @@ module Higgs
       @commit_lock.synchronize{
         @logger.debug("start raw_write_and_commit.") if @logger.debug?
 
-        check_panic
-        if (@read_only) then
-          raise NotWritableError, 'failed to write to read only storage'
-        end
-
+        check_read_write
         commit_log = []
         commit_completed = false
         eoa = @index.eoa
@@ -859,11 +874,7 @@ module Higgs
       @commit_lock.synchronize{
         @logger.info("start to apply journal log.")
 
-        check_panic
-        if (@read_only) then
-          raise NotWritableError, 'failed to write to read only storage'
-        end
-
+        check_standby
         apply_completed = false
         begin
           JournalLogger.each_log(path) do |log|
@@ -913,11 +924,18 @@ module Higgs
       nil
     end
 
+    def switch_to_write
+      @state_lock.synchronize{
+        if (@read_only != :standby) then
+          raise "not standby mode: #{@read_only}"
+        end
+        @read_only = false
+      }
+      nil
+    end
+
     def write_and_commit(write_list, commit_time=Time.now)
-      check_panic
-      if (@read_only) then
-        raise NotWritableError, 'failed to write to read only storage'
-      end
+      check_read_write
 
       raw_write_list = []
       deleted_entries = {}
@@ -1050,12 +1068,12 @@ module Higgs
     private :internal_fetch_properties
 
     def fetch_properties(key)
-      check_panic
+      check_read
       internal_fetch_properties(key)
     end
 
     def fetch(key)
-      check_panic
+      check_read
       value = read_record_body(key, :d) or return
       unless (properties = internal_fetch_properties(key)) then
         @state_lock.synchronize{ @panic = true }
@@ -1099,12 +1117,12 @@ module Higgs
     end
 
     def key?(key)
-      check_panic
+      check_read
       @index.key? key
     end
 
     def each_key
-      check_panic
+      check_read
       @index.each_key do |key|
         yield(key)
       end
@@ -1121,7 +1139,7 @@ module Higgs
     ]
 
     def verify(out=nil, verbose_level=1)
-      check_panic
+      check_read
 
       keys = @index.keys
       keys.sort!{|a, b|

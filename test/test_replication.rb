@@ -293,6 +293,9 @@ module Higgs::Test
         assert_raise(NoMethodError) { tx.commit }
         assert_raise(NoMethodError) { tx.rollback }
       }
+      assert_raise(Higgs::Storage::NotWritableError) {
+        dst_rotate_journal_log
+      }
 
       # replication enabled
       test_update_source_storage
@@ -303,6 +306,16 @@ module Higgs::Test
       # standby -> read-write
       @dst.switch_to_write
       assert_equal(false, @dst.read_only)
+
+      # replication disabled
+      test_update_source_storage
+      src_rotate_journal_log
+      move_jlog
+      assert_raise(RuntimeError) {
+        @dst.apply_journal_log
+      }
+
+      # check read-write
       @dst.transaction{|tx|
         tx[:foo] = "Hello world.\n"
         tx.set_property(:foo, 'baz', 'orange')
@@ -313,14 +326,7 @@ module Higgs::Test
         tx.commit
         tx.rollback
       }
-
-      # replication disabled
-      test_update_source_storage
-      src_rotate_journal_log
-      move_jlog
-      assert_raise(RuntimeError) {
-        @dst.apply_journal_log
-      }
+      dst_rotate_journal_log
     end
 
     def test_switch_to_write_RuntimeError_not_standby_mode
@@ -348,7 +354,8 @@ module Higgs::Test
       FileUtils.cp("#{@src_name}.idx", "#{@dst_name}.idx", :preserve => true)
 
       @dst_st = Storage.new(@dst_name,
-                            :logger => @logger)
+                            :logger => @logger,
+                            :read_only => :standby)
 
       for jlog_path in Storage.rotated_entries("#{@src_name}.jlog")
         @dst_st.apply_journal_log(jlog_path)
@@ -367,6 +374,10 @@ module Higgs::Test
 
     def src_rotate_journal_log
       @src_st.rotate_journal_log
+    end
+
+    def dst_rotate_journal_log
+      @dst_st.rotate_journal_log
     end
   end
 
@@ -404,6 +415,10 @@ module Higgs::Test
     def src_rotate_journal_log
       @src.rotate_journal_log
     end
+
+    def dst_rotate_journal_log
+      @dst.rotate_journal_log
+    end
   end
 
   class DBMReplicationTest < Test::Unit::TestCase
@@ -439,6 +454,10 @@ module Higgs::Test
 
     def src_rotate_journal_log
       @src.rotate_journal_log
+    end
+
+    def dst_rotate_journal_log
+      @dst.rotate_journal_log
     end
   end
 end
