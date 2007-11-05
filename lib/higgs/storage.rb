@@ -64,6 +64,10 @@ module Higgs
       # these options are defined.
       # [<tt>:number_of_read_io</tt>] number of read I/O handle of pool. default is <tt>2</tt>.
       # [<tt>:read_only</tt>] if <tt>true</tt> then storage is read-only. default is <tt>false</tt>.
+      #                       <tt>:standby</tt> is standby mode. in standby mode, storage is read-only
+      #                       and Higgs::Storage#apply_journal_log is callable.
+      #                       if Higgs::Storage#switch_to_write is called in standby mode then
+      #                       state of storage changes from standby mode to read-write mode.
       # [<tt>:properties_cache</tt>] read-cache for properties. default is a new instance of Higgs::LRUCache.
       # [<tt>:data_hash_type</tt>] hash type (<tt>:SUM16</tt>, <tt>:MD5</tt>, <tt>:RMD160</tt>,
       #                            <tt>:SHA1</tt>, <tt>:SHA256</tt>, <tt>:SHA384</tt> or <tt>:SHA512</tt>)

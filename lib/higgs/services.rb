@@ -21,6 +21,13 @@ module Higgs
     # [<tt>:storage</tt>] an instance of Higgs::Storage as remote service provider.
     # [<tt>:transaction_manager</tt>] an instance of Higgs::TransactionManager
     #                                 as remote service provider.
+    #
+    # these methods are exported as remote services.
+    # * Higgs::Storage#localhost_check_service
+    # * Higgs::Storage#rotate_journal_log
+    # * Higgs::TransactionManager#apply_journal_log
+    # * Higgs::TransactionManager#switch_to_write
+    #
     def initialize(options)
       @remote_services_uri = options[:remote_services_uri]
       @storage = options[:storage]

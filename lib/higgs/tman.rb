@@ -46,6 +46,10 @@ module Higgs
       # these options are defined.
       # [<tt>:read_only</tt>] if <tt>true</tt> then transaction is always read-only.
       #                       default is <tt>false</tt>.
+      #                       <tt>:standby</tt> is standby mode. in standby mode, transaction is
+      #                       read-only and Higgs::TransactionManager#apply_journal_log is callable.
+      #                       if Higgs::TransactionManager#switch_to_write is called in standby mode
+      #                       then state of manager changes from standby mode to read-write mode.
       # [<tt>:decode</tt>] procedure to decode data on read. if <tt>:string_only</tt>
       #                    property at an entry is <tt>true</tt> then <tt>decode</tt>
       #                    is not used to read the entry. default is <tt>proc{|r| r }</tt>.
@@ -59,6 +63,9 @@ module Higgs
       # [<tt>:secondary_cache</tt>] secondary read-cache for encoded string data.
       #                             key of cache is always unique string.
       #                             default is no effect.
+      # [<tt>:jlog_apply_dir</tt>] journal logs under the directory of this parameter is
+      #                            applied to storage on call of
+      #                            Higgs::TransactionManager#apply_journal_log
       def init_options(options)
         if (options.key? :read_only) then
           @read_only = options[:read_only]
@@ -78,6 +85,7 @@ module Higgs
     end
     include InitOptions
 
+    # see Higgs::TransactionManager::InitOptions for <tt>options</tt>.
     def initialize(storage, options={})
       @storage = storage
       init_options(options)
