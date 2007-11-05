@@ -23,7 +23,7 @@ module Higgs
     #                                 as remote service provider.
     #
     # these methods are exported as remote services.
-    # * Higgs::Storage#localhost_check_service
+    # * Higgs::Storage#localhost_check
     # * Higgs::Storage#rotate_journal_log
     # * Higgs::TransactionManager#apply_journal_log
     # * Higgs::TransactionManager#switch_to_write
@@ -39,8 +39,8 @@ module Higgs
         @service_map[:jlog_rotate_service_v1] = @storage.method(:rotate_journal_log)
       end
       if (@tman) then
-        @service_map[:jlog_apply_v1] = @tman.method(:apply_journal_log)
-        @service_map[:switch_to_write_v1] = @tman.method(:switch_to_write)
+        @service_map[:jlog_apply_service_v1] = @tman.method(:apply_journal_log)
+        @service_map[:switch_to_write_service_v1] = @tman.method(:switch_to_write)
       end
 
       @service_map.extend(DRb::DRbUndumped)
