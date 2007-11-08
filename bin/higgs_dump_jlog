@@ -25,16 +25,32 @@ opts.on_tail('-h', '--help') {
 }
 opts.parse!
 
-Higgs::JournalLogger.scan_log(ARGF) {|log|
-  case (output_format)
-  when :pretty
-    pp log
-  when :yaml
-    puts log.to_yaml
+def scan_args
+  if (ARGV.empty?) then
+    yield(STDIN)
   else
-    raise "unknown output format: #{output_format}"
+    for filename in ARGV
+      File.open(filename, 'r') {|r|
+        r.binmode
+        yield(r)
+      }
+    end
   end
-}
+  nil
+end
+
+scan_args do |r|
+  Higgs::JournalLogger.scan_log(r) do |log|
+    case (output_format)
+    when :pretty
+      pp log
+    when :yaml
+      puts log.to_yaml
+    else
+      raise "unknown output format: #{output_format}"
+    end
+  end
+end
 
 # Local Variables:
 # mode: Ruby
