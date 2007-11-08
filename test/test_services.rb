@@ -77,6 +77,11 @@ module Higgs::Test
       @localhost_check_tmpfile = File.join(STORAGE_DIR, ".localhost_check.#{RemoteServicesTest.pid}")
     end
 
+    def test_alive_service_v1
+      alive_service = @services[:alive_service_v1] or flunk
+      assert_equal(true, alive_service.call)
+    end
+
     def test_localhost_check_service_v1
       Dir.chdir('/') {
 	localhost_check_service = @services[:localhost_check_service_v1] or flunk

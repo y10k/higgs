@@ -418,7 +418,11 @@ module Higgs::Test
     end
 
     def test_shutdown
+      assert_equal(false, @st.shutdown?)
+      assert_equal(true, @st.alive?)
       @st.shutdown
+      assert_equal(true, @st.shutdown?)
+      assert_equal(false, @st.alive?)
       assert_raise(Storage::ShutdownException) { @st.shutdown }
       assert_raise(Storage::ShutdownException) { @st.fetch('foo') }
       assert_raise(Storage::ShutdownException) { @st.fetch_properties('foo') }
@@ -454,7 +458,9 @@ module Higgs::Test
   class StorageSwitchToWriteTest < StorageTest
     def new_storage
       st = Storage.new(@name, :logger => @logger, :read_only => :standby)
+      assert_equal(:standby, st.read_only)
       st.switch_to_write
+      assert_equal(false, st.read_only)
       st
     end
 
@@ -700,15 +706,23 @@ module Higgs::Test
 
       other_name = File.join(@test_dir, 'bar')
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
+      assert_equal(true, st2.alive?, 'alive storage')
+      assert_equal(false, st2.shutdown?)
+
       begin
         for path in Storage.rotated_entries("#{@name}.jlog")
           assert_raise(Storage::PanicError) {
             st2.apply_journal_log(path)
           }
         end
+        assert_equal(false, st2.alive?, 'panic storage')
+        assert_equal(false, st2.shutdown?)
       ensure
         st2.shutdown
       end
+
+      assert_equal(false, st2.alive?, 'shutdown storage')
+      assert_equal(true, st2.shutdown?)
     end
 
     def test_apply_journal_log_PanicError_lost_journal_log
@@ -723,7 +737,9 @@ module Higgs::Test
       @st.shutdown
 
       st2 = Storage.new(other_name, :jlog_rotate_size => 1024 * 8)
-      first = true
+      assert_equal(true, st2.alive?, 'alive storage')
+      assert_equal(false, st2.shutdown?)
+
       begin
         entries = Storage.rotated_entries("#{@name}.jlog")
         entries.shift           # skip first journal log
@@ -732,9 +748,14 @@ module Higgs::Test
             st2.apply_journal_log(path)
           }
         end
+        assert_equal(false, st2.alive?, 'panic storage')
+        assert_equal(false, st2.shutdown?)
       ensure
         st2.shutdown
       end
+
+      assert_equal(false, st2.alive?, 'shutdown storage')
+      assert_equal(true, st2.shutdown?)
     end
 
     def test_apply_journal_log_from_online_backup

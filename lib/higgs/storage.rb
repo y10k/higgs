@@ -497,6 +497,12 @@ module Higgs
       @state_lock.synchronize{ @shutdown }
     end
 
+    def alive?
+      @state_lock.synchronize{
+        ! @shutdown && ! @panic
+      }
+    end
+
     def self.rotated_entries(name)
       rotate_list = Dir["#{name}.*"].map{|nm|
         n = Integer(nm[(name.length + 1)..-1])

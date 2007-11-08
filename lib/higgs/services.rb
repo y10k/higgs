@@ -23,6 +23,7 @@ module Higgs
     #                                 as remote service provider.
     #
     # these methods are exported as remote services.
+    # * Higgs::Storage#alive?
     # * Higgs::Storage#localhost_check
     # * Higgs::Storage#rotate_journal_log
     # * Higgs::TransactionManager#apply_journal_log
@@ -35,6 +36,7 @@ module Higgs
 
       @service_map = {}
       if (@storage) then
+        @service_map[:alive_service_v1] = @storage.method(:alive?)
         @service_map[:localhost_check_service_v1] = @storage.method(:localhost_check)
         @service_map[:jlog_rotate_service_v1] = @storage.method(:rotate_journal_log)
       end
