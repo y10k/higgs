@@ -46,7 +46,14 @@ spec = Gem::Specification.new{|s|
   s.summary = 'pure ruby transactional storage compatible with unix TAR format'
   s.author = 'TOKI Yoshinori'
   s.email = 'toki@freedom.ne.jp'
-  s.executables  = %w[ higgs_backup higgs_dump_index higgs_dump_jlog higgs_verify ]
+  s.executables  = %w[
+    higgs_apply_jlog
+    higgs_backup
+    higgs_dump_index
+    higgs_dump_jlog
+    higgs_ping
+    higgs_verify
+  ]
   s.files = Dir['**/{Rakefile,.strc,*.{rb,yml}}']
   s.files += %w[ ChangeLog LICENSE README ]
   s.test_files = %w[ test/run.rb ]

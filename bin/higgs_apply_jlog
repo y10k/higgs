@@ -1,0 +1,27 @@
+#!/usr/local/bin/ruby
+
+require 'drb'
+require 'optparse'
+
+# for ident(1)
+CVS_ID = '$Id$'
+
+opt_not_delete = false
+
+opts = OptionParser.new
+opts.banner = "Usage: #{opts.program_name} [OPTIONs] URI_FOR_REMOTE_SERVICES\n"
+opts.banner << "OPTIONs:\n"
+opts.on('-n', '--not-delete') {|value|
+  opt_not_delete = value ? true : false
+}
+opts.parse!
+
+if (ARGV.empty?) then
+  puts opts
+  exit 1
+end
+
+uri = ARGV.shift
+services = DRbObject.new_with_uri(uri)
+jlog_apply_service = services[:jlog_apply_service_v1] or raise 'not provided remote service: jlog_apply_service_v1'
+jlog_apply_service.call(opt_not_delete)

@@ -1,0 +1,24 @@
+#!/usr/local/bin/ruby
+
+require 'drb'
+
+# for ident(1)
+CVS_ID = '$Id$'
+
+if (ARGV.empty?) then
+  puts "Usage: #{File.basename($0)} URI_FOR_REMOTE_SERVICES"
+  exit 1
+end
+
+uri = ARGV.shift
+begin
+  services = DRbObject.new_with_uri(uri)
+  alive_service = services[:alive_service_v1] or raise 'not provided remote service: alive_service_v1'
+  if (alive_service.call) then
+    exit 0
+  else
+    exit 255
+  end
+rescue DRb::DRbError
+  exit 255
+end
