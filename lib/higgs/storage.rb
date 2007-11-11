@@ -175,7 +175,7 @@ module Higgs
     # storage is composed of the following 5 files.
     # <tt>name.log</tt>:: event log. default logging level is <tt>WARN</tt>.
     # <tt>name.tar</tt>:: data file compatible with unix TAR format.
-    # <tt>name.idx</tt>:: index snapshot. genuine index is Hash in the memory.
+    # <tt>name.idx</tt>:: index snapshot. genuine index is Hash in memory.
     #                     see Higgs::Index for detail.
     # <tt>name.jlog</tt>:: transaction journal log. see Higgs::JournalLogger for detail.
     # <tt>name.lock</tt>:: lock file for File#flock. see Higgs::FileLock for detail.
