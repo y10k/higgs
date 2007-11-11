@@ -7,12 +7,16 @@ require 'optparse'
 CVS_ID = '$Id$'
 
 opt_not_delete = false
+opt_switch_to_write = false
 
 opts = OptionParser.new
 opts.banner = "Usage: #{opts.program_name} [OPTIONs] URI_FOR_REMOTE_SERVICES\n"
 opts.banner << "OPTIONs:\n"
 opts.on('-n', '--not-delete') {|value|
   opt_not_delete = value ? true : false
+}
+opts.on('--switch-to-write') {|value|
+  opt_switch_to_write = true
 }
 opts.parse!
 
@@ -25,3 +29,7 @@ uri = ARGV.shift
 services = DRbObject.new_with_uri(uri)
 jlog_apply_service = services[:jlog_apply_service_v1] or raise 'not provided remote service: jlog_apply_service_v1'
 jlog_apply_service.call(opt_not_delete)
+if (opt_switch_to_write) then
+  switch_to_write_service = services[:switch_to_write_service_v1] or raise 'not provided remote service: switch_to_write_service_v1'
+  switch_to_write_service.call
+end
