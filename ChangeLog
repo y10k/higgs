@@ -1,3 +1,7 @@
+2007-11-11  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/version.rb: version 0.1.3.
+
 2007-11-10  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* bin/higgs_apply_jlog, bin/higgs_ping: some utilities.
