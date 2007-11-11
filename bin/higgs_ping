@@ -1,24 +1,46 @@
 #!/usr/local/bin/ruby
 
 require 'drb'
+require 'optparse'
 
 # for ident(1)
 CVS_ID = '$Id$'
 
+opt_verbose = 0
+
+opts = OptionParser.new
+opts.banner = "Usage: #{opts.program_name} [OPTIONs] URI_FOR_REMOTE_SERVICES\n"
+opts.banner << "OPTIONs:\n"
+opts.on('-v', '--[no-]verbose') {|value|
+  if (value) then
+    opt_verbose += 1
+  else
+    opt_verbose -= 1
+  end
+}
+opts.on('--verbose-level=LEVEL', Integer) {|value|
+  opt_verbose = value
+}
+opts.parse!
+
 if (ARGV.empty?) then
-  puts "Usage: #{File.basename($0)} URI_FOR_REMOTE_SERVICES"
+  puts opts
   exit 1
 end
 
 uri = ARGV.shift
 begin
+  puts "connect to #{uri}" if (opt_verbose >= 2)
   services = DRbObject.new_with_uri(uri)
   alive_service = services[:alive_service_v1] or raise 'not provided remote service: alive_service_v1'
   if (alive_service.call) then
+    puts "alive" if (opt_verbose >= 1)
     exit 0
-  else
-    exit 255
   end
 rescue DRb::DRbError
-  exit 255
+  # fall through
+  puts "error: #{$!}" if (opt_verbose >= 2)
 end
+
+puts "dead" if (opt_verbose >= 1)
+exit 255
