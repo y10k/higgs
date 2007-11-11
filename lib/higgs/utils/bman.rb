@@ -158,6 +158,9 @@ module Higgs
     # === OPTION: <tt>--verbose</tt>
     # verbose level up.
     #
+    # === OPTION: <tt>--no-verbose</tt>
+    # verbose level down.
+    #
     # === OPTION: <tt>--verbose-level=LEVEL</tt>
     # set verbose level to <tt>LEVEL</tt>.
     #
