@@ -172,8 +172,8 @@ module Higgs::Test
       assert(expected_keys.empty?)
 
       @tman.transaction{|tx|
-        tx['alice']             # load to cache
-        tx['bob']               # load to cache
+        tx[:foo]                # load to cache
+        tx[:bar]                # load to cache
 
         expected_keys = [ :foo, :bar, :baz ]
         tx.each_key do |key|
