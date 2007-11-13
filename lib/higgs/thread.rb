@@ -112,14 +112,31 @@ module Higgs
       @lock = Mutex.new
       @cond = ConditionVariable.new
       @state = :init
+      @abort = nil
+      @error = nil
       @result = nil
     end
+
+    def abort_msg
+      msg = 'abort'
+      msg << " - #{@error.inspect}" if @error
+      msg
+    end
+    private :abort_msg
+
+    def __result__
+      if (@abort) then
+        raise RuntimeError, abort_msg
+      end
+      @result
+    end
+    private :__result__
 
     def result
       @lock.synchronize{
         case (@state)
         when :done
-          return @result
+          return __result__
         when :init
           @state = :working
           # fall through
@@ -127,17 +144,26 @@ module Higgs
           until (@state == :done)
             @cond.wait(@lock)
           end
-          return @result
+          return __result__
         else
           raise 'internal error'
         end
       }
 
-      r = @result = @work.call
-      @lock.synchronize{
-        @state = :done
-        @cond.broadcast
-      }
+      completed = false
+      begin
+        r = @result = @work.call
+        completed = true
+      ensure
+        @lock.synchronize{
+          @state = :done
+          unless (completed) then
+            @abort = true
+            @error = $!
+          end
+          @cond.broadcast
+        }
+      end
       r
     end
 
@@ -150,6 +176,13 @@ module Higgs
           until (@state == :done)
             @cond.wait(@lock)
           end
+        when :done
+          # nothing to do.
+        else
+          raise 'internal error'
+        end
+        if (@abort) then
+          raise RuntimeError, abort_msg
         end
         @result = value
       }

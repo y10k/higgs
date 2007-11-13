@@ -1,3 +1,8 @@
+2007-11-14  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/thread.rb (Higgs::SharedWork class): fixed a bug of
+	hung up on exception.
+
 2007-11-11  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb: version 0.1.3.

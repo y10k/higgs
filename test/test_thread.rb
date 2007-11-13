@@ -261,6 +261,63 @@ module Higgs::Test
 
       assert_equal(:bar, work.result)
     end
+
+    def test_abort_work
+      work = SharedWork.new{
+        raise ThreadError, 'abort'
+      }
+
+      barrier = Barrier.new(2 + 1)
+      latch = Latch.new
+
+      t1 = Thread.new{
+        barrier.wait
+        assert_raise(ThreadError) {
+          work.result
+        }
+        latch.start
+      }
+
+      t2 = Thread.new{
+        barrier.wait
+        latch.wait
+        timeout(10) {
+          assert_raise(RuntimeError) {
+            work.result
+          }
+        }
+      }
+
+      barrier.wait
+      t1.join
+      t2.join
+
+      assert_raise(RuntimeError) {
+        work.result = nil
+      }
+    end
+
+    def test_abort_work_many_threads
+      work = SharedWork.new{
+        raise RuntimeError, 'abort'
+      }
+
+      barrier = Barrier.new(COUNT_OF_THREADS + 1)
+      th_grp = ThreadGroup.new
+      COUNT_OF_THREADS.times{|i|# `i' should be local scope of thread block
+        th_grp.add Thread.new{
+          barrier.wait
+          assert_raise(RuntimeError, "thread: #{i}") {
+            work.result
+          }
+        }
+      }
+
+      barrier.wait
+      for t in th_grp.list
+        t.join
+      end
+    end
   end
 
   class ReadWriteLockTest < Test::Unit::TestCase
