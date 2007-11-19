@@ -1,3 +1,7 @@
+2007-11-19  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* bin/higgs_backup: fixed a bug of some COMMANDs.
+
 2007-11-14  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/thread.rb (Higgs::SharedWork class): fixed a bug of

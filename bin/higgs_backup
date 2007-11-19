@@ -9,20 +9,20 @@ CVS_ID = '$Id$'
 
 STDOUT.sync = true
 
-COMMANDs = %w[
-  online_backup
-  index
-  data
-  rotate
-  jlog
-  recover
-  verify
-  clean_from
-  clean_to
-  restore
-  restore_files
-  restore_recover
-  restore_verify
+COMMANDs = [
+  'online_backup',
+  %w[ index backup_index ],
+  %w[ data backup_data ],
+  %w[ rotate rotate_jlog ],
+  %w[ jlog backup_jlog ],
+  'recover',
+  'verify',
+  %w[ clean_from clean_jlog_from ],
+  %w[ clean_to clean_jlog_to ],
+  'restore',
+  'restore_files',
+  'restore_recover',
+  'restore_verify'
 ]
 
 commands = %w[ online_backup ]
@@ -31,7 +31,7 @@ options = { :verbose => 0 }
 opts = OptionParser.new
 opts.banner = "Usage: #{opts.program_name} [OPTIONs] [COMMANDs]\n"
 opts.banner << "COMMANDs:\n"
-opts.banner << COMMANDs.map{|s| opts.summary_indent + s }.join("\n") << "\n"
+opts.banner << COMMANDs.map{|n, m| opts.summary_indent + n }.join("\n") << "\n"
 opts.banner << "OPTIONs:\n"
 
 opts.on('-f', '--from=BACKUP_TARGET_STORAGE', String) {|value|
@@ -61,7 +61,7 @@ opts.parse!
 unless (ARGV.empty?) then
   count = 0
   for cmd in ARGV
-    unless (COMMANDs.include? cmd) then
+    unless (COMMANDs.map{|n, m| n }.include? cmd) then
       STDERR.puts "error: unknown command: #{cmd}"
       count += 1
     end
@@ -75,10 +75,11 @@ end
 DRb.start_service
 bman = Higgs::Utils::BackupManager.new(options)
 for cmd in commands
-  unless (bman.public_methods(false).include? cmd) then
+  name, method = COMMANDs.find{|n, m| n == cmd }
+  unless (name) then
     raise "unknown command: #{cmd}"
   end
-  bman.__send__(cmd)
+  bman.__send__(method || name)
 end
 
 # Local Variables:
