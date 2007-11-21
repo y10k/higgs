@@ -46,6 +46,7 @@ module Higgs::Test
                                        :to_dir => @to_dir,
                                        :to_name => @to_name,
                                        :remote_services_uri => @remote_services_uri,
+                                       :drb_service_autostart => false,
                                        :verbose => $DEBUG ? 2 : 0,
                                        :out => $DEBUG ? STDERR : '')
     end

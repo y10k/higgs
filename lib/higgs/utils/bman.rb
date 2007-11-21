@@ -26,10 +26,6 @@ module Higgs
     # [<tt>:remote_services_uri</tt>] value is <tt>"druby://<em>host</em>:<em>port</em>"</tt>.
     #                                 journal log rotation remote service should be enabled.
     #
-    # DRb service should be started before Higgs::BackupManager is used.
-    #
-    #   DRb.start_service
-    #
     # == online-backup
     #
     # online-backup is controlled by <tt>higgs_backup</tt> command that
@@ -38,24 +34,26 @@ module Higgs
     # simple online-backup is like this...
     #
     #   % higgs_backup -v -f foo -t backup_dir -u druby://localhost:17320
-    #   2007-10-03 00:32:58.117 [7558]: **** START BACKUP SCENARIO ****
-    #   2007-10-03 00:32:58.118 [7558]: start index backup.
-    #   2007-10-03 00:32:58.550 [7558]: completed index backup.
-    #   2007-10-03 00:32:58.551 [7558]: start data backup.
-    #   2007-10-03 00:42:00.637 [7558]: completed data backup.
-    #   2007-10-03 00:42:00.665 [7558]: start journal log rotation.
-    #   2007-10-03 00:42:00.907 [7558]: completed journal log rotation.
-    #   2007-10-03 00:42:00.909 [7558]: start journal logs backup.
-    #   2007-10-03 00:42:00.958 [7558]: completed journal logs backup.
-    #   2007-10-03 00:42:00.959 [7558]: start backup storage recovery.
-    #   2007-10-03 00:42:01.550 [7558]: completed backup storage recovery.
-    #   2007-10-03 00:42:01.552 [7558]: start backup storage verify.
-    #   2007-10-03 00:58:56.885 [7558]: completed backup storage verify.
-    #   2007-10-03 00:58:56.904 [7558]: start journal logs clean of from-storage.
-    #   2007-10-03 00:58:56.954 [7558]: completed jounal logs clean of from-storage.
-    #   2007-10-03 00:58:56.955 [7558]: start journal logs clean of to-storage.
-    #   2007-10-03 00:58:56.977 [7558]: completed jounal logs clean of to-storage.
-    #   2007-10-03 00:58:56.978 [7558]: **** COMPLETED BACKUP SCENARIO ****
+    #   2007-11-21 22:33:08.127 [18215]: **** START BACKUP SCENARIO ****
+    #   2007-11-21 22:33:08.129 [18215]: connect to remote services: druby://localhost:17320
+    #   2007-11-21 22:33:13.227 [18215]: DRb service started.
+    #   2007-11-21 22:33:13.233 [18215]: start index backup.
+    #   2007-11-21 22:33:13.724 [18215]: completed index backup.
+    #   2007-11-21 22:33:13.725 [18215]: start data backup.
+    #   2007-11-21 22:44:09.738 [18215]: completed data backup.
+    #   2007-11-21 22:44:09.763 [18215]: start journal log rotation.
+    #   2007-11-21 22:44:10.092 [18215]: completed journal log rotation.
+    #   2007-11-21 22:44:10.200 [18215]: start journal logs backup.
+    #   2007-11-21 22:44:10.339 [18215]: completed journal logs backup.
+    #   2007-11-21 22:44:10.340 [18215]: start backup storage recovery.
+    #   2007-11-21 22:44:11.101 [18215]: completed backup storage recovery.
+    #   2007-11-21 22:44:11.103 [18215]: start backup storage verify.
+    #   2007-11-21 22:58:04.552 [18215]: completed backup storage verify.
+    #   2007-11-21 22:58:04.581 [18215]: start journal logs clean of from-storage.
+    #   2007-11-21 22:58:04.638 [18215]: completed jounal logs clean of from-storage.
+    #   2007-11-21 22:58:04.640 [18215]: start journal logs clean of to-storage.
+    #   2007-11-21 22:58:04.668 [18215]: completed jounal logs clean of to-storage.
+    #   2007-11-21 22:58:04.669 [18215]: **** COMPLETED BACKUP SCENARIO ****
     #
     # online-backup scenario includes these processes.
     #
@@ -174,6 +172,11 @@ module Higgs
         to_name = options[:to_name] || (@from && File.basename(@from))
         @to = File.join(to_dir, to_name) if (to_dir && to_name)
         @remote_services_uri = options[:remote_services_uri]
+        if (options.key? :drb_service_autostart) then
+          @drb_service_autostart = options[:drb_service_autostart]
+        else
+          @drb_service_autostart = true
+        end
         @verbose = options[:verbose] || 0
         @out = options[:out] || STDOUT
       end
@@ -190,8 +193,14 @@ module Higgs
         unless (@remote_services_uri) then
           raise 'required remote_services_uri'
         end
-        @out << log("connect to remote services: #{@remote_services_uri}") if (@verbose >= 2)
+
+        return if @services
+        @out << log("connect to remote services: #{@remote_services_uri}") if (@verbose >= 1)
         @services = DRbObject.new_with_uri(@remote_services_uri)
+        if (@drb_service_autostart) then
+          DRb.start_service
+          @out << log("DRb service started.") if (@verbose >= 1)
+        end
 
         localhost_check_service = @services[:localhost_check_service_v1] or
           raise 'not provided remote service: localhost_check_service_v1'
@@ -205,7 +214,6 @@ module Higgs
       private :connect_service
 
       def backup_index
-        @out << log('start index backup.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
@@ -213,6 +221,7 @@ module Higgs
           raise 'required to_storage'
         end
         connect_service
+        @out << log('start index backup.') if (@verbose >= 1)
         @out << log("save to #{@to}.idx") if (@verbose >= 2)
         @jlog_rotate_service.call(File.expand_path(@to) + '.idx')
         @out << log('completed index backup.') if (@verbose >= 1)
@@ -220,34 +229,34 @@ module Higgs
       end
 
       def backup_data
-        @out << log('start data backup.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
         unless (@to) then
           raise 'required to_storage'
         end
+        @out << log('start data backup.') if (@verbose >= 1)
         FileUtils.cp("#{@from}.tar", "#{@to}.tar", :preserve => true, :verbose => @verbose >= 2)
         @out << log('completed data backup.') if (@verbose >= 1)
         nil
       end
 
       def rotate_jlog
-        @out << log('start journal log rotation.') if (@verbose >= 1)
         connect_service
+        @out << log('start journal log rotation.') if (@verbose >= 1)
         @jlog_rotate_service.call(true)
         @out << log('completed journal log rotation.') if (@verbose >= 1)
         nil
       end
 
       def backup_jlog
-        @out << log('start journal logs backup.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
         unless (@to) then
           raise 'required to_storage'
         end
+        @out << log('start journal logs backup.') if (@verbose >= 1)
         for path in Storage.rotated_entries("#{@from}.jlog")
           path =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{path}"
           unless (JournalLogger.has_eof_mark? path) then
@@ -261,20 +270,20 @@ module Higgs
       end
 
       def recover
-        @out << log('start backup storage recovery.') if (@verbose >= 1)
         unless (@to) then
           raise 'required to_storage'
         end
+        @out << log('start backup storage recovery.') if (@verbose >= 1)
         Storage.recover(@to, @out, @verbose - 1)
         @out << log('completed backup storage recovery.') if (@verbose >= 1)
         nil
       end
 
       def verify
-        @out << log('start backup storage verify.') if (@verbose >= 1)
         unless (@to) then
           raise 'required to_storage'
         end
+        @out << log('start backup storage verify.') if (@verbose >= 1)
         st = Storage.new(@to, :read_only => true)
         begin
           st.verify(@out, @verbose - 1)
@@ -286,15 +295,13 @@ module Higgs
       end
 
       def clean_jlog_from
-        @out << log('start journal logs clean of from-storage.') if (@verbose >= 1)
-
         unless (@from) then
           raise 'required from_storage'
         end
         unless (@to) then
           raise 'required to_storage'
         end
-
+        @out << log('start journal logs clean of from-storage.') if (@verbose >= 1)
         for to_jlog in Storage.rotated_entries("#{@to}.jlog")
           to_jlog =~ /\.jlog\.\d+$/ or raise "mismatch jlog name: #{to_jlog}"
           ext = $&
@@ -303,22 +310,18 @@ module Higgs
             FileUtils.rm(from_jlog, :verbose => @verbose >= 2)
           end
         end
-
         @out << log('completed jounal logs clean of from-storage.') if (@verbose >= 1)
         nil
       end
 
       def clean_jlog_to
-        @out << log('start journal logs clean of to-storage.') if (@verbose >= 1)
-
         unless (@to) then
           raise 'required to_storage'
         end
-
+        @out << log('start journal logs clean of to-storage.') if (@verbose >= 1)
         for to_jlog in Storage.rotated_entries("#{@to}.jlog")
           FileUtils.rm(to_jlog, :verbose => @verbose >= 2)
         end
-
         @out << log('completed jounal logs clean of to-storage.') if (@verbose >= 1)
         nil
       end
@@ -339,13 +342,13 @@ module Higgs
       end
 
       def restore_files
-        @out << log('start storage files restore.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
         unless (@to) then
           raise 'required to_storage'
         end
+        @out << log('start storage files restore.') if (@verbose >= 1)
         FileLock.open("#{@from}.lock") {|flock|
           flock.synchronize{
             FileUtils.cp("#{@to}.idx", "#{@from}.idx", :preserve => true, :verbose => @verbose >= 2)
@@ -362,20 +365,20 @@ module Higgs
       end
 
       def restore_recover
-        @out << log('start restored storage recovery.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
+        @out << log('start restored storage recovery.') if (@verbose >= 1)
         Storage.recover(@from, @out, @verbose - 1)
         @out << log('completed restored storage recovery.') if (@verbose >= 1)
         nil
       end
 
       def restore_verify
-        @out << log('start restored storage verify.') if (@verbose >= 1)
         unless (@from) then
           raise 'required from_storage'
         end
+        @out << log('start restored storage verify.') if (@verbose >= 1)
         st = Storage.new(@from)   # read-write open for recovery
         begin
           st.verify(@out, @verbose - 1)

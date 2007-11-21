@@ -72,7 +72,6 @@ unless (ARGV.empty?) then
   commands = ARGV
 end
 
-DRb.start_service
 bman = Higgs::Utils::BackupManager.new(options)
 for cmd in commands
   name, method = COMMANDs.find{|n, m| n == cmd }
