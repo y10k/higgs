@@ -1,3 +1,7 @@
+2007-11-28  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/version.rb: version 0.1.4.
+
 2007-11-21  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* bin/higgs_backup, lib/higgs/utils/bman.rb
