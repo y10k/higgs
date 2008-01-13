@@ -109,6 +109,163 @@ module Higgs
       r ? true : false
     end
   end
+
+  # = cache for Multi-Version Concurrency Control
+  class MVCCCache
+    extend Forwardable
+
+    def initialize
+      @lock = Mutex.new
+      @snapshots = {}
+    end
+
+    # for debug
+    def_delegator :@snapshots, :empty?
+
+    def write_old_values(cnum, write_list)
+      @lock.synchronize{
+        @snapshots.each_value do |snapshot|
+          lock = snapshot[:lock].write_lock
+          cache = snapshot[:cache]
+          lock.synchronize{
+            for ope, key, type, value in write_list
+              case (ope)
+              when :value
+                if (cache.key? key) then
+                  if (cache[key] != :none && ! (cache[key].key? type)) then
+                    cache[key][type] = { :value => value, :cnum => cnum }
+                  end
+                else
+                  cache[key] = { type => { :value => value, :cnum => cnum } }
+                end
+              when :none
+                unless (cache.key? key) then
+                  cache[key] = :none
+                end
+              else
+                raise "unknown operation: #{ope}"
+              end
+            end
+          }
+        end
+      }
+      nil
+    end
+
+    def ref_count_up(cnum)
+      @lock.synchronize{
+        @snapshots[cnum] = { :lock => ReadWriteLock.new, :cache => {}, :ref_count => 0 } unless (@snapshots.key? cnum)
+        @snapshots[cnum][:ref_count] += 1
+        return @snapshots[cnum][:lock].read_lock, @snapshots[cnum][:cache]
+      }
+    end
+
+    def ref_count_down(cnum)
+      @lock.synchronize{
+        @snapshots[cnum][:ref_count] -= 1
+        @snapshots.delete(cnum) if (@snapshots[cnum][:ref_count] == 0)
+      }
+      nil
+    end
+
+    class Snapshot
+      def initialize(parent)
+        @parent = parent
+      end
+
+      def ref_count_up(cnum)
+        @cnum = cnum
+        @lock, @cache = @parent.ref_count_up(@cnum)
+        nil
+      end
+
+      def ref_count_down
+        @cnum or raise 'not initialized'
+        @parent.ref_count_down(@cnum)
+        @cnum = @lock = @cache = nil
+      end
+
+      def change_number
+        @cnum
+      end
+
+      def cached?(key)
+        @cache.key? key
+      end
+
+      def cache_key?(key)
+        (@cache.key? key) && (@cache[key] != :none)
+      end
+
+      def each_cache_key
+        @cache.each_key do |key|
+          if (@cache[key] != :none) then
+            yield(key)
+          end
+        end
+        nil
+      end
+
+      def key?(store, key)
+        (store.key? key) && ! (cached? key) || (cache_key? key)
+      end
+
+      def keys(store)
+        key_set = {}
+        store.each_key do |key|
+          unless (cached? key) then
+            key_set[key] = true
+          end
+        end
+        each_cache_key do |key|
+          key_set[key] = true
+        end
+        key_set.keys
+      end
+
+      def each_key(store)
+        for key in keys(store)
+          yield(key)
+        end
+        nil
+      end
+
+      def fetch(key, type)
+        @lock.synchronize{
+          if (@cache.key? key) then
+            if (@cache[key] != :none) then
+              if (cache_entry = @cache[key][type]) then
+                cache_entry[:value]
+              else
+                yield
+              end
+            else
+              nil
+            end
+          else
+            yield
+          end
+        }
+      end
+
+      def write_old_values(write_list)
+        @parent.write_old_values(@cnum, write_list)
+        nil
+      end
+    end
+
+    def transaction(cnum)
+      r = nil
+      snapshot = Snapshot.new(self)
+      snapshot.ref_count_up(cnum)
+      begin
+        r = yield(snapshot)
+      ensure
+        snapshot.ref_count_down
+      end
+      r
+    end
+  end
 end
 
 # Local Variables:

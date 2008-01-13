@@ -8,6 +8,8 @@ require 'higgs/tman'
 require 'logger'
 require 'test/unit'
 
+Thread.abort_on_exception = true if $DEBUG
+
 module Higgs::Test
   class TransactionManagerTest < Test::Unit::TestCase
     include Higgs
@@ -1059,8 +1061,8 @@ module Higgs::Test
       }
     end
 
-    def test_fine_grain_lock_manager
-      @tman = TransactionManager.new(@st, :lock_manager => FineGrainLockManager.new)
+    def test_optimistic_lock_manager
+      @tman = TransactionManager.new(@st, :lock_manager => OptimisticLockManager.new)
       @tman.transaction{|tx|
         tx[:foo] = '0'
         tx[:bar] = '0'
@@ -1073,20 +1075,28 @@ module Higgs::Test
       a = Thread.new{
         barrier.wait
         count.times do
-          @tman.transaction{|tx|
-            tx[:foo] = tx[:foo].succ
-            tx[:bar] = tx[:bar].succ
-          }
+          begin
+            @tman.transaction{|tx|
+              tx[:foo] = tx[:foo].succ
+              tx[:bar] = tx[:bar].succ
+            }
+          rescue LockManager::CollisionError
+            retry
+          end
         end
       }
 
       b = Thread.new{
         barrier.wait
         count.times do
-          @tman.transaction{|tx|
-            tx[:bar] = tx[:bar].succ
-            tx[:baz] = tx[:baz].succ
-          }
+          begin
+            @tman.transaction{|tx|
+              tx[:bar] = tx[:bar].succ
+              tx[:baz] = tx[:baz].succ
+            }
+          rescue LockManager::CollisionError
+            retry
+          end
         end
       }
 

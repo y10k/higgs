@@ -9,6 +9,8 @@ require 'higgs/tman'
 require 'logger'
 require 'test/unit'
 
+Thread.abort_on_exception = true if $DEBUG
+
 module Higgs::Test
   module ReplicationTest
     include Higgs

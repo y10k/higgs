@@ -8,6 +8,8 @@ require 'higgs/utils/bman'
 require 'logger'
 require 'test/unit'
 
+Thread.abort_on_exception = true if $DEBUG
+
 module Higgs::Test
   class UtilsBackupManagerTest < Test::Unit::TestCase
     include Higgs

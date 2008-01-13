@@ -1,3 +1,73 @@
+2008-01-11  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class): inner class name is
+	changed.
+
+2008-01-09  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class): lock collision
+	reduced by read-write lock.
+
+	* lib/higgs/storage.rb (Higgs::Storage class): change number lock
+	for MVCC-cache access.
+
+2008-01-05  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage class): backing store on
+	update is obsolete.  string_only method is obsolete.
+
+	* lib/higgs/tman.rb (Higgs::TransactionManager class): MVCC-transaction.
+
+2008-01-04  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/lock.rb: critical section in transaction.
+
+	* lib/higgs/lock.rb: Higgs::FineGrainLockManager class is
+	obsolete.  Higgs::OptimisticLockManager class is new. lock of each
+	type. check_collision method is new. unlock method is obsolete.
+
+2008-01-01  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class): resource of cache
+	accessor is releaseable in transaction.
+
+2007-12-30  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class): added
+	write_old_values method to cache accessor. fixed a bug of each_key
+	method.
+
+2007-12-24  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class): cache of each type.
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class): MVCC-cache access
+	logic is implemented.
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class):
+	NOTE: MVCC-cache access order.
+	read access: 1. source storage. -> 2. cache entry.
+	write access: 1. cache entry. -> 2. source storage.
+	(it is assumed that multithreaded read-write access of ruby's Hash
+	is atomic)
+
+	* test/test_cache_mvcc.rb: 
+
+2007-12-05  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/storage.rb (Higgs::Storage class): backing store on
+	update.
+
+2007-12-01  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class): cache for
+	Multi-Version Concurrency Control
+
+	* test/test_tman_mvcc.rb: test of MVCC for
+	Higgs::TransactionManager class.
+
+	* development branch of MVCC. branched from trunk:r695.
+
 2007-11-28  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb: version 0.1.4.

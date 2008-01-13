@@ -5,6 +5,8 @@ require 'higgs/thread'
 require 'test/unit'
 require 'timeout'
 
+Thread.abort_on_exception = true if $DEBUG
+
 module Higgs::Test
   class LRUCacheTest < Test::Unit::TestCase
     include Higgs

@@ -55,7 +55,7 @@ module Higgs
       @lock.synchronize{
         if (@count > 0) then
           @count -= 1
-          @cond.broadcast 
+          @cond.broadcast if (@count == 0)
         end
       }
       nil
@@ -201,7 +201,12 @@ module Higgs
       @count_of_standby_writers = 0
       @priority_to_writer = true
       @writing = false
+      @read_lock = ReadLock.new(self)
+      @write_lock = WriteLock.new(self)
     end
+
+    attr_reader :read_lock
+    attr_reader :write_lock
 
     def __read_lock__
       @lock.synchronize{
@@ -311,14 +316,6 @@ module Higgs
       def_delegator :@rw_lock, :__write_lock__,     :lock
       def_delegator :@rw_lock, :__write_try_lock__, :try_lock
       def_delegator :@rw_lock, :__write_unlock__,   :unlock
-    end
-
-    def read_lock
-      ReadLock.new(self)
-    end
-
-    def write_lock
-      WriteLock.new(self)
     end
 
     def to_a

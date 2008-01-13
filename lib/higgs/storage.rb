@@ -9,7 +9,6 @@
 #
 
 require 'digest'
-require 'forwardable'
 require 'higgs/block'
 require 'higgs/cache'
 require 'higgs/flock'
@@ -26,7 +25,6 @@ module Higgs
     # for ident(1)
     CVS_ID = '$Id$'
 
-    extend Forwardable
     include Exceptions
 
     class Error < HiggsError
@@ -192,6 +190,9 @@ module Higgs
       @state_lock = Mutex.new
       @panic = false
       @shutdown = false
+
+      @cnum_lock = Mutex.new
+      @saved_change_number = nil
 
       init_options(options)
 
@@ -591,6 +592,7 @@ module Higgs
         eoa = @index.eoa
 
         begin
+          @cnum_lock.synchronize{ @saved_change_number = @index.change_number }
           @index.succ!
           @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
           commit_log << { :ope => :succ, :cnum => @index.change_number }
@@ -770,6 +772,7 @@ module Higgs
             @logger.error("panic: failed to commit.")
             @logger.error($!) if $!
           end
+          @cnum_lock.synchronize{ @saved_change_number = nil }
         end
 
         @logger.debug("completed raw_write_and_commit.") if @logger.debug?
@@ -1107,12 +1110,13 @@ module Higgs
       value
     end
 
-    def string_only(key)
-      properties = fetch_properties(key) or raise IndexError, "not exist properties at key: #{key}"
-      properties['system_properties']['string_only']
+    def identity(key)
+      @index.identity(key)
     end
 
-    def_delegator :@index, :identity
+    def change_number
+      @cnum_lock.synchronize{ @saved_change_number || @index.change_number }
+    end
 
     def data_change_number(key)
       i = @index[key] and i[:d][:cnum] || -1
@@ -1131,6 +1135,12 @@ module Higgs
     def key?(key)
       check_read
       @index.key? key
+    end
+
+    def keys(order_by_pos=false)
+      keys = @index.keys
+      keys.sort!{|a, b| @index[a][:d][:pos] <=> @index[b][:d][:pos] } if order_by_pos
+      keys
     end
 
     def each_key
@@ -1152,19 +1162,11 @@ module Higgs
 
     def verify(out=nil, verbose_level=1)
       check_read
-
-      keys = @index.keys
-      keys.sort!{|a, b|
-        @index[a][:d][:pos] <=> @index[b][:d][:pos]
-      }
-
-      for key in keys
+      for key in keys(true)
         if (out && verbose_level >= 1) then
           out << "check #{key}\n"
         end
-
         data = fetch(key)
-
         if (out && verbose_level >= 2) then
           out << "  #{data.length} bytes\n"
           properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"
@@ -1174,7 +1176,6 @@ module Higgs
           end
         end
       end
-
       nil
     end
 
