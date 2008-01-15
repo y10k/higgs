@@ -23,8 +23,9 @@
 * 領域管理を効率化する。(今は素朴な実装で無駄な空領域ができやすい)
 * 複製問題(replica problem)の対処方法を考える。
 ● → * CGI::Sessionのプラグインを書く。
-* MVCCに対応する。
-* 楽観的ロック(Higgs::OptimisticLockManager)を実装する。MVCCとセット。
+● → * MVCCに対応する。
+● → * 楽観的ロック(Higgs::OptimisticLockManager)を実装する。MVCCとセット。
+* Ruby 1.9に対応する。
 
 = 凡例
 [△] 一応、完了したけどいまいち。
