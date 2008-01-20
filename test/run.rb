@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 
-$: << File.dirname(__FILE__)
-$: << File.join(File.dirname(__FILE__), '..', 'lib')
+$:.unshift File.dirname(__FILE__)
+$:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 
 # for ident(1)
 CVS_ID = '$Id$'

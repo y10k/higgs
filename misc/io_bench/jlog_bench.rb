@@ -3,7 +3,7 @@
 # for dient(1)
 CVS_ID = '$Id$'
 
-$: << File.join(File.dirname($0), '..', '..', 'lib')
+$:.unshift File.join(File.dirname($0), '..', '..', 'lib')
 
 require 'benchmark'
 require 'fileutils'
