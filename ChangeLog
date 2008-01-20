@@ -1,5 +1,7 @@
 2008-01-20  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/version.rb: version 0.1.5.
+
 	* lib/higgs/tman.rb (Higgs::TransactionManager class): uncheck
 	nested transaction.
 
