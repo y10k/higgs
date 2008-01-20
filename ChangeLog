@@ -1,3 +1,8 @@
+2008-01-20  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/tman.rb (Higgs::TransactionManager class): uncheck
+	nested transaction.
+
 2008-01-14  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* merge from development branch of MVCC (higgs_develop_mvcc).

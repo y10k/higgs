@@ -105,35 +105,20 @@ module Higgs
       r = nil
       @lock_manager.transaction(read_only) {|lock_handler|
         @mvcc_cache.transaction(@storage.change_number) {|snapshot|
-          begin
-            if (TransactionManager.in_transaction?) then
-              raise 'nested transaction forbidden'
+          if (read_only) then
+            tx = ReadOnlyTransactionContext.new(lock_handler, @storage, snapshot, @master_cache, @secondary_cache, @decode, @encode)
+          else
+            if (@read_only) then
+              raise NotWritableError, 'not writable'
             end
-            if (read_only) then
-              tx = ReadOnlyTransactionContext.new(lock_handler, @storage, snapshot, @master_cache, @secondary_cache, @decode, @encode)
-            else
-              if (@read_only) then
-                raise NotWritableError, 'not writable'
-              end
-              tx = ReadWriteTransactionContext.new(lock_handler, @storage, snapshot, @master_cache, @secondary_cache, @decode, @encode)
-            end
-            Thread.current[:higgs_current_transaction] = tx
-            r = yield(tx)
-            tx.commit unless read_only
-          ensure
-            Thread.current[:higgs_current_transaction] = nil
+            tx = ReadWriteTransactionContext.new(lock_handler, @storage, snapshot, @master_cache, @secondary_cache, @decode, @encode)
           end
+          Thread.current[:higgs_current_transaction] = tx
+          r = yield(tx)
+          tx.commit unless read_only
         }
       }
       r
-    end
-
-    def self.in_transaction?
-      ! Thread.current[:higgs_current_transaction].nil?
-    end
-
-    def self.current_transaction
-      Thread.current[:higgs_current_transaction]
     end
 
     def apply_journal_log(not_delete=false)
