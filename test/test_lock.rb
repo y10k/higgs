@@ -3,7 +3,6 @@
 require 'higgs/lock'
 require 'higgs/thread'
 require 'test/unit'
-require 'thwait'
 
 Thread.abort_on_exception = true if $DEBUG
 
