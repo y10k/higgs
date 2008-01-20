@@ -529,7 +529,7 @@ module Higgs
           case (ope)
           when :write
             if (@storage.key? key) then
-              properties = Marshal.load(Marshal.dump(@storage.fetch_properties(key)))
+              properties = deep_copy(@storage.fetch_properties(key))
               old_write_list << [ :value, key, :data, @master_cache[key] ]
               old_write_list << [ :value, key, :properties, properties ]
               old_write_list << [ :value, key, :identity, @storage.identity(key) ]
@@ -541,7 +541,7 @@ module Higgs
             end
           when :system_properties, :custom_properties
             if (@storage.key? key) then
-              properties = Marshal.load(Marshal.dump(@storage.fetch_properties(key)))
+              properties = deep_copy(@storage.fetch_properties(key))
               old_write_list << [ :value, key, :properties, properties ]
               old_write_list << [ :value, key, :properties_change_number, @storage.properties_change_number(key) ]
             else
@@ -549,7 +549,7 @@ module Higgs
             end
           when :delete
             if (@storage.key? key) then
-              properties = Marshal.load(Marshal.dump(@storage.fetch_properties(key)))
+              properties = deep_copy(@storage.fetch_properties(key))
               old_write_list << [ :value, key, :data, @master_cache[key] ]
               old_write_list << [ :value, key, :properties, properties ]
               old_write_list << [ :value, key, :identity, @storage.identity(key) ]
