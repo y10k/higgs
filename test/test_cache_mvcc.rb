@@ -29,10 +29,10 @@ module Higgs::Test
 
       cnum_list = [ 2, 7, 13 ]
       barrier = Higgs::Barrier.new(NUM_OF_THREADS + 1)
-      th_grp = ThreadGroup.new
+      th_list = []
 
       NUM_OF_THREADS.times{|i|
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do
             cnum = cnum_list[rand(cnum_list.size)]
@@ -44,7 +44,7 @@ module Higgs::Test
       }
 
       barrier.wait
-      for t in th_grp.list
+      for t in th_list
         t.join
       end
 
@@ -55,20 +55,20 @@ module Higgs::Test
 
     class RunFlag
       def initialize(running)
-        #@lock = Mutex.new
+        @lock = Mutex.new
         @running = running
       end
 
       def running=(running)
-        #@lock.synchronize{
+        @lock.synchronize{
 	  @running = running
-	#}
+	}
       end
 
       def running?
-        #@lock.synchronize{
+        @lock.synchronize{
 	  @running
-	#}
+	}
       end
     end
 
@@ -226,20 +226,20 @@ module Higgs::Test
 
     class RunFlag
       def initialize(running)
-        #@lock = Mutex.new
+        @lock = Mutex.new
         @running = running
       end
 
       def running=(running)
-        #@lock.synchronize{
+        @lock.synchronize{
 	  @running = running
-	#}
+	}
       end
 
       def running?
-        #@lock.synchronize{
+        @lock.synchronize{
 	  @running
-	#}
+	}
       end
     end
 
@@ -332,10 +332,10 @@ module Higgs::Test
 	}
       end
 
-      th_read_grp = ThreadGroup.new
+      th_read_list = []
       read_start_latch = CountDownLatch.new(NUM_OF_READ_THREADS)
       NUM_OF_READ_THREADS.times{|i| # `i' should be local scope of thread block
-	th_read_grp.add Thread.new{
+	th_read_list << Thread.new{
 	  @cache.transaction(init_cnum) {|snapshot|
 	    read_start_latch.count_down
 
@@ -370,7 +370,7 @@ module Higgs::Test
 
       sleep(HEAT_RUN_TIME)
       do_read.running = false
-      for t in th_read_grp.list
+      for t in th_read_list
 	t.join
       end
     end
@@ -382,10 +382,10 @@ module Higgs::Test
       do_read = RunFlag.new(true)
       write_lock = Mutex.new
 
-      th_read_grp = ThreadGroup.new
+      th_read_list = []
       read_start_latch = CountDownLatch.new(NUM_OF_READ_WRITE_THREADS)
       NUM_OF_READ_WRITE_THREADS.times{|i| # `i' should be local scope of thread block
-	th_read_grp.add Thread.new{
+	th_read_list << Thread.new{
 	  read_start_latch.count_down
 
 	  while (do_read.running?)
@@ -402,10 +402,10 @@ module Higgs::Test
       }
       read_start_latch.wait
 
-      th_write_grp = ThreadGroup.new
+      th_write_list = []
       write_start_latch = CountDownLatch.new(NUM_OF_READ_WRITE_THREADS)
       NUM_OF_READ_WRITE_THREADS.times{|i| # `i' should be local scope of thread block
-	th_write_grp.add Thread.new{
+	th_write_list << Thread.new{
 	  write_start_latch.count_down
 
 	  WORK_COUNT.times do |j|
@@ -429,12 +429,12 @@ module Higgs::Test
       }
       write_start_latch.wait
 
-      for t in th_write_grp.list
+      for t in th_write_list
 	t.join
       end
 
       do_read.running = false
-      for t in th_read_grp.list
+      for t in th_read_list
 	t.join
       end
 

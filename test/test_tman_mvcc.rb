@@ -46,20 +46,20 @@ module Higgs::Test
 
     class RunFlag
       def initialize(running)
-        #@lock = Mutex.new
+        @lock = Mutex.new
         @running = running
       end
 
       def running=(running)
-        #@lock.synchronize{
+        @lock.synchronize{
           @running = running
-        #}
+        }
       end
 
       def running?
-        #@lock.synchronize{
+        @lock.synchronize{
           @running
-        #}
+        }
       end
     end
 
@@ -202,12 +202,12 @@ module Higgs::Test
 
     def test_read_write_multithread_mvcc
       do_read = RunFlag.new(true)
-      read_th_grp = ThreadGroup.new
-      write_th_grp = ThreadGroup.new
+      th_read_list = []
+      th_write_list = []
       barrier = Barrier.new((READ_THREAD_COUNT + WRITE_THREAD_COUNT) + 1)
 
       READ_THREAD_COUNT.times{|i|
-        read_th_grp.add Thread.new{
+        th_read_list << Thread.new{
           barrier.wait
           while (do_read.running?)
             @tman.transaction(true) {|tx|
@@ -220,7 +220,7 @@ module Higgs::Test
       }
 
       WRITE_THREAD_COUNT.times{|i|
-        write_th_grp.add Thread.new{
+        th_write_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do |j|
             begin
@@ -237,12 +237,12 @@ module Higgs::Test
       }
 
       barrier.wait
-      for t in write_th_grp.list
+      for t in th_write_list
         t.join
       end
 
       do_read.running = false
-      for t in read_th_grp.list
+      for t in th_read_list
         t.join
       end
 

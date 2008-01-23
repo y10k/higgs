@@ -1,3 +1,7 @@
+2008-01-24  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* refactoring of multi-thread test.
+
 2008-01-20  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb: version 0.1.5.

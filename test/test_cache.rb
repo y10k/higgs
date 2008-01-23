@@ -145,18 +145,18 @@ module Higgs::Test
 
     def calc_race_condition
       barrier = Higgs::Barrier.new(NUM_OF_THREADS + 1)
-      th_grp = ThreadGroup.new
+      th_list = []
 
       result_list = [ nil ] * NUM_OF_THREADS
       NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           barrier.wait
           result_list[i] = calc(WORK_COUNT)
         }
       }
 
       barrier.wait
-      for t in th_grp.list
+      for t in th_list
         t.join
       end
 
@@ -179,16 +179,16 @@ module Higgs::Test
 
       count.times do |n|
         barrier = Higgs::Barrier.new(NUM_OF_THREADS + 1)
-        th_grp = ThreadGroup.new
+        th_list = []
         NUM_OF_THREADS.times{|i|  # `i' should be local scope of thread block
-          th_grp.add Thread.new{
+          th_list << Thread.new{
             barrier.wait
             assert_equal(expected_result, @cache[WORK_COUNT], "#{n}th: th#{i}")
           }
         }
 
         barrier.wait
-        for t in th_grp.list
+        for t in th_list
           t.join
         end
         assert_equal(2, @calc_calls, "#{n}th")

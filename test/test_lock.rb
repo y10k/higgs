@@ -40,11 +40,11 @@ module Higgs::Test
 
     def test_read_transaction_multithread
       v = "foo"
-      th_grp = ThreadGroup.new
+      th_list = []
       barrier = Barrier.new(THREAD_COUNT + 1)
 
       THREAD_COUNT.times{|i|
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           @lock_manager.transaction(true) {|lock_handler|
             lock_handler.lock(:foo, :data, 0)
             barrier.wait
@@ -56,7 +56,7 @@ module Higgs::Test
       }
 
       barrier.wait
-      for t in th_grp.list
+      for t in th_list
         t.join
       end
     end
@@ -66,11 +66,11 @@ module Higgs::Test
       mvcc_last_cnum = 0
       mvcc_old_values = {}
       mvcc_lock = Mutex.new
-      th_grp = ThreadGroup.new
+      th_list = []
       barrier = Barrier.new(THREAD_COUNT + 1)
 
       THREAD_COUNT.times do
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do
             begin
@@ -96,7 +96,7 @@ module Higgs::Test
       end
 
       barrier.wait
-      for t in th_grp.list
+      for t in th_list
         t.join
       end
       assert_equal(THREAD_COUNT * WORK_COUNT, count)
@@ -107,11 +107,11 @@ module Higgs::Test
       mvcc_last_cnum = 0
       mvcc_old_values = {}
       mvcc_lock = Mutex.new
-      th_grp = ThreadGroup.new
+      th_list = []
       barrier = Barrier.new(THREAD_COUNT * 2 + 1)
 
       THREAD_COUNT.times{|i|
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           @lock_manager.transaction(true) {|lock_handler|
             curr_cnum = mvcc_last_cnum # save at first
             lock_handler.lock(:foo, :data, curr_cnum)
@@ -126,7 +126,7 @@ module Higgs::Test
       }
 
       THREAD_COUNT.times do
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do
             begin
@@ -154,7 +154,7 @@ module Higgs::Test
       end
 
       barrier.wait
-      for t in th_grp.list
+      for t in th_list
         t.join
       end
       assert_equal(THREAD_COUNT * WORK_COUNT, count)
@@ -171,11 +171,11 @@ module Higgs::Test
 
     def test_exclusive_multithread
       count = 0
-      th_grp = ThreadGroup.new
+      th_list = []
       barrier = Barrier.new(THREAD_COUNT + 1)
 
       THREAD_COUNT.times do
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do
             @lock_manager.exclusive{
@@ -186,7 +186,7 @@ module Higgs::Test
       end
 
       barrier.wait
-      for t in th_grp.list
+      for t in th_list
         t.join
       end
       assert_equal(THREAD_COUNT * WORK_COUNT, count)
@@ -199,11 +199,11 @@ module Higgs::Test
       mvcc_last_cnum = 0
       mvcc_old_values = {}
       mvcc_lock = Mutex.new
-      th_grp = ThreadGroup.new
+      th_list = []
       barrier = Barrier.new(THREAD_COUNT * 3 + 1)
 
       THREAD_COUNT.times{|i|
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do |j|
             @lock_manager.transaction(true) {|lock_handler|
@@ -220,7 +220,7 @@ module Higgs::Test
       }
 
       THREAD_COUNT.times{|i|
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do |j|
             begin
@@ -249,7 +249,7 @@ module Higgs::Test
       }
 
       THREAD_COUNT.times{|i|
-        th_grp.add Thread.new{
+        th_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do |j|
             @lock_manager.exclusive{
@@ -263,7 +263,7 @@ module Higgs::Test
       }
 
       barrier.wait
-      for t in th_grp.list
+      for t in th_list
         t.join
       end
       assert_equal(THREAD_COUNT * WORK_COUNT, count)
