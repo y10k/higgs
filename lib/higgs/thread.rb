@@ -12,7 +12,129 @@ require 'forwardable'
 require 'higgs/exceptions'
 require 'thread'
 
+class Module
+  # alias for Higgs::Synchronized
+  alias __higgs_ruby_native_attr__ attr
+
+  # alias for Higgs::Synchronized
+  alias __higgs_ruby_native_attr_accessor__ attr_accessor
+
+  # alias for Higgs::Synchronized
+  alias __higgs_ruby_native_attr_reader__ attr_reader
+
+  # alias for Higgs::Synchronized
+  alias __higgs_ruby_native_attr_writer__ attr_writer
+
+  # re-define for Higgs::Synchronized
+  def attr(name, assignable=false)
+    __higgs_ruby_native_attr__(name, assignable)
+    if (assignable) then
+      [ name, "#{name}=" ]
+    else
+      name
+    end
+  end
+
+  # re-define for Higgs::Synchronized
+  def attr_accessor(name, *optional_names)
+    names = [ name ] + optional_names
+    __higgs_ruby_native_attr_accessor__(*names)
+    return *names.map{|n| [ n, "#{n}=" ] }.flatten
+  end
+
+  # re-define for Higgs::Synchronized
+  def attr_reader(name, *optional_names)
+    names = [ name ] + optional_names
+    __higgs_ruby_native_attr_reader__(*names)
+    return *names
+  end
+
+  # re-define for Higgs::Synchronized
+  def attr_writer(name, *optional_names)
+    names = [ name ] + optional_names
+    __higgs_ruby_native_attr_writer__(*names)
+    return *names.map{|n| "#{n}=" }
+  end
+end
+
+module Forwardable
+  # alias for Higgs::Synchronized
+  alias __higgs_ruby_native_def_instance_delegators__ def_instance_delegators
+
+  # alias for Higgs::Synchronized
+  alias __higgs_ruby_native_def_instance_delegator__ def_instance_delegator
+
+  # re-define for Higgs::Synchronized
+  def def_instance_delegators(accessor, *methods)
+    __higgs_ruby_native_def_instance_delegators__(accessor, *methods)
+    return *methods
+  end
+
+  # re-define for Higgs::Synchronized
+  def def_instance_delegator(accessor, method, ali = method)
+    __higgs_ruby_native_def_instance_delegator__(accessor, method, ali)
+    ali
+  end
+
+  # re-define for Higgs::Synchronized
+  alias def_delegators def_instance_delegators
+
+  # re-define for Higgs::Synchronized
+  alias def_delegator def_instance_delegator
+end
+
 module Higgs
+  module Synchronized
+    def self.included(mod)
+      r = super
+      mod.extend(SynchronizedSyntax)
+      r
+    end
+
+    attr_accessor :__lock__
+  end
+
+  module SynchronizedSyntax
+    def synchronized(name_or_names, *optional_names)
+      case (name_or_names)
+      when Array
+        names = name_or_names
+      else
+        names = [ name_or_names ]
+      end
+      names += optional_names
+
+      for name in names
+        name = name.to_sym
+        thread_unsafe_name = "thread_unsafe_#{name}".to_sym
+
+        if (public_instance_methods(true).any?{|n| n.to_sym ==  name }) then
+          visibility = 'public'
+        elsif (private_instance_methods(true).any?{|n| n.to_sym == name }) then
+          visibility = 'private'
+        elsif (protected_instance_methods(true).any?{|n| n.to_sym == name }) then
+          visibility = 'protected'
+        else
+          raise NoMethodError, "undefined method `#{name}' for #{self}"
+        end
+
+        class_eval(<<-EOF, "synchronized(#{name}) => #{__FILE__}", __LINE__ + 1)
+          alias_method #{thread_unsafe_name.inspect}, #{name.inspect}
+          private #{thread_unsafe_name.inspect}
+
+          def #{name}(*args, &block)
+            @__lock__.synchronize{
+              __send__(#{thread_unsafe_name.inspect}, *args, &block)
+            }
+          end
+          #{visibility} #{name.inspect}
+        EOF
+      end
+
+      name_or_names
+    end
+  end
+
   class Latch
     # for ident(1)
     CVS_ID = '$Id$'

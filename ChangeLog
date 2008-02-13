@@ -1,3 +1,20 @@
+2008-02-02  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/cache.rb (Higgs::MVCCCache class): fixed a bug of race
+	condition.
+
+	* lib/higgs/index.rb (Higgs::Index class): multi-thread guard on
+	update.
+
+	* lib/higgs/thread.rb: HiggsSynchronized module is new.
+	multi-thread guard syntax like java.
+
+2008-02-01  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* development branch of ruby-1.9.
+	branch: branches/higgs_develop_ruby1_9
+	snapshot of start: tag/higgs_develop_mvcc_snapshot_20080114_merge_to_trunk
+
 2008-01-24  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* refactoring of multi-thread test.

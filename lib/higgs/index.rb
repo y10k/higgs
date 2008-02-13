@@ -10,6 +10,8 @@
 
 require 'forwardable'
 require 'higgs/block'
+require 'higgs/thread'
+require 'thread'
 
 module Higgs
   # = storage index
@@ -19,6 +21,7 @@ module Higgs
 
     extend Forwardable
     include Block
+    include Synchronized
 
     MAGIC_SYMBOL = 'HIGGS_INDEX'
     MAJOR_VERSION = 0
@@ -31,41 +34,48 @@ module Higgs
       @index = {}
       @identities = {}
       @storage_id = nil
+      self.__lock__ = Mutex.new
     end
 
-    attr_reader :change_number
-    attr_accessor :eoa
-    attr_accessor :storage_id
+    synchronized attr_reader(:change_number)
+    synchronized attr_accessor(:eoa)
+    synchronized attr_accessor(:storage_id)
 
     def succ!
       @change_number = @change_number.succ
       self
     end
+    synchronized :succ!
 
     def free_fetch(size)
       @free_lists[size].shift if (@free_lists.key? size)
     end
+    synchronized :free_fetch
 
     def free_fetch_at(pos, size)
       @free_lists[size].delete(pos) or raise "not found free region: (#{pos},#{size})"
     end
+    synchronized :free_fetch_at
 
     def free_store(pos, size)
       @free_lists[size] = [] unless (@free_lists.key? size)
       @free_lists[size] << pos
       nil
     end
+    synchronized :free_store
 
-    def_delegator :@index, :key?
-    def_delegator :@index, :keys
+    synchronized def_delegator(:@index, :key?)
+    synchronized def_delegator(:@index, :keys)
 
     def identity(key)
       i = @index[key] and i[0]
     end
+    synchronized :identity
 
     def [](key)
       i = @index[key] and i[1]
     end
+    synchronized :[]
 
     def self.create_id(key, identities)
       id = key.to_s
@@ -86,15 +96,18 @@ module Higgs
       end
       value
     end
+    synchronized :[]=
 
     def delete(key)
       id, value = @index.delete(key)
       @identities.delete(id) if id
       value
     end
+    synchronized :delete
 
     def each_key
-      @index.each_key do |key|
+      keys = __lock__.synchronize{ @index.keys }
+      for key in keys
         yield(key)
       end
       self
@@ -110,6 +123,7 @@ module Higgs
         :storage_id => @storage_id
       }
     end
+    synchronized :to_h
 
     def migration_0_0_to_0_1(index_data)
       if ((index_data[:version] <=> [ 0, 0 ]) > 0) then
@@ -152,8 +166,10 @@ module Higgs
       tmp_path = "#{path}.tmp.#{$$}"
       File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
         f.binmode
-        index_data = self.to_h
-        block_write(f, MAGIC_SYMBOL, Marshal.dump(index_data))
+        block_write(f, MAGIC_SYMBOL,
+                    __lock__.synchronize{
+                      Marshal.dump(thread_unsafe_to_h)
+                    })
         f.fsync
       }
       File.rename(tmp_path, path)
@@ -169,12 +185,14 @@ module Higgs
         if (index_data[:version] != [ MAJOR_VERSION, MINOR_VERSION ]) then
           raise "unsupported version: #{index_data[:version].join('.')}"
         end
-        @change_number = index_data[:change_number]
-        @eoa = index_data[:eoa]
-        @free_lists = index_data[:free_lists]
-        @index = index_data[:index]
-        @identities = index_data[:identities]
-        @storage_id = index_data[:storage_id]
+        __lock__.synchronize{
+          @change_number = index_data[:change_number]
+          @eoa = index_data[:eoa]
+          @free_lists = index_data[:free_lists]
+          @index = index_data[:index]
+          @identities = index_data[:identities]
+          @storage_id = index_data[:storage_id]
+        }
       }
       self
     end

@@ -184,10 +184,8 @@ module Higgs::Test
     def test_identity_dup
       @idx[:foo] = 0
       @idx['foo'] = 1
-      @idx[ %w[ f o o ] ] = 2
       assert_equal('foo', @idx.identity(:foo))
       assert_equal('foo.a', @idx.identity('foo'))
-      assert_equal('foo.b', @idx.identity(%w[ f o o ]))
     end
 
     def test_delete

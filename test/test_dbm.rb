@@ -73,9 +73,18 @@ module Higgs::Test
       @db.transaction{|tx|
         tx.update('foo') {|s|
           assert_equal(true, s.frozen?)
-          assert_raise(TypeError) {
-            s << 'foo' << ',' << 'bar' << ',' << 'baz'
-          }
+          case (RUBY_VERSION)
+          when /^1\.8\./
+            assert_raise(TypeError, 'ruby-1.8') {
+              s << 'foo' << ',' << 'bar' << ',' << 'baz'
+            }
+          when /^1\.9\./
+            assert_raise(RuntimeError, 'ruby-1.9') {
+              s << 'foo' << ',' << 'bar' << ',' << 'baz'
+            }
+          else
+            flunk("unknown RUBY_VERSION: #{RUBY_VERSION}")
+          end
         }
 
         assert_equal('', tx['foo'], 'not updated')

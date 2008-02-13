@@ -22,6 +22,8 @@ module Higgs::Test
     MAX_ITEM_BYTES = (ENV['MAX_ITEM_BYTES'] || '16384').to_i
     ITEM_CHARS = ('A'..'Z').to_a + ('a'..'z').to_a
 
+    SERVICES_PORT = '17320'
+
     def setup
       srand(0)
       @from_dir = 'bman_from'
@@ -34,7 +36,7 @@ module Higgs::Test
       FileUtils.mkdir_p(@from_dir)
       FileUtils.rm_rf(@to_dir)  # for debug
       FileUtils.mkdir_p(@to_dir)
-      @remote_services_uri = 'druby://localhost:17320'
+      @remote_services_uri = "druby://localhost:#{SERVICES_PORT}"; SERVICES_PORT.succ!
       @from_st = Storage.new(@from,
                              :jlog_rotate_max => 0,
                              :logger => proc{|path|

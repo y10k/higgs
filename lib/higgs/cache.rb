@@ -123,7 +123,10 @@ module Higgs
     def_delegator :@snapshots, :empty?
 
     def write_old_values(cnum, write_list)
-      @lock.synchronize{
+      # new snapshot is not created until the update ends.
+      snapshot_list = @lock.synchronize{ @snapshots.values }
+
+      for snapshot in snapshot_list
         @snapshots.each_value do |snapshot|
           lock = snapshot[:lock].write_lock
           cache = snapshot[:cache]
@@ -148,15 +151,17 @@ module Higgs
             end
           }
         end
-      }
+      end
+
       nil
     end
 
-    def ref_count_up(cnum)
+    def ref_count_up(cnum_func)
       @lock.synchronize{
+        cnum = cnum_func.call
         @snapshots[cnum] = { :lock => ReadWriteLock.new, :cache => {}, :ref_count => 0 } unless (@snapshots.key? cnum)
         @snapshots[cnum][:ref_count] += 1
-        return @snapshots[cnum][:lock].read_lock, @snapshots[cnum][:cache]
+        return cnum, @snapshots[cnum][:lock].read_lock, @snapshots[cnum][:cache]
       }
     end
 
@@ -173,9 +178,8 @@ module Higgs
         @parent = parent
       end
 
-      def ref_count_up(cnum)
-        @cnum = cnum
-        @lock, @cache = @parent.ref_count_up(@cnum)
+      def ref_count_up(cnum_func)
+        @cnum, @lock, @cache = @parent.ref_count_up(cnum_func)
         nil
       end
 
@@ -254,10 +258,10 @@ module Higgs
       end
     end
 
-    def transaction(cnum)
+    def transaction(cnum_func)
       r = nil
       snapshot = Snapshot.new(self)
-      snapshot.ref_count_up(cnum)
+      snapshot.ref_count_up(cnum_func)
       begin
         r = yield(snapshot)
       ensure

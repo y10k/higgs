@@ -624,7 +624,9 @@ module Higgs
                   :val => value
                 }
                 if (i = @index[key]) then
+		  i = i.dup
                   if (j = i[type]) then
+		    j = j.dup; i[type] = j
                     commit_log << {
                       :ope => :free_store,
                       :pos => j[:pos],
@@ -638,6 +640,7 @@ module Higgs
                   else
                     i[type] = { :pos => pos, :siz => blocked_size, :cnum => @index.change_number }
                   end
+		  @index[key] = i
                 else
                   @index[key] = { type => { :pos => pos, :siz => blocked_size, :cnum => @index.change_number } }
                 end
@@ -648,6 +651,7 @@ module Higgs
               if (i = @index[key]) then
                 if (j = i[type]) then
                   if (j[:siz] >= blocked_size) then
+                    i = i.dup; j = j.dup; i[type] = j
                     @logger.debug("write type of overwrite: (pos,size)=(#{j[:pos]},#{blocked_size})") if @logger.debug?
                     commit_log << {
                       :ope => :write,
@@ -670,6 +674,7 @@ module Higgs
                       @index.free_store(commit_log.last[:pos], commit_log.last[:siz])
                       j[:siz] = blocked_size
                     end
+                    @index[key] = i
                     next
                   end
                 end
@@ -687,7 +692,9 @@ module Higgs
                 :val => value
               }
               if (i = @index[key]) then
+                i = i.dup
                 if (j = i[type]) then
+                  j = j.dup; i[type] = j
                   commit_log << {
                     :ope => :free_store,
                     :pos => j[:pos],
@@ -701,6 +708,7 @@ module Higgs
                 else
                   i[type] = { :pos => eoa, :siz => blocked_size, :cnum => @index.change_number }
                 end
+                @index[key] = i
               else
                 @index[key] = { type => { :pos => eoa, :siz => blocked_size, :cnum => @index.change_number } }
               end
@@ -804,13 +812,16 @@ module Higgs
             w_tar.add(cmd[:nam], cmd[:val], :mtime => cmd[:mod])
             blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(cmd[:val].length)
             if (i = index[cmd[:key]]) then
+              i = i.dup
               if (j = i[cmd[:typ]]) then
+                j = j.dup; i[cmd[:typ]] = j
                 j[:pos] = cmd[:pos]
                 j[:siz] = blocked_size
                 j[:cnum] = index.change_number
               else
                 i[cmd[:typ]] = { :pos => cmd[:pos], :siz => blocked_size, :cnum => index.change_number }
               end
+              index[cmd[:key]] = i
             else
               index[cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size, :cnum => index.change_number } }
             end

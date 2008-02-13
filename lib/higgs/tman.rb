@@ -92,6 +92,7 @@ module Higgs
       if (@read_only == :standby && ! @jlog_apply_dir) then
         raise ArgumentError, "need for `:jlog_apply_dir' parameter in standby mode"
       end
+      @cnum_func = @storage.method(:change_number)
       @mvcc_cache = MVCCCache.new
       @master_cache = SharedWorkCache.new(@master_cache) {|key|
         (id = @storage.unique_data_id(key) and @secondary_cache[id]) or
@@ -104,7 +105,7 @@ module Higgs
     def transaction(read_only=@read_only)
       r = nil
       @lock_manager.transaction(read_only) {|lock_handler|
-        @mvcc_cache.transaction(@storage.change_number) {|snapshot|
+        @mvcc_cache.transaction(@cnum_func) {|snapshot|
           if (read_only) then
             tx = ReadOnlyTransactionContext.new(lock_handler, @storage, snapshot, @master_cache, @secondary_cache, @decode, @encode)
           else
@@ -115,7 +116,7 @@ module Higgs
           end
           Thread.current[:higgs_current_transaction] = tx
           r = yield(tx)
-          tx.commit unless read_only
+          tx.commit(false) unless read_only
         }
       }
       r
@@ -506,7 +507,7 @@ module Higgs
     end
     private :write_list
 
-    def commit
+    def commit(continue=true)
       write_list = write_list()
       if (write_list.empty?) then
         return
@@ -575,8 +576,10 @@ module Higgs
         @ope_map.clear
 
         @storage.write_and_commit(write_list)
-        @snapshot.ref_count_down
-        @snapshot.ref_count_up(@storage.change_number)
+        if (continue) then
+          @snapshot.ref_count_down
+          @snapshot.ref_count_up(@storage.method(:change_number))
+        end
       }
 
       nil
