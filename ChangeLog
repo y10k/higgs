@@ -1,3 +1,10 @@
+2008-02-13  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* merge from development branch of ruby-1.9.
+	branch: branches/higgs_develop_ruby1_9
+	snapshot of start: tag/higgs_develop_mvcc_snapshot_20080114_merge_to_trunk
+	snapshot of end: tags/higgs_develop_ruby1_9_snapshot_20080213_merge_to_trunk
+
 2008-02-02  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/cache.rb (Higgs::MVCCCache class): fixed a bug of race
