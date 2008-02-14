@@ -114,7 +114,6 @@ module Higgs
             end
             tx = ReadWriteTransactionContext.new(lock_handler, @storage, snapshot, @master_cache, @secondary_cache, @decode, @encode)
           end
-          Thread.current[:higgs_current_transaction] = tx
           r = yield(tx)
           tx.commit(false) unless read_only
         }
