@@ -29,6 +29,8 @@ module Higgs
   # * Higgs::Storage#jlog_rotate_size
   # * Higgs::Storage#jlog_rotate_max
   # * Higgs::Storage#shutdown?
+  # * Higgs::Storage#alive?
+  # * Higgs::Storage#change_number
   # * Higgs::Storage#rotate_journal_log
   #
   # these methods are delegated to Higgs::TransactionManager.
@@ -67,6 +69,8 @@ module Higgs
     def_delegator :@storage, :jlog_rotate_size
     def_delegator :@storage, :jlog_rotate_max
     def_delegator :@storage, :shutdown?
+    def_delegator :@storage, :alive?
+    def_delegator :@storage, :change_number
     def_delegator :@storage, :rotate_journal_log
     def_delegator :@tman, :read_only
     def_delegator :@tman, :transaction
