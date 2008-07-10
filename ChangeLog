@@ -1,5 +1,7 @@
 2008-07-11  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/version.rb: version 0.1.6.
+
 	* check ruby 1.9.0 (2008-06-20 revision 17482) [i686-linux]
 Loaded suite run
 Started
