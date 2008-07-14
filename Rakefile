@@ -46,6 +46,8 @@ spec = Gem::Specification.new{|s|
   s.summary = 'pure ruby transactional storage compatible with unix TAR format'
   s.author = 'TOKI Yoshinori'
   s.email = 'toki@freedom.ne.jp'
+  s.homepage = 'http://higgs.rubyforge.org/'
+  s.rubyforge_project = 'higgs'
   s.executables  = %w[
     higgs_apply_jlog
     higgs_backup
