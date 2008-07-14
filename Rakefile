@@ -54,8 +54,9 @@ spec = Gem::Specification.new{|s|
     higgs_ping
     higgs_verify
   ]
-  s.files = Dir['**/{Rakefile,.strc,*.{rb,yml}}']
-  s.files += %w[ ChangeLog LICENSE README ]
+  s.files =
+    Dir['{lib,misc,sample,test}/**/{Rakefile,.strc,*.rb,*.yml}'] +
+    %w[ ChangeLog LICENSE README ]
   s.test_files = %w[ test/run.rb ]
   s.has_rdoc = true
   s.rdoc_options = load_rdoc_opts['CommonOptions'].flatten
