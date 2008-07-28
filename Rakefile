@@ -7,16 +7,13 @@ require 'yaml'
 
 LIB_DIR = 'lib'
 TEST_DIR = 'test'
-RDOC_DIR = 'api'
+RDOC_OPTS = YAML.load(IO.read('rdoc.yml'))
+RDOC_DIR = RDOC_OPTS['CommandLineOptions'].assoc('-o')[1]
 
 def cd_v(dir)
   cd(dir, :verbose => true) {
     yield
   }
-end
-
-def load_rdoc_opts
-  YAML.load(IO.read('rdoc.yml'))
 end
 
 task :default
@@ -28,8 +25,7 @@ task :test do
 end
 
 task :rdoc do
-  rdoc_opts = load_rdoc_opts
-  sh 'rdoc', *(rdoc_opts['CommonOptions'] + rdoc_opts['CommandLineOptions']).flatten
+  sh 'rdoc', *(RDOC_OPTS['CommonOptions'] + RDOC_OPTS['CommandLineOptions']).flatten
 end
 
 task :rdoc_clean do
@@ -58,10 +54,10 @@ spec = Gem::Specification.new{|s|
   ]
   s.files =
     Dir['{lib,misc,sample,test}/**/{Rakefile,.strc,*.rb,*.yml}'] +
-    %w[ ChangeLog LICENSE README ]
+    %w[ ChangeLog lib/LICENSE README ]
   s.test_files = %w[ test/run.rb ]
   s.has_rdoc = true
-  s.rdoc_options = load_rdoc_opts['CommonOptions'].flatten
+  s.rdoc_options = RDOC_OPTS['CommonOptions'].flatten
 }
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_zip = true

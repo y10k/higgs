@@ -5,7 +5,7 @@
 # Revision:: $Revision$
 #
 # == license
-#   :include:LICENSE
+#   :include:../LICENSE
 #
 
 require 'forwardable'
