@@ -1,13 +1,9 @@
 CommonOptions:
   - -SNa
-  - [ -i, . ]
   - [ -m, Higgs ]
 
 CommandLineOptions:
-  - [ -i, lib ]
   - [ -x, misc ]
-  - [ -x, mkrdoc ]
-  - [ -x, pkg ]
   - [ -x, sample ]
   - [ -x, test ]
   - [ -o, api ]
