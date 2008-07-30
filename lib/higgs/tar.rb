@@ -115,6 +115,12 @@ module Higgs
     class RawIO
       extend Forwardable
 
+      def self.open(path, *args)
+        io = File.open(path, *args)
+        io.binmode
+        RawIO.new(io)
+      end
+
       def initialize(io)
         @io = io
       end

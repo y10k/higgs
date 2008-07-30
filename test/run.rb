@@ -26,6 +26,8 @@ for test_rb in Dir.entries(test_dir).sort
   end
 end
 
+require 'higgs/jcompat' if (RUBY_PLATFORM == 'java')
+
 # Local Variables:
 # mode: Ruby
 # indent-tabs-mode: nil

@@ -11,6 +11,7 @@
 require 'higgs/dbm'
 require 'higgs/store'
 require 'higgs/version'
+require 'higgs/jcompat' if (RUBY_PLATFORM == 'java')
 
 # = pure ruby transactional storage compatible with unix TAR format
 # == features
