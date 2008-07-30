@@ -239,10 +239,9 @@ module Higgs
 
         @logger.info("build I/O handle pool for read.")
         @r_tar_pool = Pool.new(@number_of_read_io) {
-          r_io = File.open(@tar_name, File::RDONLY)
-          r_io.binmode
+          r_io = Tar::RawIO.open(@tar_name, File::RDONLY)
           @logger.info("open I/O handle for read: #{@tar_name}")
-          Tar::ArchiveReader.new(Tar::RawIO.new(r_io))
+          Tar::ArchiveReader.new(r_io)
         }
 
         @index = Index.new

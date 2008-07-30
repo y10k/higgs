@@ -1,3 +1,7 @@
+2008-07-31  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/tar.rb: open of Higgs::Tar::RawIO.
+
 2008-07-29  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/LICENSE: move from ./LICENSE to ./lib/LICENSE.

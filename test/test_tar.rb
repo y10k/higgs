@@ -142,7 +142,7 @@ module Higgs::Test
     CVS_ID = '$Id$'
 
     def open_for_read(filename)
-      RawIO.new(File.open(filename, 'rb'))
+      RawIO.open(filename, 'rb')
     end
   end
 
@@ -265,7 +265,7 @@ module Higgs::Test
     CVS_ID = '$Id$'
 
     def open_for_read(filename)
-      RawIO.new(File.open(filename, 'rb'))
+      RawIO.open(filename, 'rb')
     end
   end
 
@@ -347,7 +347,7 @@ module Higgs::Test
     CVS_ID = '$Id$'
 
     def open_for_write(filename)
-      RawIO.new(File.open(filename, 'wb'))
+      RawIO.open(filename, 'wb')
     end
   end
 
