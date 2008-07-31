@@ -1,5 +1,6 @@
 # JRuby compatibility support
 
+require 'higgs/tar'
 require 'java'
 
 # for digest
