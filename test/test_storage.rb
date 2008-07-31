@@ -810,9 +810,21 @@ module Higgs::Test
     end
 
     def test_read_only_first_open_error
-      assert_raise(Errno::ENOENT) {
+      begin
         Storage.new(@name, :read_only => true, :logger => @logger)
-      }
+      rescue Errno::ENOENT
+        return
+      rescue java.io.FileNotFoundException
+        return
+      ensure
+        error = $!
+      end
+
+      if (error) then
+        flunk("unexpected error: #{error}")
+      else
+        flunk('no raise!')
+      end
     end
   end
 end

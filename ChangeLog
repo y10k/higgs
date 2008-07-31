@@ -1,5 +1,7 @@
 2008-07-31  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* lib/higgs/jcompat.rb: adaptor for java.io.RandomAccessFile.
+
 	* lib/higgs/jcompat.rb: JRuby compatibility support.
 
 	* lib/higgs/tar.rb: open of Higgs::Tar::RawIO.
