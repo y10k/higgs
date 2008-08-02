@@ -15,6 +15,11 @@ module Higgs
     class JRawIO
       CVS_ID = '$Id$'
 
+      def make_java_byte_array(size)
+        ([ 0 ]  * size).to_java(:byte)
+      end
+      private :make_java_byte_array
+
       def initialize(path, mode='r')
         read_only = true
         case (mode)
@@ -28,14 +33,15 @@ module Higgs
           end
         end
 	@io = java.io.RandomAccessFile.new(path, read_only ? 'r' : 'rw')
+        @buf = make_java_byte_array(1024)
 	@closed = false
       end
 
       def read(size)
-	buf = ([ 0 ]  * size).to_java(:byte)
-	read_size = @io.read(buf)
+        @buf = make_java_byte_array(size) if (@buf.length < size)
+	read_size = @io.read(@buf, 0, size)
 	if (read_size > 0) then
-	  String.from_java_bytes(buf)[0, read_size]
+	  String.from_java_bytes(@buf)[0, read_size]
 	elsif (read_size == 0) then
 	  ""
 	else
