@@ -32,35 +32,35 @@ module Higgs
             read_only = false
           end
         end
-	@io = java.io.RandomAccessFile.new(path, read_only ? 'r' : 'rw')
+        @io = java.io.RandomAccessFile.new(path, read_only ? 'r' : 'rw')
         @buf = make_java_byte_array(1024)
-	@closed = false
+        @closed = false
       end
 
       def read(size)
         @buf = make_java_byte_array(size) if (@buf.length < size)
-	read_size = @io.read(@buf, 0, size)
-	if (read_size > 0) then
-	  String.from_java_bytes(@buf)[0, read_size]
-	elsif (read_size == 0) then
-	  ""
-	else
-	  nil
-	end
+        read_size = @io.read(@buf, 0, size)
+        if (read_size > 0) then
+          String.from_java_bytes(@buf)[0, read_size]
+        elsif (read_size == 0) then
+          ""
+        else
+          nil
+        end
       end
 
       def write(str)
-	@io.write(str.to_java_bytes)
-	nil
+        @io.write(str.to_java_bytes)
+        nil
       end
 
       def tell
-	@io.getFilePointer
+        @io.getFilePointer
       end
 
       def seek(pos)
-	@io.seek(pos)
-	nil
+        @io.seek(pos)
+        nil
       end
 
       alias pos tell
@@ -70,23 +70,23 @@ module Higgs
       end
 
       def fsync
-	@io.getFD.sync
-	nil
+        @io.getFD.sync
+        nil
       end
 
       def truncate(size)
-	@io.setLength(size)
-	nil
+        @io.setLength(size)
+        nil
       end
 
       def close
-	@io.close
-	@closed = true
-	nil
+        @io.close
+        @closed = true
+        nil
       end
 
       def closed?
-	@closed
+        @closed
       end
     end
 
