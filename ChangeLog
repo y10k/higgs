@@ -1,3 +1,7 @@
+2008-11-19  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/thread.rb: `synchronized' syntax is changed.
+
 2008-07-31  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/jcompat.rb: adaptor for java.io.RandomAccessFile.
@@ -64,7 +68,7 @@ Finished in 426.574262 seconds.
 	* lib/higgs/index.rb (Higgs::Index class): multi-thread guard on
 	update.
 
-	* lib/higgs/thread.rb: HiggsSynchronized module is new.
+	* lib/higgs/thread.rb: Higgs::Synchronized module is new.
 	multi-thread guard syntax like java.
 
 2008-02-01  TOKI Yoshinori  <toki@freedom.ne.jp>

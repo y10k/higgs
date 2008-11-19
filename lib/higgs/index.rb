@@ -37,9 +37,9 @@ module Higgs
       self.__lock__ = Mutex.new
     end
 
-    synchronized attr_reader(:change_number)
-    synchronized attr_accessor(:eoa)
-    synchronized attr_accessor(:storage_id)
+    synchronized_reader :change_number
+    synchronized_accessor :eoa
+    synchronized_accessor :storage_id
 
     def succ!
       @change_number = @change_number.succ
@@ -64,8 +64,8 @@ module Higgs
     end
     synchronized :free_store
 
-    synchronized def_delegator(:@index, :key?)
-    synchronized def_delegator(:@index, :keys)
+    def_synchronized_delegator(:@index, :key?)
+    def_synchronized_delegator(:@index, :keys)
 
     def identity(key)
       i = @index[key] and i[0]
