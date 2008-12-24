@@ -1,7 +1,7 @@
 # = storage like pstore
 #
 # Author:: $Author$
-# Date:: $Date$
+# Date:: $Date::                           $
 # Revision:: $Revision$
 #
 # == license

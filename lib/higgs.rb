@@ -1,7 +1,7 @@
 # = pure ruby transactional storage compatible with unix TAR format
 #
 # Author:: $Author$
-# Date:: $Date$
+# Date:: $Date::                           $
 # Revision:: $Revision$
 #
 # == license

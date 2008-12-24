@@ -1,7 +1,7 @@
 # = transaction manager
 #
 # Author:: $Author$
-# Date:: $Date$
+# Date:: $Date::                           $
 # Revision:: $Revision$
 #
 # == license

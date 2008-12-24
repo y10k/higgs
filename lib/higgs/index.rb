@@ -1,7 +1,7 @@
 # = storage index
 #
 # Author:: $Author$
-# Date:: $Date$
+# Date:: $Date::                           $
 # Revision:: $Revision$
 #
 # == license

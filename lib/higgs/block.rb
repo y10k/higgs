@@ -1,7 +1,7 @@
 # = block read/write
 #
 # Author:: $Author$
-# Date:: $Date$
+# Date:: $Date::                           $
 # Revision:: $Revision$
 #
 # == license

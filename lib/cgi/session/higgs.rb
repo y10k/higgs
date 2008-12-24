@@ -1,7 +1,7 @@
 # like cgi/session/pstore.rb
 #
 # Author:: $Author$
-# Date:: $Date$
+# Date:: $Date::                           $
 # Revision:: $Revision$
 #
 

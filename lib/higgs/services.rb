@@ -1,7 +1,7 @@
 # = remote services
 #
 # Author:: $Author $
-# Date:: $Date$
+# Date:: $Date::                           $
 # Revision:: $Revision$
 #
 # == license
