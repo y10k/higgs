@@ -64,8 +64,8 @@ module Higgs
     end
     synchronized :free_store
 
-    def_synchronized_delegator(:@index, :key?)
-    def_synchronized_delegator(:@index, :keys)
+    def_synchronized_delegator :@index, :key?
+    def_synchronized_delegator :@index, :keys
 
     def identity(key)
       i = @index[key] and i[0]
