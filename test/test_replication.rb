@@ -26,15 +26,15 @@ module Higgs::Test
     def setup
       srand(0)
 
-      @name = 'foo'
+      @st_name = 'foo'
 
       @src_dir = 'rep_src'
-      @src_name = File.join(@src_dir, @name)
+      @src_name = File.join(@src_dir, @st_name)
       FileUtils.rm_rf(@src_dir)
       FileUtils.mkdir_p(@src_dir)
 
       @dst_dir = 'rep_dst'
-      @dst_name = File.join(@dst_dir, @name)
+      @dst_name = File.join(@dst_dir, @st_name)
       FileUtils.rm_rf(@dst_dir)
       FileUtils.mkdir_p(@dst_dir)
 

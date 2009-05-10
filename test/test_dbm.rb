@@ -16,8 +16,8 @@ module Higgs::Test
       @test_dir = 'dbm_test'
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
-      @name = File.join(@test_dir, 'foo')
-      @db = DBM.new(@name,
+      @st_name = File.join(@test_dir, 'foo')
+      @db = DBM.new(@st_name,
                     :logger => proc{|path|
                       logger = Logger.new(path, 1)
                       logger.level = Logger::DEBUG
@@ -143,7 +143,7 @@ module Higgs::Test
       @test_dir = 'dbm_test'
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
-      @name = File.join(@test_dir, 'foo')
+      @st_name = File.join(@test_dir, 'foo')
     end
 
     def teardown
@@ -151,13 +151,13 @@ module Higgs::Test
     end
 
     def test_open
-      DBM.open(@name) {|db|
+      DBM.open(@st_name) {|db|
         db.transaction{|tx|
           tx['foo'] = 'apple'
         }
       }
 
-      DBM.open(@name, :read_only => true) {|db|
+      DBM.open(@st_name, :read_only => true) {|db|
         db.transaction{|tx|
           assert_equal('apple', tx['foo'])
         }

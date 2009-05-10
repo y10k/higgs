@@ -1,3 +1,10 @@
+2009-05-09  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* test/test_cache_mvcc.rb, test/test_dbm.rb,
+	test/test_replication.rb, test/test_storage.rb,
+	test/test_store.rb, test/test_tman.rb, test/test_tman_mvcc.rb: for
+	minitest of ruby-1.9
+
 2008-11-19  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/thread.rb: `synchronized' syntax is changed.

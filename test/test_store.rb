@@ -16,8 +16,8 @@ module Higgs::Test
       @test_dir = 'store_test'
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
-      @name = File.join(@test_dir, 'foo')
-      @st = Store.new(@name,
+      @st_name = File.join(@test_dir, 'foo')
+      @st = Store.new(@st_name,
                       :logger => proc{|path|
                         logger = Logger.new(path, 1)
                         logger.level = Logger::DEBUG
@@ -221,7 +221,7 @@ module Higgs::Test
       @test_dir = 'store_test'
       FileUtils.rm_rf(@test_dir) # for debug
       FileUtils.mkdir_p(@test_dir)
-      @name = File.join(@test_dir, 'foo')
+      @st_name = File.join(@test_dir, 'foo')
     end
 
     def teardown
@@ -229,13 +229,13 @@ module Higgs::Test
     end
 
     def test_open
-      Store.open(@name) {|st|
+      Store.open(@st_name) {|st|
         st.transaction{|tx|
           tx[:foo] = :apple
         }
       }
 
-      Store.open(@name, :read_only => true) {|st|
+      Store.open(@st_name, :read_only => true) {|st|
         st.transaction{|tx|
           assert_equal(:apple, tx[:foo])
         }
