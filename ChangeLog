@@ -1,3 +1,7 @@
+2009-05-11  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/version.rb: version 0.1.6. last version for ruby-1.8.
+
 2009-05-09  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* test/test_cache_mvcc.rb, test/test_dbm.rb,
