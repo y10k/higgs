@@ -1,6 +1,6 @@
 2009-05-11  TOKI Yoshinori  <toki@freedom.ne.jp>
 
-	* lib/higgs/version.rb: version 0.1.6. last version for ruby-1.8.
+	* lib/higgs/version.rb: version 0.1.7. last version for ruby-1.8.
 
 2009-05-09  TOKI Yoshinori  <toki@freedom.ne.jp>
 
