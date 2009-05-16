@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # for ident(1)
 CVS_ID = '$Id$'
 

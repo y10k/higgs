@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = storage like dbm
 #
 # Author:: $Author$

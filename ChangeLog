@@ -1,3 +1,26 @@
+2009-05-16  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* Rakefile, bin/higgs_apply_jlog, bin/higgs_backup,
+	bin/higgs_dump_index, bin/higgs_dump_jlog, bin/higgs_ping,
+	bin/higgs_verify, lib/higgs.rb, lib/higgs/block.rb,
+	lib/higgs/cache.rb, lib/higgs/dbm.rb, lib/higgs/exceptions.rb,
+	lib/higgs/flock.rb, lib/higgs/index.rb, lib/higgs/jcompat.rb,
+	lib/higgs/jlog.rb, lib/higgs/lock.rb, lib/higgs/services.rb,
+	lib/higgs/sman.rb, lib/higgs/storage.rb, lib/higgs/store.rb,
+	lib/higgs/tar.rb, lib/higgs/thread.rb, lib/higgs/tman.rb,
+	lib/higgs/utils.rb, lib/higgs/utils/bman.rb, lib/higgs/version.rb,
+	mkrdoc.rb, sample/count.rb, sample/dbmtest.rb, test/Rakefile,
+	test/run.rb, test/test_block.rb, test/test_cache.rb,
+	test/test_cache_mvcc.rb, test/test_cgi_session.rb,
+	test/test_dbm.rb, test/test_flock.rb, test/test_index.rb,
+	test/test_jlog.rb, test/test_lock.rb, test/test_online_backup.rb,
+	test/test_replication.rb, test/test_services.rb,
+	test/test_storage.rb, test/test_storage_conf.rb,
+	test/test_storage_init_opts.rb, test/test_store.rb,
+	test/test_tar.rb, test/test_thread.rb, test/test_tman.rb,
+	test/test_tman_init_opts.rb, test/test_tman_mvcc.rb,
+	test/test_utils_bman.rb: magic comment for ruby-1.9.
+
 2009-05-11  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/version.rb: version 0.1.7. last version for ruby-1.8.

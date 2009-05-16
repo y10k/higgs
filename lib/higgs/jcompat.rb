@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # JRuby compatibility support
 
 require 'higgs/tar'

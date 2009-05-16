@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = transactional storage core
 #
 # Author:: $Author$

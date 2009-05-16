@@ -1,4 +1,5 @@
 #!/usr/local/bin/ruby
+# -*- coding: utf-8 -*-
 
 $:.unshift File.dirname(__FILE__)
 $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')

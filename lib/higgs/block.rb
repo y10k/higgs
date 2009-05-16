@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = block read/write
 #
 # Author:: $Author$

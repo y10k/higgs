@@ -1,4 +1,5 @@
 #!/usr/local/bin/ruby
+# -*- coding: utf-8 -*-
 
 require 'higgs'
 require 'higgs/thread'          # for Higgs::Barrier

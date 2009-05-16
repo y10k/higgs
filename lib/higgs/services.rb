@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = remote services
 #
 # Author:: $Author $

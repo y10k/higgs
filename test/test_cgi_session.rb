@@ -1,4 +1,5 @@
 #!/usr/local/bin/ruby
+# -*- coding: utf-8 -*-
 
 require 'cgi/session/higgs'
 require 'cgi/session/pstore'

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = namespace for utilities
 #
 # Author:: $Author$

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = multi-thread utilities
 #
 # Author:: $Author$

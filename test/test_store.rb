@@ -1,4 +1,5 @@
 #!/usr/local/bin/ruby
+# -*- coding: utf-8 -*-
 
 require 'fileutils'
 require 'higgs/store'

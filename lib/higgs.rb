@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = pure ruby transactional storage compatible with unix TAR format
 #
 # Author:: $Author$

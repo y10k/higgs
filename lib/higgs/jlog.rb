@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = journal log writer
 #
 # Author:: $Author$

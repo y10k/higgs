@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # = multi-thread lock manager
 #
 # Author:: $Author$
