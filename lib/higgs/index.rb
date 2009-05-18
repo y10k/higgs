@@ -167,6 +167,7 @@ module Higgs
       tmp_path = "#{path}.tmp.#{$$}"
       File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
         f.binmode
+        f.set_encoding(Encoding::ASCII_8BIT)
         block_write(f, MAGIC_SYMBOL,
                     __lock__.synchronize{
                       Marshal.dump(thread_unsafe_to_h)
@@ -180,6 +181,7 @@ module Higgs
     def load(path)
       File.open(path, 'r') {|f|
         f.binmode
+        f.set_encoding(Encoding::ASCII_8BIT)
         index_data = Marshal.load(block_read(f, MAGIC_SYMBOL))
         migration_0_0_to_0_1(index_data)
         migration_0_1_to_0_2(index_data)

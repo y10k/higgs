@@ -235,6 +235,7 @@ module Higgs
             w_io = File.open(@tar_name, File::WRONLY, 0660)
           end
           w_io.binmode
+          w_io.set_encoding(Encoding::ASCII_8BIT)
           @w_tar = Tar::ArchiveWriter.new(w_io)
         end
 
@@ -402,6 +403,7 @@ module Higgs
         @logger.info("open journal log for read: #{@jlog_name}")
         File.open(@jlog_name, File::RDONLY) {|f|
           f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
           begin
             JournalLogger.scan_log(f) do |log|
               change_number = log[0]
@@ -420,6 +422,7 @@ module Higgs
 
         File.open(@jlog_name, File::WRONLY, 0660) {|f|
           f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
           @logger.info("shrink journal log to erase last broken segment.")
           f.truncate(safe_pos)
           f.seek(safe_pos)
@@ -867,6 +870,7 @@ module Higgs
             w_io = File.open(tar_name, File::WRONLY, 0660)
           end
           w_io.binmode
+          w_io.set_encoding(Encoding::ASCII_8BIT)
           w_tar = Tar::ArchiveWriter.new(w_io)
 
           index = Index.new
@@ -1203,6 +1207,7 @@ module Higgs
 
         File.open(@path, 'r') {|f|
           f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
           if (f.read != @messg) then
             raise 'client should exist in localhost.'
           end
@@ -1227,6 +1232,7 @@ module Higgs
       begin
         begin
           f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
           f.write(messg)
         ensure
           f.close

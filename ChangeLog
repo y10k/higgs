@@ -1,3 +1,10 @@
+2009-05-19  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/flock.rb, lib/higgs/index.rb, lib/higgs/jlog.rb,
+	lib/higgs/storage.rb, lib/higgs/tar.rb, test/test_block.rb,
+	test/test_index.rb, test/test_jlog.rb, test/test_services.rb: IO
+	encoding for binary file.
+
 2009-05-16  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* Rakefile, bin/higgs_apply_jlog, bin/higgs_backup,

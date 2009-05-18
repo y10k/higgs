@@ -103,6 +103,7 @@ module Higgs::Test
     def test_eof_mark
       File.open(@path, 'w') {|w|
         w.binmode
+        w.set_encoding(Encoding::ASCII_8BIT)
         w << 'x' * Block::BLOCK_SIZE
         JournalLogger.eof_mark(w)
       }
@@ -124,6 +125,7 @@ module Higgs::Test
     def test_eof_mark_broken_file
       File.open(@path, 'w') {|w|
         w.binmode
+        w.set_encoding(Encoding::ASCII_8BIT)
         w << 'x' * Block::BLOCK_SIZE
         JournalLogger.eof_mark(w)
       }
@@ -134,6 +136,7 @@ module Higgs::Test
     def test_eof_mark_no_eof_mark
       File.open(@path, 'w') {|w|
         w.binmode
+        w.set_encoding(Encoding::ASCII_8BIT)
         jlog = JournalLogger.new(w)
         jlog.write(:no_EOF)
         jlog.close(false)
@@ -161,6 +164,7 @@ module Higgs::Test
 
       File.open(@path) {|r|
         r.binmode
+        r.set_encoding(Encoding::ASCII_8BIT)
         count = 0
         expected_values = [ :foo, :bar ]
         assert_raise(Block::BrokenError) {

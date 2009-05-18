@@ -16,6 +16,7 @@ module Higgs::Test
     def setup
       @io = File.open('block.test_io', 'w+')
       @io.binmode
+      @io.set_encoding(Encoding::ASCII_8BIT)
     end
 
     def teardown

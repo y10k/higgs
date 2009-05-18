@@ -98,8 +98,9 @@ module Higgs
 
       def tar?(path)
         if (File.file? path) then
-          head = File.open(path, 'rb') {|r_io|
+          head = File.open(path, 'r') {|r_io|
             r_io.binmode
+            r_io.set_encoding(Encoding::ASCII_8BIT)
             r_io.read(BLKSIZ)
           }
           if (head && head.length == BLKSIZ) then
@@ -119,6 +120,7 @@ module Higgs
       def self.open(path, *args)
         io = File.open(path, *args)
         io.binmode
+        io.set_encoding(Encoding::ASCII_8BIT)
         RawIO.new(io)
       end
 
@@ -367,7 +369,9 @@ module Higgs
         end
         write_header(head)
         if (stat.ftype == 'file') then
-          File.open(path, 'rb') {|r_io|
+          File.open(path, 'r') {|r_io|
+            r_io.binmode
+            r_io.set_encoding(Encoding::ASCII_8BIT)
             chunk_size = BLKSIZ * 128
             remaining_size = stat.size
             while (remaining_size > chunk_size)

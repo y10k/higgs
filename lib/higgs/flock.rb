@@ -23,6 +23,8 @@ module Higgs
       rescue Errno::EEXIST
         @f = File.open(path, rdwr_mode, 0660)
       end
+      @f.binmode
+      @f.set_encoding(Encoding::ASCII_8BIT)
     end
 
     attr_reader :read_only

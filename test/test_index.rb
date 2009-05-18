@@ -241,6 +241,7 @@ module Higgs::Test
       }
       File.open(@path, 'w') {|w|
         w.binmode
+        w.set_encoding(Encoding::ASCII_8BIT)
         Block.block_write(w, Index::MAGIC_SYMBOL, Marshal.dump(index_data_0_0))
       }
 
@@ -275,6 +276,7 @@ module Higgs::Test
       }
       File.open(@path, 'w') {|w|
         w.binmode
+        w.set_encoding(Encoding::ASCII_8BIT)
         Block.block_write(w, Index::MAGIC_SYMBOL, Marshal.dump(index_data_1_0))
       }
 

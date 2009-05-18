@@ -74,6 +74,7 @@ module Higgs
       def has_eof_mark?(path)
         File.open(path, 'r') {|f|
           f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
           fsiz = f.stat.size
           if (fsiz < Block::BLOCK_SIZE * 2) then
             return false
@@ -101,15 +102,18 @@ module Higgs
       def open(path, *args)
         begin
           f = File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0660)
+          f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
         rescue Errno::EEXIST
           if (need_for_recovery? path) then
             raise "need for recovery: #{path}"
           end
           f = File.open(path, File::WRONLY, 0660)
+          f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
           fsiz = f.stat.size
           f.truncate(fsiz - Block::BLOCK_SIZE * 2)
         end
-        f.binmode
         f.seek(0, IO::SEEK_END)
         new(f, *args)
       end
@@ -140,6 +144,7 @@ module Higgs
       def each_log(path)
         File.open(path, 'r') {|f|
           f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
           scan_log(f) do |log|
             yield(log)
           end

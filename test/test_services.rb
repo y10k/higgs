@@ -117,6 +117,7 @@ module Higgs::Test
       localhost_check_service.call{|localhost_check|
 	File.open(@localhost_check_tmpfile, 'w') {|f|
 	  f.binmode
+	  f.set_encoding(Encoding::ASCII_8BIT)
 	  f << 'bar'
 	}
 	assert_raise(RuntimeError) { localhost_check.call }
