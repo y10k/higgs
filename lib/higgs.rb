@@ -20,7 +20,7 @@ require 'higgs/jcompat' if (RUBY_PLATFORM == 'java')
 # [Higgs::DBM] storage like dbm
 # [Higgs::Utils::BackupManager] online backup utility (body of <tt>higgs_backup</tt> command)
 #
-# == safety level
+# == robustness
 # === case of no backup
 #
 # [REQUIREMENTS] default
