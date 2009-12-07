@@ -12,71 +12,81 @@ module Higgs::Test
   class LRUCacheTest < Test::Unit::TestCase
     include Higgs
 
-    CACHE_LIMIT_SIZE = 10
-
     def setup
-      @cache = LRUCache.new(CACHE_LIMIT_SIZE)
+      @cache = LRUCache.new(3)
     end
 
-    def test_store_and_fetch
-      @cache[:foo] = 'apple'
-      @cache[:bar] = 'banana'
-      @cache[:baz] = 'orange'
-      assert_equal('apple',  @cache[:foo])
-      assert_equal('banana', @cache[:bar])
-      assert_equal('orange', @cache[:baz])
+    def test_empty
+      assert_nil(@cache['apple'])
+    end
+
+    def test_store_fetch
+      @cache[:a] = 1
+      assert_equal(1, @cache[:a])
+    end
+
+    def test_store_fetch_full
+      @cache[:a] = 1
+      @cache[:b] = 2
+      @cache[:c] = 3
+      assert_equal(1, @cache[:a])
+      assert_equal(2, @cache[:b])
+      assert_equal(3, @cache[:c])
     end
 
     def test_fetch_not_defined_value
-      assert_nil(@cache[:foo])
-      assert_nil(@cache[:bar])
-      assert_nil(@cache[:baz])
+      assert_nil(@cache[:a])
+      assert_nil(@cache[:b])
+      assert_nil(@cache[:c])
     end
 
     def test_delete
-      @cache[:foo] = 'apple'
-      @cache[:bar] = 'banana'
-      @cache[:baz] = 'orange'
-      @cache.delete(:bar)
-      assert_equal('apple',  @cache[:foo])
-      assert_equal(nil,      @cache[:bar])
-      assert_equal('orange', @cache[:baz])
+      @cache[:a] = 1
+      @cache[:b] = 2
+      @cache[:c] = 3
+      @cache.delete(:b)
+      assert_equal(1,  @cache[:a])
+      assert_equal(nil, @cache[:b])
+      assert_equal(3, @cache[:c])
     end
 
-    def test_LRU_read
-      CACHE_LIMIT_SIZE.times do |i|
-        @cache[i] = i.to_s
-      end
-      CACHE_LIMIT_SIZE.times do |i|
-        assert_equal(i.to_s, @cache[i], "#{i}")
-      end
-
-      old_key = 0
-      last_key = CACHE_LIMIT_SIZE - 1
-      new_key = CACHE_LIMIT_SIZE
-
-      @cache[new_key] = new_key.to_s
-      assert_equal(nil,           @cache[old_key])
-      assert_equal(last_key.to_s, @cache[last_key])
-      assert_equal(new_key.to_s,  @cache[new_key])
+    def test_store_fetch_overflow
+      @cache['a'] = 1
+      @cache['b'] = 2
+      @cache['c'] = 3
+      @cache['d'] = 4
+      assert_equal(nil, @cache['a'])
+      assert_equal(2, @cache['b'])
+      assert_equal(3, @cache['c'])
+      assert_equal(4, @cache['d'])
     end
 
-    def test_LRU_write
-      CACHE_LIMIT_SIZE.times do |i|
-        @cache[i] = i.to_s
-      end
-      (0...CACHE_LIMIT_SIZE).to_a.reverse_each do |i|
-        @cache[i] = i.to_s
-      end
+    def test_store_fetch_reorder_read
+      @cache['a'] = 1
+      @cache['b'] = 2
+      @cache['c'] = 3
+      @cache['b']
+      @cache['d'] = 4
+      @cache['e'] = 5
+      assert_equal(nil, @cache['a'])
+      assert_equal(2, @cache['b'])
+      assert_equal(nil, @cache['c'])
+      assert_equal(4, @cache['d'])
+      assert_equal(5, @cache['e'])
+    end
 
-      old_key = CACHE_LIMIT_SIZE - 1
-      last_key = 0
-      new_key = CACHE_LIMIT_SIZE
-
-      @cache[new_key] = new_key.to_s
-      assert_equal(nil,           @cache[old_key])
-      assert_equal(last_key.to_s, @cache[last_key])
-      assert_equal(new_key.to_s,  @cache[new_key])
+    def test_store_fetch_reorder_write
+      @cache['a'] = 1
+      @cache['b'] = 2
+      @cache['c'] = 3
+      @cache['b'] = 4
+      @cache['d'] = 5
+      @cache['e'] = 6
+      assert_equal(nil, @cache['a'])
+      assert_equal(4, @cache['b'])
+      assert_equal(nil, @cache['c'])
+      assert_equal(5, @cache['d'])
+      assert_equal(6, @cache['e'])
     end
   end
 

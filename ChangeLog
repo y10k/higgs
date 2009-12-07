@@ -1,3 +1,7 @@
+2009-12-07  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/higgs/cache.rb: LRU cache by ordered Hash.
+
 2009-11-30  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* test/Rakefile, test/long/Rakefile, test/long/test_cache_mvcc.rb,

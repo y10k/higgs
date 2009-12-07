@@ -11,52 +11,29 @@ module Higgs
 
     def initialize(limit_size=1000)
       @limit_size = limit_size
-      @count = 0
-      @cache = {}
+      @hash = {}
     end
 
     attr_reader :limit_size
-    def_delegator :@cache, :keys
-    def_delegator :@cache, :key?
-    alias has_key? key?
-    alias include? key?
 
     def [](key)
-      if (cached_pair = @cache[key]) then
-        cached_pair[1] = @count
-        @count = @count.succ
-        return cached_pair[0]
+      if (@hash.key? key) then
+        @hash[key] = @hash.delete(key)
       end
-      nil
     end
 
     def []=(key, value)
-      if (cached_pair = @cache[key]) then
-        cached_pair[1] = @count
-      else
-        @cache[key] = [ value, @count ]
-      end
-      @count = @count.succ
-      if (@cache.size > @limit_size) then
-        purge_old_cache
-      end
+      @hash.delete(key) if (@hash.key? key)
+      @hash[key] = value
+      @hash.delete(@hash.each_key.next) if (@hash.size > @limit_size)
       value
     end
 
-    def purge_old_cache
-      c_list = @cache.map{|key, (value, c)| c }
-      c_list.sort!
-      threshold = c_list[c_list.size / 2]
-      @cache.delete_if{|key, (value, c)| c < threshold }
-    end
-    private :purge_old_cache
-
-    def delete(key)
-      if (cached_pair = @cache.delete(key)) then
-        return cached_pair[0]
-      end
-      nil
-    end
+    def_delegator :@hash, :keys
+    def_delegator :@hash, :key?
+    def_delegator :@hash, :delete
+    alias has_key? key?
+    alias include? key?
   end
 
   # = multi-thread safe cache
