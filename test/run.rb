@@ -11,11 +11,9 @@ if ($0 == __FILE__) then
   end
 end
 
-test_dir, this_name = File.split(__FILE__)
+test_dir = Dir.getwd
 for test_rb in Dir.entries(test_dir).sort
   case (test_rb)
-  when this_name
-    # skip
   when /^test_.*\.rb$/
     if (test_rb =~ mask) then
       puts "load #{test_rb}"

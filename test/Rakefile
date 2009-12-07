@@ -1,11 +1,29 @@
 # -*- coding: utf-8 -*-
 
+require 'rbconfig'
+
+RbConfig::CONFIG['RUBY_INSTALL_NAME'] =~ /(.*)ruby(.*)/i or raise 'not found RUBY_INSTALL_NAME'
+prefix = $1
+suffix = $2
+
+RAKE_CMD = "#{prefix}rake#{suffix}"
+
 task :default => [ :test ]
 
 desc 'run unit-test.'
 task :test do
   ruby 'run.rb'
 end
+
+desc 'run long unit-test.'
+task :long do
+  cd 'long', :verbose => true do
+    sh RAKE_CMD, 'test'
+  end
+end
+
+desc 'run all unit-test.'
+task :all => [ :test, :long ]
 
 # Local Variables:
 # mode: Ruby

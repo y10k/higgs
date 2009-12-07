@@ -1,3 +1,13 @@
+2009-11-30  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* test/Rakefile, test/long/Rakefile, test/long/test_cache_mvcc.rb,
+	test/long/test_lock.rb, test/long/test_online_backup.rb,
+	test/long/test_replication.rb, test/long/test_tman_mvcc.rb,
+	test/long/test_utils_bman.rb, test/run.rb,
+	test/test_cache_mvcc.rb, test/test_lock.rb,
+	test/test_online_backup.rb, test/test_replication.rb,
+	test/test_tman_mvcc.rb, test/test_utils_bman.rb: split long test.
+
 2009-10-23  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* Rakefile: program prefix and suffix.
