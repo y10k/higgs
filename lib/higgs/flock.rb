@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = file lock
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 module Higgs

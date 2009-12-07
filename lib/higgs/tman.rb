@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = transaction manager
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 require 'higgs/cache'

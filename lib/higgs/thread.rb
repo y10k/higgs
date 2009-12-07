@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = multi-thread utilities
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 require 'forwardable'

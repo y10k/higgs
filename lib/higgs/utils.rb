@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = namespace for utilities
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 module Higgs

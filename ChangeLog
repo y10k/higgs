@@ -1,3 +1,7 @@
+2009-10-21  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* LICENSE: move from ./lib/LICENSE to ./LICENSE.
+
 2009-10-20  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* mkrdoc.rb, rdoc.yml: these files are unnecessary because rake

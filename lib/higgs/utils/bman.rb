@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = backup manager
 # == license
-#   :include:../../LICENSE
+#   :include:../../../LICENSE
 #
 
 require 'drb'

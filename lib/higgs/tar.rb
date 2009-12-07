@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = unix TAR utilities
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 require 'forwardable'

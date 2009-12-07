@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = storage manager
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 require 'forwardable'

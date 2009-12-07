@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = remote services
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 require 'drb'

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = transactional storage core
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 require 'digest'

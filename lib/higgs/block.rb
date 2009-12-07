@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # = block read/write
 # == license
-#   :include:../LICENSE
+#   :include:../../LICENSE
 #
 
 require 'digest'
