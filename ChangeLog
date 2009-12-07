@@ -1,3 +1,7 @@
+2009-10-20  TOKI Yoshinori  <toki@freedom.ne.jp>
+
+	* lib/cgi/session/higgs.rb: obsolete.
+
 2009-05-19  TOKI Yoshinori  <toki@freedom.ne.jp>
 
 	* lib/higgs/flock.rb, lib/higgs/index.rb, lib/higgs/jlog.rb,
