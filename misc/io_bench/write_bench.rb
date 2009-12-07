@@ -1,8 +1,5 @@
 #!/usr/local/bin/ruby
 
-# for dient(1)
-CVS_ID = '$Id$'
-
 require 'benchmark'
 
 segment_count = (ARGV.shift || '10000').to_i

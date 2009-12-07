@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = transactional storage core
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -23,9 +18,6 @@ require 'yaml'
 module Higgs
   # = transactional storage core
   class Storage
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Exceptions
 
     class Error < HiggsError
@@ -349,7 +341,6 @@ module Higgs
       hash.update(String(now.usec))
       hash.update(String(rand(0)))
       hash.update(String($$))
-      hash.update(CVS_ID)
       hash.update(@name)
       hash.update('toki')
       hash.hexdigest

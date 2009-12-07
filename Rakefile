@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# for ident(1)
-CVS_ID = '$Id$'
 
 require 'lib/higgs/version'
 require 'rake/gempackagetask'

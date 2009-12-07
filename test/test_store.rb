@@ -10,9 +10,6 @@ module Higgs::Test
   class StoreTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @test_dir = 'store_test'
       FileUtils.rm_rf(@test_dir) # for debug
@@ -214,9 +211,6 @@ module Higgs::Test
 
   class StoreOpenTest < Test::Unit::TestCase
     include Higgs
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @test_dir = 'store_test'

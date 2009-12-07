@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = remote services
-#
-# Author:: $Author $
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -14,9 +9,6 @@ require 'drb'
 module Higgs
   # = remote services
   class RemoteServices
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     # theses options are defined.
     # [<tt>:remote_services_uri</tt>] URI for DRb remote call to provide services.
     # [<tt>:storage</tt>] an instance of Higgs::Storage as remote service provider.

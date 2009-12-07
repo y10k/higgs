@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = unix TAR utilities
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -14,9 +9,6 @@ require 'higgs/exceptions'
 
 module Higgs
   module Tar
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Exceptions
 
     class Error < HiggsError

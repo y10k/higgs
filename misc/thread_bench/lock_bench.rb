@@ -1,8 +1,5 @@
 #!/usr/local/bin/ruby
 
-# for ident(1)
-CVS_ID = '$Id$'
-
 $:.unshift File.join(File.dirname($0), '..', '..', 'lib')
 
 require 'benchmark'

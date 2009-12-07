@@ -27,9 +27,6 @@ module Higgs::Test
     include ThreadParams
     include Timeout
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def test_start_wait
       latch = Latch.new
 
@@ -60,9 +57,6 @@ module Higgs::Test
     include Higgs
     include ThreadParams
     include Timeout
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def test_count_down_wait
       latch = CountDownLatch.new(3)
@@ -102,9 +96,6 @@ module Higgs::Test
     include Higgs
     include ThreadParams
     include Timeout
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def test_wait
       barrier = Barrier.new(COUNT_OF_THREADS)
@@ -146,9 +137,6 @@ module Higgs::Test
     include Higgs
     include ThreadParams
     include Timeout
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def calc
       @s = 0                    # @s's scope is over multi-threading
@@ -324,9 +312,6 @@ module Higgs::Test
   class ReadWriteLockTest < Test::Unit::TestCase
     include Higgs
     include ThreadParams
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @rw_lock = ReadWriteLock.new
@@ -508,9 +493,6 @@ module Higgs::Test
   class PoolTest < Test::Unit::TestCase
     include Higgs
     include ThreadParams
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     class Counter
       def initialize

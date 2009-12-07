@@ -31,9 +31,6 @@ module Higgs::Test
     include Higgs
     include OnlineBackupParams
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       srand(0)
 

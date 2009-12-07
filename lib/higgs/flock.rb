@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
 # = file lock
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
 
 module Higgs
   class FileLock
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize(path, read_only=false)
       @path = path
       @read_only = read_only

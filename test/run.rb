@@ -4,9 +4,6 @@
 $:.unshift File.dirname(__FILE__)
 $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 
-# for ident(1)
-CVS_ID = '$Id$'
-
 mask = //                       # any match
 if ($0 == __FILE__) then
   if (ARGV.length > 0 && ARGV[0] !~ /^-/) then

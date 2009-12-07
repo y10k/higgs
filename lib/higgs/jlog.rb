@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = journal log writer
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -14,9 +9,6 @@ require 'higgs/block'
 module Higgs
   # = journal log writer
   class JournalLogger
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Block
 
     MAGIC_SYMBOL = 'HIGGS_JLOG'

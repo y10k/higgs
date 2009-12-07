@@ -3,9 +3,6 @@
 $:.unshift File.dirname(__FILE__)
 $:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
 
-# for ident(1)
-CVS_ID = '$Id$'
-
 require 'fileutils'
 require 'rbconfig'
 

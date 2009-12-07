@@ -15,9 +15,6 @@ module Higgs::Test
   class TransactionManagerTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @test_dir = 'st_test'
       FileUtils.rm_rf(@test_dir) # for debug
@@ -1088,9 +1085,6 @@ module Higgs::Test
   end
 
   class TransactionManagerTest_with_SecondaryCache < TransactionManagerTest
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       super
       @secondary_cache = {}

@@ -9,9 +9,6 @@ module Higgs::Test
   class FileLockTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @test_dir = 'flock_test'
       FileUtils.rm_rf(@test_dir) # for debug

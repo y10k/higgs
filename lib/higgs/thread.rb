@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = multi-thread utilities
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -105,9 +100,6 @@ module Higgs
   end
 
   class Latch
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize
       @lock = Mutex.new
       @cond = ConditionVariable.new
@@ -133,9 +125,6 @@ module Higgs
   end
 
   class CountDownLatch
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize(count)
       @count = count
       @lock = Mutex.new
@@ -163,9 +152,6 @@ module Higgs
   end
 
   class Barrier
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize(count)
       @count = count
       @lock = Mutex.new
@@ -192,9 +178,6 @@ module Higgs
   end
 
   class SharedWork
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize(&work)
       unless (work) then
         raise ArgumentError, 'required work block'
@@ -281,9 +264,6 @@ module Higgs
   end
 
   class ReadWriteLock
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize
       @lock = Mutex.new
       @read_cond = ConditionVariable.new
@@ -415,9 +395,6 @@ module Higgs
   end
 
   class Pool
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     class ShutdownException < Exceptions::ShutdownException
     end
 

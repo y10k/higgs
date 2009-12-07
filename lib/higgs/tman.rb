@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = transaction manager
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -17,9 +12,6 @@ require 'singleton'
 
 module Higgs
   class TransactionManager
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Exceptions
 
     class Error < HiggsError
@@ -151,9 +143,6 @@ module Higgs
   end
 
   class TransactionContext
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Enumerable
 
     def deep_copy(obj)

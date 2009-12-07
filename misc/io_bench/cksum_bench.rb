@@ -1,8 +1,5 @@
 #!/usr/local/bin/ruby
 
-# for dient(1)
-CVS_ID = '$Id$'
-
 require 'benchmark'
 require 'digest/md5'
 require 'digest/rmd160'

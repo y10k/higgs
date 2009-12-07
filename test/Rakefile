@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# for ident(1)
-CVS_ID = '$Id$'
 
 LIB_DIR = File.join(File.dirname(__FILE__), '..', 'lib')
 RCOV_DIR = File.join(File.dirname(__FILE__), 'coverage')

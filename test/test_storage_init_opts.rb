@@ -6,9 +6,6 @@ require 'test/unit'
 
 module Higgs::Test
   class StorageInitOptionsTest < Test::Unit::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Higgs::Storage::InitOptions
 
     def test_default

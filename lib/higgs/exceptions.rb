@@ -1,19 +1,11 @@
 # -*- coding: utf-8 -*-
 # = exceptions
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
 
 module Higgs
   module Exceptions
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     class HiggsError < StandardError
     end
 

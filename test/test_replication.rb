@@ -16,9 +16,6 @@ module Higgs::Test
   module ReplicationTest
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id: test_tman.rb 662 2007-11-03 16:13:33Z toki $'
-
     STORAGE_ITEMS = (ENV['STORAGE_ITEMS'] || '100').to_i
     WARM_START_ITEMS = (ENV['WARM_START_ITEMS'] || '1000').to_i
     MAX_ITEM_BYTES = (ENV['MAX_ITEM_BYTES'] || '16384').to_i
@@ -344,9 +341,6 @@ module Higgs::Test
     include Higgs
     include ReplicationTest
 
-    # for ident(1)
-    CVS_ID = '$Id: test_tman.rb 662 2007-11-03 16:13:33Z toki $'
-
     def setup_storage
       @src_st = Storage.new(@src_name,
                             :logger => @logger,
@@ -388,9 +382,6 @@ module Higgs::Test
     include Higgs
     include ReplicationTest
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup_storage
       @src = Store.new(@src_name,
                        :logger => @logger,
@@ -427,9 +418,6 @@ module Higgs::Test
   class DBMReplicationTest < Test::Unit::TestCase
     include Higgs
     include ReplicationTest
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup_storage
       @src = DBM.new(@src_name,

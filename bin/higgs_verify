@@ -4,9 +4,6 @@
 require 'higgs/storage'
 require 'optparse'
 
-# for ident(1)
-CVS_ID = '$Id$'
-
 opts = OptionParser.new
 opts.banner = "Usage: #{opts.program_name} [options] HIGGS_NAME"
 

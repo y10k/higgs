@@ -14,8 +14,6 @@ module Higgs
   # for higgs/tar.rb
   module Tar
     class JRawIO
-      CVS_ID = '$Id$'
-
       def make_java_byte_array(size)
         ([ 0 ]  * size).to_java(:byte)
       end

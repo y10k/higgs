@@ -1,6 +1,3 @@
-# for idnet(1)
-CVS_ID = '$Id$'
-
 LIB_DIR = File.join(File.dirname(__FILE__), '..', '..', 'lib')
 
 LOOP_COUNT = ENV['LOOP_COUNT'] || '100'

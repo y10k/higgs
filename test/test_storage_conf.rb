@@ -7,9 +7,6 @@ require 'test/unit'
 
 module Higgs::Test
   class StorageConfTest < Test::Unit::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Higgs
 
     def setup

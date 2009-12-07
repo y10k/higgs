@@ -10,9 +10,6 @@ module Higgs::Test
   class JournalLoggerTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @path = 't.jlog'
     end

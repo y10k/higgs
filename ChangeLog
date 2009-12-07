@@ -1,5 +1,8 @@
 2009-10-20  TOKI Yoshinori  <toki@freedom.ne.jp>
 
+	* keyword substitution will not be necessary because git instead
+	of subversion is used to manage source code in this project.
+
 	* lib/cgi/session/higgs.rb: obsolete.
 
 2009-05-19  TOKI Yoshinori  <toki@freedom.ne.jp>

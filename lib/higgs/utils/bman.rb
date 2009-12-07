@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = backup manager
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../../LICENSE
 #
@@ -164,9 +159,6 @@ module Higgs
     # set verbose level to <tt>LEVEL</tt>.
     #
     class BackupManager
-      # for ident(1)
-      CVS_ID = '$Id$'
-
       def initialize(options={})
         @from = options[:from]
         to_dir = options[:to_dir]

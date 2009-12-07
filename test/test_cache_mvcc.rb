@@ -14,9 +14,6 @@ module Higgs::Test
   class MVCCCacheTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     NUM_OF_THREADS = 10
     WORK_COUNT = 1000
 
@@ -206,9 +203,6 @@ module Higgs::Test
 
   class MVCCCacheWithHashTest < Test::Unit::TestCase
     include Higgs
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       srand(0)                  # preset for rand
@@ -429,9 +423,6 @@ module Higgs::Test
 
   class MVCCCacheWithStorageTest < Test::Unit::TestCase
     include Higgs
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup                   # preset for rand
       srand(0)

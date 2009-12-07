@@ -10,9 +10,6 @@ module Higgs::Test
   class DBMTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @test_dir = 'dbm_test'
       FileUtils.rm_rf(@test_dir) # for debug
@@ -136,9 +133,6 @@ module Higgs::Test
 
   class DBMOpenTest < Test::Unit::TestCase
     include Higgs
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @test_dir = 'dbm_test'

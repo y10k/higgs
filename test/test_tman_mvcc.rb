@@ -16,9 +16,6 @@ module Higgs::Test
     include Higgs
     include Timeout
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def create_lock_manager
       GiantLockManager.new
     end

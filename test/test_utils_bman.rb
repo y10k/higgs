@@ -15,9 +15,6 @@ module Higgs::Test
   class UtilsBackupManagerTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     STORAGE_ITEMS = (ENV['STORAGE_ITEMS'] || '100').to_i
     WARM_START_ITEMS = (ENV['WARM_START_ITEMS'] || '1000').to_i
     MAX_ITEM_BYTES = (ENV['MAX_ITEM_BYTES'] || '16384').to_i

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = storage manager
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -44,9 +39,6 @@ module Higgs
   # * Higgs::RemoteServices#remote_services_uri
   #
   class StorageManager
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     extend Forwardable
 
     # <tt>name</tt> is a storage name and see Higgs::Storage.new for

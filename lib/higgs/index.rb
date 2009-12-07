@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = storage index
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -17,9 +12,6 @@ require 'thread'
 module Higgs
   # = storage index
   class Index
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     extend Forwardable
     include Block
     include Synchronized

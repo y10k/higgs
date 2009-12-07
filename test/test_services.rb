@@ -10,9 +10,6 @@ module Higgs::Test
   class RemoteServicesTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     STORAGE_DIR = 'remote_storage'
     REMOTE_SERVICES_URI = 'druby://localhost:31415'
 

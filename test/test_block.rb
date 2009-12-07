@@ -10,9 +10,6 @@ module Higgs::Test
   class BlockTest < Test::Unit::TestCase
     include Higgs::Block
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @io = File.open('block.test_io', 'w+')
       @io.binmode

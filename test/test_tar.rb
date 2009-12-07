@@ -9,9 +9,6 @@ module Higgs::Test
   class TarBlockTest < Test::Unit::TestCase
     include Higgs::Tar
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def test_padding_size
       assert_equal(0,   Block.padding_size(0))
 
@@ -68,9 +65,6 @@ module Higgs::Test
   end
 
   class TarIOReadTest < Test::Unit::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def open_for_read(filename)
       File.open(filename, 'rb')
     end
@@ -139,9 +133,6 @@ module Higgs::Test
   class TarIOSysreadTest < TarIOReadTest
     include Higgs::Tar
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def open_for_read(filename)
       RawIO.open(filename, 'rb')
     end
@@ -150,9 +141,6 @@ module Higgs::Test
   class TarArchiveReaderTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def open_for_read(filename)
       File.open(filename, 'rb')
@@ -262,9 +250,6 @@ module Higgs::Test
   end
 
   class TarArchiveReaderSyscallTest < TarArchiveReaderTest
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def open_for_read(filename)
       RawIO.open(filename, 'rb')
     end
@@ -273,9 +258,6 @@ module Higgs::Test
   class TarArchiveWriterTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def open_for_write(filename)
       File.open(filename, 'wb')
@@ -344,9 +326,6 @@ module Higgs::Test
   end
 
   class TarArchiveWriterSyscallTest < TarArchiveWriterTest
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def open_for_write(filename)
       RawIO.open(filename, 'wb')
     end
@@ -355,9 +334,6 @@ module Higgs::Test
   class TarArchiveHeaderTest < Test::Unit::TestCase
     include Higgs::Tar
     include Higgs::Tar::Block
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @output = File.open('foo.tar', 'wb')

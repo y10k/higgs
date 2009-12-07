@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = block read/write
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -28,9 +23,6 @@ module Higgs
   #  73..511 : a440 : body hash binary
   #
   module Block
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Exceptions
 
     class BrokenError < HiggsError

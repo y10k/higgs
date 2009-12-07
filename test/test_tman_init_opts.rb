@@ -7,9 +7,6 @@ require 'yaml'
 
 module Higgs::Test
   class TransactionManagerInitOptionsTest < Test::Unit::TestCase
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Higgs::TransactionManager::InitOptions
 
     def test_default

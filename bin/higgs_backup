@@ -5,9 +5,6 @@ require 'drb'
 require 'higgs/utils/bman'
 require 'optparse'
 
-# for ident(1)
-CVS_ID = '$Id$'
-
 STDOUT.sync = true
 
 COMMANDs = [

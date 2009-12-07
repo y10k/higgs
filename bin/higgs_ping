@@ -4,9 +4,6 @@
 require 'drb'
 require 'optparse'
 
-# for ident(1)
-CVS_ID = '$Id$'
-
 opt_verbose = 0
 
 opts = OptionParser.new

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = storage like dbm
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -54,9 +49,6 @@ module Higgs
   #   %
   #
   class DBM < StorageManager
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     DECODE = proc{|r| r }
     ENCODE = proc{|w| w }
 

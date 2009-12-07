@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = storage like pstore
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -218,9 +213,6 @@ module Higgs
   #   %
   #
   class Store < StorageManager
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     DECODE = proc{|r| Marshal.load(r) }
     ENCODE = proc{|w| Marshal.dump(w) }
 

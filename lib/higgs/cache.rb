@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = cache utilities
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -16,9 +11,6 @@ require 'thread'
 module Higgs
   # = cache by Least Recently Used strategy
   class LRUCache
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     extend Forwardable
 
     def initialize(limit_size=1000)
@@ -73,9 +65,6 @@ module Higgs
 
   # = multi-thread safe cache
   class SharedWorkCache
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize(cache={}, &work)
       unless (work) then
         raise ArgumentError, 'required work block'

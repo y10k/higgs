@@ -11,9 +11,6 @@ module Higgs::Test
   module StorageTestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       srand(0)                  # preset for rand
       @test_dir = 'st_test'
@@ -36,9 +33,6 @@ module Higgs::Test
 
   class StorageTest < Test::Unit::TestCase
     include StorageTestCase
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def new_storage
       Storage.new(@st_name, :logger => @logger)
@@ -469,9 +463,6 @@ module Higgs::Test
   class StorageRecoveryTest < Test::Unit::TestCase
     include StorageTestCase
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def new_storage
       Storage.new(@st_name,
                   :jlog_rotate_max => 0, # unlimited rotation
@@ -790,9 +781,6 @@ module Higgs::Test
 
   class ReadOnlyStorageFirstOpenErrorTest < Test::Unit::TestCase
     include Higgs
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @test_dir = 'st_test'

@@ -4,9 +4,6 @@
 require 'drb'
 require 'optparse'
 
-# for ident(1)
-CVS_ID = '$Id$'
-
 opt_not_delete = false
 opt_switch_to_write = false
 

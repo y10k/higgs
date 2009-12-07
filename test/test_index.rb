@@ -10,9 +10,6 @@ module Higgs::Test
   class IndexChangeNumberTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @idx = Index.new
     end
@@ -44,9 +41,6 @@ module Higgs::Test
 
   class IndexFreeListTest < Test::Unit::TestCase
     include Higgs
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @idx = Index.new
@@ -90,9 +84,6 @@ module Higgs::Test
 
   class IndexTest < Test::Unit::TestCase
     include Higgs
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @idx = Index.new
@@ -164,9 +155,6 @@ module Higgs::Test
   class IndexIdentitiesTest < Test::Unit::TestCase
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @idx = Index.new
     end
@@ -202,9 +190,6 @@ module Higgs::Test
 
   class IndexLoadSaveTest < Test::Unit::TestCase
     include Higgs
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @path = 'test.idx'

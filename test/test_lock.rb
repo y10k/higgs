@@ -11,9 +11,6 @@ module Higgs::Test
   module LockManagerTest
     include Higgs
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     WORK_COUNT = 1000
     THREAD_COUNT = 10
 
@@ -306,9 +303,6 @@ module Higgs::Test
     include Higgs
     include LockManagerTest
 
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def setup
       @lock_manager = GiantLockManager.new
     end
@@ -323,9 +317,6 @@ module Higgs::Test
   class OptimisticLockManagerTest < Test::Unit::TestCase
     include Higgs
     include LockManagerTest
-
-    # for ident(1)
-    CVS_ID = '$Id$'
 
     def setup
       @lock_manager = OptimisticLockManager.new

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 # = multi-thread lock manager
-#
-# Author:: $Author$
-# Date:: $Date::                           $
-# Revision:: $Revision$
-#
 # == license
 #   :include:../LICENSE
 #
@@ -17,9 +12,6 @@ require 'thread'
 module Higgs
   # = multi-thread lock manager
   class LockManager
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     include Exceptions
 
     class Error < HiggsError
@@ -102,9 +94,6 @@ module Higgs
   end
 
   class GiantLockManager < LockManager
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize(*args)
       super
       @write_lock = Mutex.new
@@ -126,9 +115,6 @@ module Higgs
   end
 
   class OptimisticLockManager < LockManager
-    # for ident(1)
-    CVS_ID = '$Id$'
-
     def initialize(*args)
       super
       @critical_lock = Mutex.new
