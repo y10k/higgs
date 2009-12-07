@@ -1,4 +1,4 @@
-please run `ruby mkrdoc.rb' or `rake rdoc', and see api/index.html by
+please run `rake rdoc', and see api/index.html by
 your browser.
 
 Web: http://higgs.rubyforge.org

@@ -1,9 +1,0 @@
-CommonOptions:
-  - -SNa
-  - [ -m, Higgs ]
-
-CommandLineOptions:
-  - [ -x, misc ]
-  - [ -x, sample ]
-  - [ -x, test ]
-  - [ -o, api ]

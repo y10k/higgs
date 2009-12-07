@@ -53,7 +53,7 @@ spec = Gem::Specification.new{|s|
   ]
   s.files =
     Dir['{lib,misc,sample,test}/**/{Rakefile,.strc,*.rb,*.yml}'] +
-    %w[ ChangeLog README Rakefile lib/LICENSE mkrdoc.rb rdoc.yml ]
+    %w[ ChangeLog README Rakefile lib/LICENSE ]
   s.test_files = %w[ test/run.rb ]
   s.has_rdoc = true
   s.rdoc_options = rdoc_opts
