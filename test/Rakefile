@@ -1,41 +1,10 @@
 # -*- coding: utf-8 -*-
 
-LIB_DIR = File.join(File.dirname(__FILE__), '..', 'lib')
-RCOV_DIR = File.join(File.dirname(__FILE__), 'coverage')
-
 task :default => [ :test ]
 
+desc 'run unit-test.'
 task :test do
-  ruby '-I', LIB_DIR, 'run.rb'
-end
-
-task :rcov do
-  rm_rf RCOV_DIR
-  sh 'rcov', '-I', LIB_DIR, '-x', 'rcov\.rb,run\.rb', 'run.rb'
-end
-
-task :optional do
-  for opt_rb in Dir['optional/*.rb']
-    symlnk_rb = File.basename(opt_rb)
-    unless (File.symlink? symlnk_rb) then
-      ln_s opt_rb, symlnk_rb, :verbose => true
-    end
-  end
-end
-
-task :clean do
-  rm_rf RCOV_DIR
-end
-
-task :clean_optional do
-  for opt_rb in Dir['optional/*.rb']
-    symlnk_rb = File.basename(opt_rb)
-    rm_f symlnk_rb
-  end
-end
-
-rule '.test' => [ '.rb' ] do |t|
-  ruby '-I', LIB_DIR, 'run.rb', '^' + Regexp.quote(t.source) + '$'
+  ruby 'run.rb'
 end
 
 # Local Variables:
