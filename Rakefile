@@ -23,6 +23,7 @@ end
 
 task :default
 
+desc 'unit-test.'
 task :test do
   cd_v TEST_DIR do
     sh RAKE_CMD
@@ -32,14 +33,17 @@ end
 rdoc_dir = 'api'
 rdoc_opts = [ '-SNa', '-m', 'Higgs', '-t', 'pure ruby transactional storage compatible with unix TAR format' ]
 
+desc 'make document.'
 task :rdoc do
   sh RDOC_CMD, *rdoc_opts, '-o', rdoc_dir, 'lib'
 end
 
+desc 'clean document.'
 task :rdoc_clean do
   rm_rf rdoc_dir
 end
 
+desc 'upload document to higgs.rubyforge.org.'
 task :rdoc_upload => [ :rdoc_clean, :rdoc ] do
   sh 'scp', '-pr', rdoc_dir, 'rubyforge.org:/var/www/gforge-projects/higgs/.'
 end
@@ -72,10 +76,12 @@ Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_tar_gz = true
 end
 
+desc 'install gem.'
 task :gem_install => [ :gem ] do
   sh GEM_CMD, 'install', "pkg/higgs-#{Higgs::VERSION}.gem"
 end
 
+desc 'clean garbage files'
 task :clean => [ :rdoc_clean, :clobber_package ] do
   cd_v 'misc/dbm_bench' do
     sh RAKE_CMD, 'clean'
