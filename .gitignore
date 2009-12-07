@@ -1,0 +1,6 @@
+*~
+/api/*
+/gems/*
+/pkg/*
+/misc/dbm_bench/foo*
+/misc/io_bench/*.dat
