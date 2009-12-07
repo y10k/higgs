@@ -2,12 +2,9 @@
 
 require 'lib/higgs/version'
 require 'rake/gempackagetask'
-require 'yaml'
 
 LIB_DIR = 'lib'
 TEST_DIR = 'test'
-RDOC_OPTS = YAML.load(IO.read('rdoc.yml'))
-RDOC_DIR = RDOC_OPTS['CommandLineOptions'].assoc('-o')[1]
 
 def cd_v(dir)
   cd(dir, :verbose => true) {
@@ -23,16 +20,19 @@ task :test do
   end
 end
 
+rdoc_dir = 'api'
+rdoc_opts = [ '-SNa', '-m', 'Higgs', '-t', 'pure ruby transactional storage compatible with unix TAR format' ]
+
 task :rdoc do
-  sh 'rdoc', *(RDOC_OPTS['CommonOptions'] + RDOC_OPTS['CommandLineOptions']).flatten
+  sh 'rdoc', *rdoc_opts, '-o', rdoc_dir, 'lib'
 end
 
 task :rdoc_clean do
-  rm_rf RDOC_DIR
+  rm_rf rdoc_dir
 end
 
 task :rdoc_upload => [ :rdoc_clean, :rdoc ] do
-  sh 'scp', '-pr', RDOC_DIR, 'rubyforge.org:/var/www/gforge-projects/higgs/.'
+  sh 'scp', '-pr', rdoc_dir, 'rubyforge.org:/var/www/gforge-projects/higgs/.'
 end
 
 spec = Gem::Specification.new{|s|
@@ -56,7 +56,7 @@ spec = Gem::Specification.new{|s|
     %w[ ChangeLog README Rakefile lib/LICENSE mkrdoc.rb rdoc.yml ]
   s.test_files = %w[ test/run.rb ]
   s.has_rdoc = true
-  s.rdoc_options = RDOC_OPTS['CommonOptions'].flatten
+  s.rdoc_options = rdoc_opts
 }
 Rake::GemPackageTask.new(spec) do |pkg|
   pkg.need_zip = true
