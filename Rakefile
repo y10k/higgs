@@ -2,6 +2,15 @@
 
 require 'lib/higgs/version'
 require 'rake/gempackagetask'
+require 'rbconfig'
+
+RbConfig::CONFIG['RUBY_INSTALL_NAME'] =~ /(.*)ruby(.*)/i or raise 'not found RUBY_INSTALL_NAME'
+prefix = $1
+suffix = $2
+
+RAKE_CMD = "#{prefix}rake#{suffix}"
+RDOC_CMD = "#{prefix}rdoc#{suffix}"
+GEM_CMD = "#{prefix}gem#{suffix}"
 
 LIB_DIR = 'lib'
 TEST_DIR = 'test'
@@ -16,7 +25,7 @@ task :default
 
 task :test do
   cd_v TEST_DIR do
-    sh 'rake'
+    sh RAKE_CMD
   end
 end
 
@@ -24,7 +33,7 @@ rdoc_dir = 'api'
 rdoc_opts = [ '-SNa', '-m', 'Higgs', '-t', 'pure ruby transactional storage compatible with unix TAR format' ]
 
 task :rdoc do
-  sh 'rdoc', *rdoc_opts, '-o', rdoc_dir, 'lib'
+  sh RDOC_CMD, *rdoc_opts, '-o', rdoc_dir, 'lib'
 end
 
 task :rdoc_clean do
@@ -64,12 +73,12 @@ Rake::GemPackageTask.new(spec) do |pkg|
 end
 
 task :gem_install => [ :gem ] do
-  sh 'gem', 'install', "pkg/higgs-#{Higgs::VERSION}.gem"
+  sh GEM_CMD, 'install', "pkg/higgs-#{Higgs::VERSION}.gem"
 end
 
 task :clean => [ :rdoc_clean, :clobber_package ] do
   cd_v 'misc/dbm_bench' do
-    sh 'rake', 'clean'
+    sh RAKE_CMD, 'clean'
   end
 end
 
