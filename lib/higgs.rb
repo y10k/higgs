@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = pure ruby transactional storage compatible with unix TAR format
-# == license
-#   :include:../LICENSE
-#
 
 require 'higgs/dbm'
 require 'higgs/store'

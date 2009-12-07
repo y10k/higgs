@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# JRuby compatibility support
 
 require 'higgs/tar'
 require 'java'
@@ -11,8 +10,8 @@ require 'digest/sha1'
 require 'digest/sha2'
 
 module Higgs
-  # for higgs/tar.rb
   module Tar
+    # JRuby compatibility support
     class JRawIO
       def make_java_byte_array(size)
         ([ 0 ]  * size).to_java(:byte)

@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = transactional storage core
-# == license
-#   :include:../../LICENSE
-#
 
 require 'digest'
 require 'higgs/block'

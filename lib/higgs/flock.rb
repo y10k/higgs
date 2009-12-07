@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = file lock
-# == license
-#   :include:../../LICENSE
-#
 
 module Higgs
   class FileLock

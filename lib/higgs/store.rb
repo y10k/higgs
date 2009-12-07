@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = storage like pstore
-# == license
-#   :include:../../LICENSE
-#
 
 require 'higgs/sman'
 

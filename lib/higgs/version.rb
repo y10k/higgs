@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = version
-# == license
-#   :include:../../LICENSE
-#
 
 module Higgs
   VERSION = '0.1.7'

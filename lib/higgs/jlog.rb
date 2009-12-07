@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = journal log writer
-# == license
-#   :include:../../LICENSE
-#
 
 require 'higgs/block'
 

@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = storage index
-# == license
-#   :include:../../LICENSE
-#
 
 require 'forwardable'
 require 'higgs/block'

@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = multi-thread lock manager
-# == license
-#   :include:../../LICENSE
-#
 
 require 'higgs/cache'
 require 'higgs/exceptions'

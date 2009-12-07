@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-# = unix TAR utilities
-# == license
-#   :include:../../LICENSE
-#
 
 require 'forwardable'
 require 'higgs/exceptions'
 
 module Higgs
+  # = unix TAR utilities
   module Tar
     include Exceptions
 

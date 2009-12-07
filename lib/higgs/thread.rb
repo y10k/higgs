@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = multi-thread utilities
-# == license
-#   :include:../../LICENSE
-#
 
 require 'forwardable'
 require 'higgs/exceptions'

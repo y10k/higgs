@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = storage like dbm
-# == license
-#   :include:../../LICENSE
-#
 
 require 'higgs/sman'
 

@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-# = block read/write
-# == license
-#   :include:../../LICENSE
-#
 
 require 'digest'
 require 'higgs/exceptions'
 
 module Higgs
+  # = block read/write
   # block header format
   # 
   #   0..15  : Z16  : magic symbol

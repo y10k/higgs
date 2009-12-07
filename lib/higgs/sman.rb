@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = storage manager
-# == license
-#   :include:../../LICENSE
-#
 
 require 'forwardable'
 require 'higgs/services'

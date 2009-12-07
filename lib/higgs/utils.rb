@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-# = namespace for utilities
-# == license
-#   :include:../../LICENSE
-#
 
 module Higgs
   # = namespace for command-line utilities
