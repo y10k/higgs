@@ -23,7 +23,7 @@ module Higgs
     end
 
     def []=(key, value)
-      @hash.delete(key) if (@hash.key? key)
+      @hash.delete(key)
       @hash[key] = value
       @hash.delete(@hash.each_key.next) if (@hash.size > @limit_size)
       value
