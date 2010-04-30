@@ -26,12 +26,12 @@ module Higgs
       @out.stat.size
     end
 
-    def write(log, hash_type=nil)
+    def write(log)
       bin_log = Marshal.dump(log)
       start_pos = @out.tell
       commit_completed = false
       begin
-        block_write(@out, MAGIC_SYMBOL, bin_log, hash_type || @hash_type)
+        block_write(@out, MAGIC_SYMBOL, bin_log, @hash_type)
         if (@sync) then
           @out.fsync
         else
