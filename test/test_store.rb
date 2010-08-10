@@ -192,7 +192,7 @@ module Higgs::Test
 
         expected_keys = [ :foo, :bar, :baz ]
         tx.each_key do |key|
-          assert((expected_keys.include? key), key)
+          assert((expected_keys.include? key), "key: #{key}")
           expected_keys.delete(key)
         end
         assert_equal([], expected_keys)
@@ -201,7 +201,7 @@ module Higgs::Test
       @st.transaction{|tx|
         expected_keys = [ :foo, :bar, :baz ]
         tx.each_key do |key|
-          assert((expected_keys.include? key), key)
+          assert((expected_keys.include? key), "key: #{key}")
           expected_keys.delete(key)
         end
         assert_equal([], expected_keys)

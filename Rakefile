@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-require 'lib/higgs/version'
+load File.join(File.dirname(__FILE__), 'lib/higgs/version.rb')
+
 require 'rake/gempackagetask'
 require 'rbconfig'
 
