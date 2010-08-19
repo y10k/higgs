@@ -572,6 +572,11 @@ module Higgs
       nil
     end
 
+    # <tt>tx</tt> is storage handler to read or write.
+    def transaction(read_only=@read_only) # :yields: tx
+      yield(self)
+    end
+
     def raw_write_and_commit(write_list, commit_time=Time.now)
       @commit_lock.synchronize{
         @logger.debug("start raw_write_and_commit.") if @logger.debug?
