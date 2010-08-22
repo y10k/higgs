@@ -614,9 +614,9 @@ module Higgs
                   :val => value
                 }
                 if (i = @index[key]) then
-		  i = i.dup
+                  i = i.dup
                   if (j = i[type]) then
-		    j = j.dup; i[type] = j
+                    j = j.dup; i[type] = j
                     commit_log << {
                       :ope => :free_store,
                       :pos => j[:pos],
@@ -630,7 +630,7 @@ module Higgs
                   else
                     i[type] = { :pos => pos, :siz => blocked_size, :cnum => @index.change_number }
                   end
-		  @index[key] = i
+                  @index[key] = i
                 else
                   @index[key] = { type => { :pos => pos, :siz => blocked_size, :cnum => @index.change_number } }
                 end
