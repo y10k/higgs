@@ -83,10 +83,6 @@ module Higgs
       end
       @cnum_func = @storage.method(:change_number)
       @mvcc_cache = MVCCCache.new
-      @master_cache = SharedWorkCache.new(@master_cache) {|key|
-        (id = @storage.unique_data_id(key) and @secondary_cache[id]) or
-          (value = @storage.fetch(key) and @secondary_cache[@storage.unique_data_id(key)] = value.freeze)
-      }
     end
 
     # <tt>tx</tt> of block argument is transaction context and see
@@ -96,12 +92,12 @@ module Higgs
       @lock_manager.transaction(read_only) {|lock_handler|
         @mvcc_cache.transaction(@cnum_func) {|snapshot|
           if (read_only) then
-            tx = ReadOnlyTransactionContext.new(lock_handler, @storage, snapshot, @master_cache, @secondary_cache, @decode, @encode)
+            tx = ReadOnlyTransactionContext.new(lock_handler, @storage, snapshot, @decode, @encode)
           else
             if (@read_only) then
               raise NotWritableError, 'not writable'
             end
-            tx = ReadWriteTransactionContext.new(lock_handler, @storage, snapshot, @master_cache, @secondary_cache, @decode, @encode)
+            tx = ReadWriteTransactionContext.new(lock_handler, @storage, snapshot, @decode, @encode)
           end
           r = yield(tx)
           tx.commit(false) unless read_only
@@ -117,9 +113,7 @@ module Higgs
         end
         name = File.join(@jlog_apply_dir, File.basename(@storage.name))
         for jlog_path in Storage.rotated_entries("#{name}.jlog")
-          @storage.apply_journal_log(jlog_path) {|key|
-            @master_cache.delete(key)
-          }
+          @storage.apply_journal_log(jlog_path)
           File.unlink(jlog_path) unless not_delete
         end
       }
@@ -154,21 +148,19 @@ module Higgs
     end
     private :string_only
 
-    def initialize(lock_handler, storage, snapshot, master_cache, secondary_cache, decode, encode)
+    def initialize(lock_handler, storage, snapshot, decode, encode)
       @lock_handler = lock_handler
       @storage = storage
       @snapshot = snapshot
-      @master_cache = master_cache
-      @secondary_cache = secondary_cache
       @decode = decode
       @encode = encode
 
       @local_data_cache = Hash.new{|hash, key|
         if (@snapshot.key? @storage, key) then
           if (string_only(key)) then
-            hash[key] = @snapshot.fetch(key, :data) { @master_cache[key] }
+            hash[key] = @snapshot.fetch(key, :data) { @storage.fetch(key).freeze }
           else
-            hash[key] = @decode.call(@snapshot.fetch(key, :data) { @master_cache[key] })
+            hash[key] = @decode.call(@snapshot.fetch(key, :data) { @storage.fetch(key).freeze })
           end
         end
       }
@@ -516,7 +508,7 @@ module Higgs
           when :write
             if (@storage.key? key) then
               properties = deep_copy(@storage.fetch_properties(key))
-              old_write_list << [ :value, key, :data, @master_cache[key] ]
+              old_write_list << [ :value, key, :data, @storage.fetch(key).freeze ]
               old_write_list << [ :value, key, :properties, properties ]
               old_write_list << [ :value, key, :identity, @storage.identity(key) ]
               old_write_list << [ :value, key, :string_only, properties['system_properties']['string_only'] ]
@@ -536,7 +528,7 @@ module Higgs
           when :delete
             if (@storage.key? key) then
               properties = deep_copy(@storage.fetch_properties(key))
-              old_write_list << [ :value, key, :data, @master_cache[key] ]
+              old_write_list << [ :value, key, :data, @storage.fetch(key).freeze ]
               old_write_list << [ :value, key, :properties, properties ]
               old_write_list << [ :value, key, :identity, @storage.identity(key) ]
               old_write_list << [ :value, key, :string_only, properties['system_properties']['string_only'] ]
@@ -550,10 +542,6 @@ module Higgs
         @snapshot.write_old_values(old_write_list)
 
         for ope, key, value in write_list
-          case (ope)
-          when :write, :delete
-            @master_cache.delete(key)
-          end
           @local_properties_cache.delete(key)
         end
         @update_system_properties.clear
