@@ -91,16 +91,18 @@ module Higgs
       r = nil
       @lock_manager.transaction(read_only) {|lock_handler|
         @mvcc_cache.transaction(@cnum_func) {|snapshot|
-          if (read_only) then
-            tx = ReadOnlyTransactionContext.new(lock_handler, @storage, snapshot, @decode, @encode)
-          else
-            if (@read_only) then
-              raise NotWritableError, 'not writable'
+          @storage.transaction(read_only) {|st_hndl|
+            if (read_only) then
+              tx = ReadOnlyTransactionContext.new(lock_handler, st_hndl, snapshot, @decode, @encode)
+            else
+              if (@read_only) then
+                raise NotWritableError, 'not writable'
+              end
+              tx = ReadWriteTransactionContext.new(lock_handler, st_hndl, snapshot, @decode, @encode)
             end
-            tx = ReadWriteTransactionContext.new(lock_handler, @storage, snapshot, @decode, @encode)
-          end
-          r = yield(tx)
-          tx.commit(false) unless read_only
+            r = yield(tx)
+            tx.commit(false) unless read_only
+          }
         }
       }
       r
@@ -142,7 +144,7 @@ module Higgs
 
     def string_only(key)
       @snapshot.fetch(key, :string_only) {
-        properties = @storage.fetch_properties(key) and
+        properties = @st_hndl.fetch_properties(key) and
           properties['system_properties']['string_only']
       }
     end
@@ -150,24 +152,24 @@ module Higgs
 
     def initialize(lock_handler, storage, snapshot, decode, encode)
       @lock_handler = lock_handler
-      @storage = storage
+      @st_hndl = storage
       @snapshot = snapshot
       @decode = decode
       @encode = encode
 
       @local_data_cache = Hash.new{|hash, key|
-        if (@snapshot.key? @storage, key) then
+        if (@snapshot.key? @st_hndl, key) then
           if (string_only(key)) then
-            hash[key] = @snapshot.fetch(key, :data) { @storage.fetch(key).freeze }
+            hash[key] = @snapshot.fetch(key, :data) { @st_hndl.fetch(key).freeze }
           else
-            hash[key] = @decode.call(@snapshot.fetch(key, :data) { @storage.fetch(key).freeze })
+            hash[key] = @decode.call(@snapshot.fetch(key, :data) { @st_hndl.fetch(key).freeze })
           end
         end
       }
 
       @local_properties_cache = Hash.new{|hash, key|
         hash[key] = @snapshot.fetch(key, :properties) {
-          deep_copy(@storage.fetch_properties(key))
+          deep_copy(@st_hndl.fetch_properties(key))
         } || { 'system_properties' => {}, 'custom_properties' => {} }
       }
 
@@ -189,12 +191,12 @@ module Higgs
     def lock(key)
       unless (@locked_map[key]) then
         cnum =  @snapshot.fetch(key, :data_change_number) {
-          @storage.data_change_number(key)
+          @st_hndl.data_change_number(key)
         }
         @lock_handler.lock(key, :data, cnum)
 
         cnum = @snapshot.fetch(key, :properties_change_number) {
-          @storage.properties_change_number(key)
+          @st_hndl.properties_change_number(key)
         }
         @lock_handler.lock(key, :properties, cnum)
 
@@ -247,7 +249,7 @@ module Higgs
         if (@local_data_cache.key? key) then
           return true
         end
-        if (@snapshot.key? @storage, key) then
+        if (@snapshot.key? @st_hndl, key) then
           return true
         end
       end
@@ -265,7 +267,7 @@ module Higgs
           yield(key)
         end
       end
-      @snapshot.each_key(@storage) do |key|
+      @snapshot.each_key(@st_hndl) do |key|
         lock(key)
         if (@ope_map[key] != :delete) then
           unless (@local_data_cache.key? key) then
@@ -335,11 +337,11 @@ module Higgs
         if (properties = @local_properties_cache[key]) then
           case (name)
           when :identity
-            @snapshot.fetch(key, :identity) { @storage.identity(key) }
+            @snapshot.fetch(key, :identity) { @st_hndl.identity(key) }
           when :data_change_number
-            @snapshot.fetch(key, :data_change_number) { @storage.data_change_number(key) }
+            @snapshot.fetch(key, :data_change_number) { @st_hndl.data_change_number(key) }
           when :properties_change_number
-            @snapshot.fetch(key, :properties_change_number) { @storage.properties_change_number(key) }
+            @snapshot.fetch(key, :properties_change_number) { @st_hndl.properties_change_number(key) }
           when Symbol
             properties['system_properties'][name.to_s]
           when String
@@ -395,11 +397,11 @@ module Higgs
       if (self.key? key) then   # lock
         case (name)
         when :identity
-          return @snapshot.fetch(key, :identity) { @storage.identity(key) } != nil
+          return @snapshot.fetch(key, :identity) { @st_hndl.identity(key) } != nil
         when :data_change_number
-          return @snapshot.fetch(key, :data_change_number) { @storage.data_change_number(key) } != nil
+          return @snapshot.fetch(key, :data_change_number) { @st_hndl.data_change_number(key) } != nil
         when :properties_change_number
-          return @snapshot.fetch(key, :properties_change_number) { @storage.properties_change_number(key) } != nil
+          return @snapshot.fetch(key, :properties_change_number) { @st_hndl.properties_change_number(key) } != nil
         when Symbol
           return (@local_properties_cache[key]['system_properties'].key? name.to_s)
         when String
@@ -415,13 +417,13 @@ module Higgs
       unless (self.key? key) then # lock
         raise IndexError, "not exist properties at key: #{key}"
       end
-      if (value = @snapshot.fetch(key, :identity) { @storage.identity(key) }) then
+      if (value = @snapshot.fetch(key, :identity) { @st_hndl.identity(key) }) then
         yield(:identity, value)
       end
-      if (value = @snapshot.fetch(key, :data_change_number) { @storage.data_change_number(key) }) then
+      if (value = @snapshot.fetch(key, :data_change_number) { @st_hndl.data_change_number(key) }) then
         yield(:data_change_number, value)
       end
-      if (value = @snapshot.fetch(key, :properties_change_number) { @storage.properties_change_number(key) }) then
+      if (value = @snapshot.fetch(key, :properties_change_number) { @st_hndl.properties_change_number(key) }) then
         yield(:properties_change_number, value)
       end
       @local_properties_cache[key]['system_properties'].each_pair do |name, value|
@@ -494,9 +496,9 @@ module Higgs
         @lock_handler.check_collision{|key, type|
           case (type)
           when :data
-            @storage.data_change_number(key)
+            @st_hndl.data_change_number(key)
           when :properties
-            @storage.properties_change_number(key)
+            @st_hndl.properties_change_number(key)
           else
             raise "unknown type: #{type}"
           end
@@ -506,34 +508,34 @@ module Higgs
         for ope, key, value in write_list
           case (ope)
           when :write
-            if (@storage.key? key) then
-              properties = deep_copy(@storage.fetch_properties(key))
-              old_write_list << [ :value, key, :data, @storage.fetch(key).freeze ]
+            if (@st_hndl.key? key) then
+              properties = deep_copy(@st_hndl.fetch_properties(key))
+              old_write_list << [ :value, key, :data, @st_hndl.fetch(key).freeze ]
               old_write_list << [ :value, key, :properties, properties ]
-              old_write_list << [ :value, key, :identity, @storage.identity(key) ]
+              old_write_list << [ :value, key, :identity, @st_hndl.identity(key) ]
               old_write_list << [ :value, key, :string_only, properties['system_properties']['string_only'] ]
-              old_write_list << [ :value, key, :data_change_number, @storage.data_change_number(key) ]
-              old_write_list << [ :value, key, :properties_change_number, @storage.properties_change_number(key) ]
+              old_write_list << [ :value, key, :data_change_number, @st_hndl.data_change_number(key) ]
+              old_write_list << [ :value, key, :properties_change_number, @st_hndl.properties_change_number(key) ]
             else
               old_write_list << [ :none, key ]
             end
           when :system_properties, :custom_properties
-            if (@storage.key? key) then
-              properties = deep_copy(@storage.fetch_properties(key))
+            if (@st_hndl.key? key) then
+              properties = deep_copy(@st_hndl.fetch_properties(key))
               old_write_list << [ :value, key, :properties, properties ]
-              old_write_list << [ :value, key, :properties_change_number, @storage.properties_change_number(key) ]
+              old_write_list << [ :value, key, :properties_change_number, @st_hndl.properties_change_number(key) ]
             else
               old_write_list << [ :none, key ]
             end
           when :delete
-            if (@storage.key? key) then
-              properties = deep_copy(@storage.fetch_properties(key))
-              old_write_list << [ :value, key, :data, @storage.fetch(key).freeze ]
+            if (@st_hndl.key? key) then
+              properties = deep_copy(@st_hndl.fetch_properties(key))
+              old_write_list << [ :value, key, :data, @st_hndl.fetch(key).freeze ]
               old_write_list << [ :value, key, :properties, properties ]
-              old_write_list << [ :value, key, :identity, @storage.identity(key) ]
+              old_write_list << [ :value, key, :identity, @st_hndl.identity(key) ]
               old_write_list << [ :value, key, :string_only, properties['system_properties']['string_only'] ]
-              old_write_list << [ :value, key, :data_change_number, @storage.data_change_number(key) ]
-              old_write_list << [ :value, key, :properties_change_number, @storage.properties_change_number(key) ]
+              old_write_list << [ :value, key, :data_change_number, @st_hndl.data_change_number(key) ]
+              old_write_list << [ :value, key, :properties_change_number, @st_hndl.properties_change_number(key) ]
             end
           else
             raise "unknown operation: #{ope}"
@@ -548,10 +550,10 @@ module Higgs
         @update_custom_properties.clear
         @ope_map.clear
 
-        @storage.write_and_commit(write_list)
+        @st_hndl.write_and_commit(write_list)
         if (continue) then
           @snapshot.ref_count_down
-          @snapshot.ref_count_up(@storage.method(:change_number))
+          @snapshot.ref_count_up(@st_hndl.method(:change_number))
         end
       }
 
