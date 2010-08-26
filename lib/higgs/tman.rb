@@ -336,8 +336,6 @@ module Higgs
       if (@ope_map[key] != :delete) then
         if (properties = @local_properties_cache[key]) then
           case (name)
-          when :identity
-            @snapshot.fetch(key, :identity) { @st_hndl.identity(key) }
           when :data_change_number
             @snapshot.fetch(key, :data_change_number) { @st_hndl.data_change_number(key) }
           when :properties_change_number
@@ -396,8 +394,6 @@ module Higgs
 
       if (self.key? key) then   # lock
         case (name)
-        when :identity
-          return @snapshot.fetch(key, :identity) { @st_hndl.identity(key) } != nil
         when :data_change_number
           return @snapshot.fetch(key, :data_change_number) { @st_hndl.data_change_number(key) } != nil
         when :properties_change_number
@@ -416,9 +412,6 @@ module Higgs
     def each_property(key)      # :yields: name, value
       unless (self.key? key) then # lock
         raise IndexError, "not exist properties at key: #{key}"
-      end
-      if (value = @snapshot.fetch(key, :identity) { @st_hndl.identity(key) }) then
-        yield(:identity, value)
       end
       if (value = @snapshot.fetch(key, :data_change_number) { @st_hndl.data_change_number(key) }) then
         yield(:data_change_number, value)
@@ -512,7 +505,6 @@ module Higgs
               properties = deep_copy(@st_hndl.fetch_properties(key))
               old_write_list << [ :value, key, :data, @st_hndl.fetch(key).freeze ]
               old_write_list << [ :value, key, :properties, properties ]
-              old_write_list << [ :value, key, :identity, @st_hndl.identity(key) ]
               old_write_list << [ :value, key, :string_only, properties['system_properties']['string_only'] ]
               old_write_list << [ :value, key, :data_change_number, @st_hndl.data_change_number(key) ]
               old_write_list << [ :value, key, :properties_change_number, @st_hndl.properties_change_number(key) ]
@@ -532,7 +524,6 @@ module Higgs
               properties = deep_copy(@st_hndl.fetch_properties(key))
               old_write_list << [ :value, key, :data, @st_hndl.fetch(key).freeze ]
               old_write_list << [ :value, key, :properties, properties ]
-              old_write_list << [ :value, key, :identity, @st_hndl.identity(key) ]
               old_write_list << [ :value, key, :string_only, properties['system_properties']['string_only'] ]
               old_write_list << [ :value, key, :data_change_number, @st_hndl.data_change_number(key) ]
               old_write_list << [ :value, key, :properties_change_number, @st_hndl.properties_change_number(key) ]

@@ -243,11 +243,10 @@ module Higgs::Test
       }
     end
 
-    def test_change_number_and_unique_data_id
+    def test_change_number
       @st.transaction{|tx|
         assert_equal(nil, tx.data_change_number(:foo))
         assert_equal(nil, tx.properties_change_number(:foo))
-        assert_equal(nil, tx.unique_data_id(:foo))
 
         tx.write_and_commit([ [ :write, :foo, 'apple' ] ])
       }
@@ -255,7 +254,6 @@ module Higgs::Test
       @st.transaction{|tx|
         assert_equal(1, tx.data_change_number(:foo))
         assert_equal(1, tx.properties_change_number(:foo))
-        assert_equal("foo\t1", tx.unique_data_id(:foo))
 
         tx.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'banana' } ] ])
       }
@@ -263,7 +261,6 @@ module Higgs::Test
       @st.transaction{|tx|
         assert_equal(1, tx.data_change_number(:foo))
         assert_equal(2, tx.properties_change_number(:foo))
-        assert_equal("foo\t1", tx.unique_data_id(:foo))
 
         tx.write_and_commit([ [ :write, :foo, 'orange' ] ])
       }
@@ -271,7 +268,6 @@ module Higgs::Test
       @st.transaction{|tx|
         assert_equal(3, tx.data_change_number(:foo))
         assert_equal(3, tx.properties_change_number(:foo))
-        assert_equal("foo\t3", tx.unique_data_id(:foo))
 
         tx.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
       }
@@ -279,7 +275,6 @@ module Higgs::Test
       @st.transaction{|tx|
         assert_equal(3, tx.data_change_number(:foo))
         assert_equal(4, tx.properties_change_number(:foo))
-        assert_equal("foo\t3", tx.unique_data_id(:foo))
       }
     end
 

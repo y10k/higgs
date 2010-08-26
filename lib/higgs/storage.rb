@@ -1117,10 +1117,6 @@ module Higgs
       value
     end
 
-    def identity(key)
-      @index.identity(key)
-    end
-
     def change_number
       @cnum_lock.synchronize{ @saved_change_number || @index.change_number }
     end
@@ -1131,12 +1127,6 @@ module Higgs
 
     def properties_change_number(key)
       i = @index[key] and i[:p][:cnum] || -1
-    end
-
-    def unique_data_id(key)
-      id = identity(key) or return
-      cnum = data_change_number(key) or return
-      "#{id}\t#{cnum}"
     end
 
     def key?(key)

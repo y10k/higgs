@@ -506,7 +506,6 @@ module Higgs::Test
                   old_values << [ :value, key, :properties, properties ]
                   old_values << [ :value, key, :data_change_number, tx.data_change_number(key) ]
                   old_values << [ :value, key, :properties_change_number, tx.properties_change_number(key) ]
-                  old_values << [ :value, key, :unique_data_id, tx.unique_data_id(key) ]
                 else
                   old_values << [ :none, key ]
                 end
@@ -525,7 +524,6 @@ module Higgs::Test
                   old_values << [ :value, key, :properties, properties ]
                   old_values << [ :value, key, :data_change_number, tx.data_change_number(key) ]
                   old_values << [ :value, key, :properties_change_number, tx.properties_change_number(key) ]
-                  old_values << [ :value, key, :unique_data_id, tx.unique_data_id(key) ]
                 end
               end
             end
@@ -552,8 +550,7 @@ module Higgs::Test
             :data => tx.fetch(key),
             :properties => Marshal.load(Marshal.dump(tx.fetch_properties(key))),
             :data_change_number => tx.data_change_number(key),
-            :properties_change_number => tx.properties_change_number(key),
-            :unique_data_id => tx.unique_data_id(key)
+            :properties_change_number => tx.properties_change_number(key)
           }
         end
 
@@ -577,8 +574,6 @@ module Higgs::Test
                                snapshot.fetch(k, :data_change_number) { tx.data_change_number(k) }, "thread: #{i}, key: #{k}")
                   assert_equal(init_values[k] && init_values[k][:properties_change_number],
                                snapshot.fetch(k, :properties_change_number) { tx.properties_change_number(k) }, "thread: #{i}, key: #{k}")
-                  assert_equal(init_values[k] && init_values[k][:unique_data_id],
-                               snapshot.fetch(k, :unique_data_id) { tx.unique_data_id(k) }, "thread: #{i}, key: #{k}")
                 end
               end
             }
