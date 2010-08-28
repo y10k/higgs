@@ -138,7 +138,7 @@ module Higgs::Test
       @st.shutdown
       @st = nil
       @st = Storage.new(@st_name, :read_only => true, :logger => @logger)
-      assert_raise(Storage::NotWritableError) {
+      assert_raise(NoMethodError) {
         @st.transaction{|tx|
           tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
         }
@@ -149,7 +149,7 @@ module Higgs::Test
       @st.shutdown
       @st = nil
       @st = Storage.new(@st_name, :read_only => :standby, :logger => @logger)
-      assert_raise(Storage::NotWritableError) {
+      assert_raise(NoMethodError) {
         @st.transaction{|tx|
           tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
         }

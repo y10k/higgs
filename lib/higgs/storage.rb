@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 require 'digest'
+require 'forwardable'
 require 'higgs/block'
 require 'higgs/cache'
 require 'higgs/flock'
@@ -572,9 +573,30 @@ module Higgs
       nil
     end
 
+    class ReadHandler
+      extend Forwardable
+
+      def initialize(storage)
+        @storage = storage
+      end
+
+      def_delegator :@storage, :fetch_properties
+      def_delegator :@storage, :fetch
+      def_delegator :@storage, :data_change_number
+      def_delegator :@storage, :properties_change_number
+      def_delegator :@storage, :key?
+      def_delegator :@storage, :keys
+      def_delegator :@storage, :each_key
+      def_delegator :@storage, :verify
+    end
+
     # <tt>tx</tt> is storage handler to read or write.
-    def transaction(read_only=@read_only) # :yields: tx
-      yield(self)
+    def transaction(read_only=false) # :yields: tx
+      if (@read_only || read_only) then
+        yield(ReadHandler.new(self))
+      else
+        yield(self)
+      end
     end
 
     def raw_write_and_commit(write_list, commit_time=Time.now)
