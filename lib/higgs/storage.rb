@@ -157,6 +157,25 @@ module Higgs
       options
     end
 
+    class Stat
+      def initialize
+        @commit_lock = Mutex.new
+        @state_lock = Mutex.new
+        @cnum_lock = Mutex.new
+        @panic = false
+        @shutdown = false
+        @saved_change_number = nil
+      end
+
+      attr_reader :commit_lock
+      attr_reader :state_lock
+      attr_reader :cnum_lock
+
+      attr_accessor :panic
+      attr_accessor :shutdown
+      attr_accessor :saved_change_number
+    end
+
     # <tt>name</tt> is storage name.
     # see Higgs::Storage::InitOptions for <tt>options</tt>.
     #
@@ -176,13 +195,7 @@ module Higgs
       @jlog_name = "#{@name}.jlog"
       @lock_name = "#{@name}.lock"
 
-      @commit_lock = Mutex.new
-      @state_lock = Mutex.new
-      @panic = false
-      @shutdown = false
-
-      @cnum_lock = Mutex.new
-      @saved_change_number = nil
+      @stat = Stat.new
 
       init_options(options)
 
@@ -258,7 +271,7 @@ module Higgs
         if (init_completed) then
           @logger.info("completed storage open.")
         else
-          @panic = true
+          @stat.panic = true
 
           if ($! && @logger) then
             begin
@@ -340,24 +353,24 @@ module Higgs
     private :create_storage_id
 
     def check_panic
-      if (@shutdown) then
+      if (@stat.shutdown) then
         raise ShutdownException, 'storage shutdown'
       end
-      if (@panic) then
+      if (@stat.panic) then
         raise PanicError, 'broken storage'
       end
     end
     private :check_panic
 
     def check_read
-      @state_lock.synchronize{
+      @stat.state_lock.synchronize{
         check_panic
       }
     end
     private :check_read
 
     def check_standby
-      @state_lock.synchronize{
+      @stat.state_lock.synchronize{
         check_panic
         if (@read_only && @read_only != :standby) then
           raise NotWritableError, 'failed to write to read only storage'
@@ -367,7 +380,7 @@ module Higgs
     private :check_standby
 
     def check_read_write
-      @state_lock.synchronize{
+      @stat.state_lock.synchronize{
         check_panic
         if (@read_only) then
           raise NotWritableError, 'failed to write to read only storage'
@@ -416,7 +429,7 @@ module Higgs
         recover_completed = true
       ensure
         unless (recover_completed) then
-          @state_lock.synchronize{ @panic = true }
+          @stat.state_lock.synchronize{ @stat.panic = true }
           @logger.error("panic: failed to recover.")
           @logger.error($!) if $!
         end
@@ -429,15 +442,15 @@ module Higgs
     attr_reader :name
 
     def shutdown
-      @commit_lock.synchronize{
-        @state_lock.synchronize{
+      @stat.commit_lock.synchronize{
+        @stat.state_lock.synchronize{
           read_only = @read_only && @read_only != :standby
 
-          if (@shutdown) then
+          if (@stat.shutdown) then
             raise ShutdownException, 'storage shutdown'
           end
           @logger.info("shutdown start...")
-          @shutdown = true
+          @stat.shutdown = true
 
           if (@jlog_rotate_service) then
             @logger.info("stop journal log rotation service: #{@jlog_rotate_service}")
@@ -445,7 +458,7 @@ module Higgs
           end
 
           unless (read_only) then
-            if (@panic) then
+            if (@stat.panic) then
               @logger.warn("abort journal log: #{@jlog_name}")
               @jlog.close(false)
             else
@@ -454,7 +467,7 @@ module Higgs
             end
           end
 
-          if (! @panic && ! read_only) then
+          if (! @stat.panic && ! read_only) then
             @logger.info("save index: #{@idx_name}")
             @index.save(@idx_name)
           end
@@ -481,12 +494,12 @@ module Higgs
     end
 
     def shutdown?
-      @state_lock.synchronize{ @shutdown }
+      @stat.state_lock.synchronize{ @stat.shutdown }
     end
 
     def alive?
-      @state_lock.synchronize{
-        ! @shutdown && ! @panic
+      @stat.state_lock.synchronize{
+        ! @stat.shutdown && ! @stat.panic
       }
     end
 
@@ -550,7 +563,7 @@ module Higgs
     private :internal_rotate_journal_log
 
     def rotate_journal_log(save_index=true)
-      @commit_lock.synchronize{
+      @stat.commit_lock.synchronize{
         check_read_write
         rotate_completed = false
         begin
@@ -558,7 +571,7 @@ module Higgs
           rotate_completed = true
         ensure
           unless (rotate_completed) then
-            @state_lock.synchronize{ @panic = true }
+            @stat.state_lock.synchronize{ @stat.panic = true }
             @logger.error("panic: failed to rotate journal log.")
             @logger.error($!) if $!
           end
@@ -616,7 +629,7 @@ module Higgs
     end
 
     def raw_write_and_commit(write_list, commit_time=Time.now)
-      @commit_lock.synchronize{
+      @stat.commit_lock.synchronize{
         @logger.debug("start raw_write_and_commit.") if @logger.debug?
 
         check_read_write
@@ -625,7 +638,7 @@ module Higgs
         eoa = @index.eoa
 
         begin
-          @cnum_lock.synchronize{ @saved_change_number = @index.change_number }
+          @stat.cnum_lock.synchronize{ @stat.saved_change_number = @index.change_number }
           @index.succ!
           @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
           commit_log << { :ope => :succ, :cnum => @index.change_number }
@@ -809,11 +822,11 @@ module Higgs
           commit_completed = true
         ensure
           unless (commit_completed) then
-            @state_lock.synchronize{ @panic = true }
+            @stat.state_lock.synchronize{ @stat.panic = true }
             @logger.error("panic: failed to commit.")
             @logger.error($!) if $!
           end
-          @cnum_lock.synchronize{ @saved_change_number = nil }
+          @stat.cnum_lock.synchronize{ @stat.saved_change_number = nil }
         end
 
         @logger.debug("completed raw_write_and_commit.") if @logger.debug?
@@ -931,7 +944,7 @@ module Higgs
     end
 
     def apply_journal_log(path)
-      @commit_lock.synchronize{
+      @stat.commit_lock.synchronize{
         @logger.info("start to apply journal log.")
 
         check_standby
@@ -971,7 +984,7 @@ module Higgs
           apply_completed = true
         ensure
           unless (apply_completed) then
-            @state_lock.synchronize{ @panic = true }
+            @stat.state_lock.synchronize{ @stat.panic = true }
             @logger.error("panic: failed to apply journal log.")
             @logger.error($!) if $!
           end
@@ -984,7 +997,7 @@ module Higgs
     end
 
     def switch_to_write
-      @state_lock.synchronize{
+      @stat.state_lock.synchronize{
         if (@read_only != :standby) then
           raise "not standby mode: #{@read_only}"
         end
@@ -1078,7 +1091,7 @@ module Higgs
             head_and_body = r_tar.fetch
           }
           unless (head_and_body) then
-            @state_lock.synchronize{ @panic = true }
+            @stat.state_lock.synchronize{ @stat.panic = true }
             @logger.error("panic: failed to read record: #{key}")
             raise PanicError, "failed to read record: #{key}"
           end
@@ -1105,12 +1118,12 @@ module Higgs
       head, body = value.split(/\n/, 2)
       cksum_type, cksum_value = head.sub(/^#\s+/, '').split(/\s+/, 2)
       if (cksum_type != PROPERTIES_CKSUM_TYPE) then
-        @state_lock.synchronize{ @panic = true }
+        @stat.state_lock.synchronize{ @stat.panic = true }
         @logger.error("panic: unknown properties cksum type: #{cksum_type}")
         raise PanicError, "unknown properties cksum type: #{cksum_type}"
       end
       if (body.sum(PROPERTIES_CKSUM_BITS) != Integer(cksum_value)) then
-        @state_lock.synchronize{ @panic = true }
+        @stat.state_lock.synchronize{ @stat.panic = true }
         @logger.error("panic: mismatch properties cksum at #{key}")
         raise PanicError, "mismatch properties cksum at #{key}"
       end
@@ -1132,19 +1145,19 @@ module Higgs
       check_read
       value = read_record_body(key, :d) or return
       unless (properties = internal_fetch_properties(key)) then
-        @state_lock.synchronize{ @panic = true }
+        @stat.state_lock.synchronize{ @stat.panic = true }
         @logger.error("panic: failed to read properties: #{key}")
         raise PanicError, "failed to read properties: #{key}"
       end
       hash_type = properties['system_properties']['hash_type']
       unless (hash_proc = DATA_HASH_BIN[hash_type]) then
-        @state_lock.synchronize{ @panic = true }
+        @stat.state_lock.synchronize{ @stat.panic = true }
         @logger.error("panic: unknown data hash type: #{hash_type}")
         raise PanicError, "unknown data hash type: #{hash_type}"
       end
       hash_value = hash_proc.call(value)
       if (hash_value != properties['system_properties']['hash_value']) then
-        @state_lock.synchronize{ @panic = true }
+        @stat.state_lock.synchronize{ @stat.panic = true }
         @logger.error("panic: mismatch hash value at #{key}")
         raise PanicError, "mismatch hash value at #{key}"
       end
@@ -1152,7 +1165,7 @@ module Higgs
     end
 
     def change_number
-      @cnum_lock.synchronize{ @saved_change_number || @index.change_number }
+      @stat.cnum_lock.synchronize{ @stat.saved_change_number || @index.change_number }
     end
 
     def data_change_number(key)
