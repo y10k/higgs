@@ -176,6 +176,29 @@ module Higgs
       attr_accessor :saved_change_number
     end
 
+    class Core
+      attr_writer :logger
+      attr_writer :stat
+      attr_writer :w_tar
+      attr_writer :r_tar_pool
+      attr_writer :jlog
+
+      def check_panic
+        if (@stat.shutdown) then
+          raise ShutdownException, 'storage shutdown'
+        end
+        if (@stat.panic) then
+          raise PanicError, 'broken storage'
+        end
+      end
+
+      def check_read
+        @stat.state_lock.synchronize{
+          check_panic
+        }
+      end
+    end
+
     # <tt>name</tt> is storage name.
     # see Higgs::Storage::InitOptions for <tt>options</tt>.
     #
@@ -195,7 +218,9 @@ module Higgs
       @jlog_name = "#{@name}.jlog"
       @lock_name = "#{@name}.lock"
 
+      @core = Core.new
       @stat = Stat.new
+      @core.stat = @stat
 
       init_options(options)
 
@@ -216,6 +241,7 @@ module Higgs
         else
           @logger.info("get file lock for write")
         end
+        @core.logger = @logger
 
         @logger.info format('block format version: 0x%04X', Block::FMT_VERSION)
         @logger.info("journal log hash type: #{@jlog_hash_type}")
@@ -234,6 +260,7 @@ module Higgs
           w_io.binmode
           w_io.set_encoding(Encoding::ASCII_8BIT)
           @w_tar = Tar::ArchiveWriter.new(w_io)
+          @core.w_tar = @w_tar
         end
 
         @logger.info("build I/O handle pool for read.")
@@ -242,6 +269,7 @@ module Higgs
           @logger.info("open I/O handle for read: #{@tar_name}")
           Tar::ArchiveReader.new(r_io)
         }
+        @core.r_tar_pool = @r_tar_pool
 
         @index = Index.new
         if (File.exist? @idx_name) then
@@ -264,6 +292,7 @@ module Higgs
           @logger.info("journal log sync mode: #{@jlog_sync}")
           @logger.info("open journal log for write: #{@jlog_name}")
           @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_hash_type)
+          @core.jlog = @jlog
         end
 
         init_completed = true
@@ -352,26 +381,9 @@ module Higgs
     end
     private :create_storage_id
 
-    def check_panic
-      if (@stat.shutdown) then
-        raise ShutdownException, 'storage shutdown'
-      end
-      if (@stat.panic) then
-        raise PanicError, 'broken storage'
-      end
-    end
-    private :check_panic
-
-    def check_read
-      @stat.state_lock.synchronize{
-        check_panic
-      }
-    end
-    private :check_read
-
     def check_standby
       @stat.state_lock.synchronize{
-        check_panic
+        @core.check_panic
         if (@read_only && @read_only != :standby) then
           raise NotWritableError, 'failed to write to read only storage'
         end
@@ -381,7 +393,7 @@ module Higgs
 
     def check_read_write
       @stat.state_lock.synchronize{
-        check_panic
+        @core.check_panic
         if (@read_only) then
           raise NotWritableError, 'failed to write to read only storage'
         end
@@ -1137,12 +1149,12 @@ module Higgs
     private :internal_fetch_properties
 
     def fetch_properties(key)
-      check_read
+      @core.check_read
       internal_fetch_properties(key)
     end
 
     def fetch(key)
-      check_read
+      @core.check_read
       value = read_record_body(key, :d) or return
       unless (properties = internal_fetch_properties(key)) then
         @stat.state_lock.synchronize{ @stat.panic = true }
@@ -1177,7 +1189,7 @@ module Higgs
     end
 
     def key?(key)
-      check_read
+      @core.check_read
       @index.key? key
     end
 
@@ -1188,7 +1200,7 @@ module Higgs
     end
 
     def each_key
-      check_read
+      @core.check_read
       @index.each_key do |key|
         yield(key)
       end
@@ -1205,7 +1217,7 @@ module Higgs
     ]
 
     def verify(out=nil, verbose_level=1)
-      check_read
+      @core.check_read
       for key in keys(true)
         if (out && verbose_level >= 1) then
           out << "check #{key}\n"
