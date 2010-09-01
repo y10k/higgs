@@ -210,11 +210,6 @@ module Higgs
         @logger.info("storage data hash type: #{@data_hash_type}")
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
 
-        @logger.info("properties cache type: #{@properties_cache.class}")
-        @properties_cache = SharedWorkCache.new(@properties_cache) {|key|
-          value = read_record_body(key, :p) and decode_properties(key, value)
-        }
-
         unless (read_only) then
           begin
             w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
@@ -961,7 +956,6 @@ module Higgs
 
               @logger.debug("apply journal log: #{change_number}") if @logger.debug?
               Storage.apply_journal(@w_tar, @index, log) {|key|
-                @properties_cache.delete(key)
                 yield(key) if block_given?
               }
 
@@ -1035,12 +1029,10 @@ module Higgs
           end
           properties['system_properties']['hash_value'] = DATA_HASH[@data_hash_type].call(value)
           properties['system_properties']['modified_time'] = commit_time
-          @properties_cache.delete(key)
         when :delete
           raw_write_list << [ :delete, key ]
           deleted_entries[key] = true
           update_properties.delete(key)
-          @properties_cache.delete(key)
         when :custom_properties, :system_properties
           if (deleted_entries[key]) then
             raise IndexError, "not exist properties at key: #{key}"
@@ -1063,7 +1055,6 @@ module Higgs
           else
             raise ArgumentError, "unknown operation: #{ope}"
           end
-          @properties_cache.delete(key)
         else
           raise ArgumentError, "unknown operation: #{ope}"
         end
@@ -1128,7 +1119,7 @@ module Higgs
     private :decode_properties
 
     def internal_fetch_properties(key)
-      @properties_cache[key] # see initialize
+      value = read_record_body(key, :p) and decode_properties(key, value)
     end
     private :internal_fetch_properties
 
