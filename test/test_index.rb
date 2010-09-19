@@ -152,42 +152,6 @@ module Higgs::Test
     end
   end
 
-  class IndexIdentitiesTest < Test::Unit::TestCase
-    include Higgs
-
-    def setup
-      @idx = Index.new
-    end
-
-    def test_identity
-      @idx[:foo] = 0
-      assert_equal('foo', @idx.identity(:foo))
-      @idx[:foo] = 1            # overwrite index entry
-      assert_equal('foo', @idx.identity(:foo))
-    end
-
-    def test_identity_not_defined
-      assert_nil(@idx.identity(:foo))
-    end
-
-    def test_identity_dup
-      @idx[:foo] = 0
-      @idx['foo'] = 1
-      assert_equal('foo', @idx.identity(:foo))
-      assert_equal('foo.a', @idx.identity('foo'))
-    end
-
-    def test_delete
-      @idx[:foo] = 0
-      @idx['foo'] = 1
-      @idx.delete(:foo)
-      assert_equal(nil, @idx.identity(:foo))
-      assert_equal('foo.a', @idx.identity('foo'))
-      @idx['foo'] = 2           # overwrite index entry
-      assert_equal('foo.a', @idx.identity('foo'))
-    end
-  end
-
   class IndexLoadSaveTest < Test::Unit::TestCase
     include Higgs
 
@@ -213,7 +177,6 @@ module Higgs::Test
       assert_equal(2048, j.eoa)
       assert_equal(0, j.free_fetch(512))
       assert_equal(1024, j[:foo])
-      assert_equal('foo', j.identity(:foo))
     end
 
     def test_migration
@@ -239,15 +202,13 @@ module Higgs::Test
       assert_equal(0, h[:change_number])
       assert_equal(1024, h[:eoa])
       assert_equal({ 512 => [ 512 ] }, h[:free_lists])
-      assert_equal({ :foo => [ 'foo', 0 ] }, h[:index], 'index format version: 0.1')
-      assert_equal({ 'foo' => :foo }, h[:identities], 'index format version: 0.1')
+      assert_equal({ :foo => 0 }, h[:index], 'index format version: 0.3')
       assert_equal('68c6b76688d84b4d72856d8f589a5551', h[:storage_id], 'index format version: 0.2')
 
       assert_equal(0, i.change_number)
       assert_equal(1024, i.eoa)
       assert_equal(512, i.free_fetch(512))
       assert_equal(0, i[:foo])
-      assert_equal('foo', i.identity(:foo))
       assert_equal('68c6b76688d84b4d72856d8f589a5551', i.storage_id)
     end
 

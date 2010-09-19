@@ -14,14 +14,13 @@ module Higgs
 
     MAGIC_SYMBOL = 'HIGGS_INDEX'
     MAJOR_VERSION = 0
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     def initialize
       @change_number = 0
       @eoa = 0
       @free_lists = {}
       @index = {}
-      @identities = {}
       @storage_id = nil
       self.__lock__ = Mutex.new
     end
@@ -53,46 +52,11 @@ module Higgs
     end
     synchronized :free_store
 
+    def_synchronized_delegator :@index, :[]
+    def_synchronized_delegator :@index, :[]=
+    def_synchronized_delegator :@index, :delete
     def_synchronized_delegator :@index, :key?
     def_synchronized_delegator :@index, :keys
-
-    def identity(key)
-      i = @index[key] and i[0]
-    end
-    synchronized :identity
-
-    def [](key)
-      i = @index[key] and i[1]
-    end
-    synchronized :[]
-
-    def self.create_id(key, identities)
-      id = key.to_s
-      if (identities.key? id) then
-        id += '.a'
-        id.succ! while (identities.key? id)
-      end
-      id
-    end
-
-    def []=(key, value)
-      if (i = @index[key]) then
-        i[1] = value
-      else
-        id = Index.create_id(key, @identities)
-        @identities[id] = key
-        @index[key] = [ id, value ]
-      end
-      value
-    end
-    synchronized :[]=
-
-    def delete(key)
-      id, value = @index.delete(key)
-      @identities.delete(id) if id
-      value
-    end
-    synchronized :delete
 
     def each_key
       keys = __lock__.synchronize{ @index.keys }
@@ -108,11 +72,20 @@ module Higgs
         :eoa => @eoa,
         :free_lists => @free_lists,
         :index => @index,
-        :identities => @identities,
         :storage_id => @storage_id
       }
     end
     synchronized :to_h
+
+    # backward compatibility for migration.
+    def self.create_id(key, identities)
+      id = key.to_s
+      if (identities.key? id) then
+        id += '.a'
+        id.succ! while (identities.key? id)
+      end
+      id
+    end
 
     def migration_0_0_to_0_1(index_data)
       if ((index_data[:version] <=> [ 0, 0 ]) > 0) then
@@ -151,6 +124,25 @@ module Higgs
     end
     private :migration_0_1_to_0_2
 
+    def migration_0_2_to_0_3(index_data)
+      if ((index_data[:version] <=> [ 0, 2 ]) > 0) then
+        return
+      end
+      if ((index_data[:version] <=> [ 0, 2 ]) < 0) then
+        raise "unexpected index format version: #{index_data[:version].join('.')}"
+      end
+
+      index = index_data[:index]
+      for key in index.keys
+        index[key] = index[key][1]
+      end
+      index_data.delete(:identities)
+      index_data[:version] = [ 0, 3 ]
+
+      index_data
+    end
+    private :migration_0_2_to_0_3
+
     def save(path)
       tmp_path = "#{path}.tmp.#{$$}"
       File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
@@ -173,6 +165,7 @@ module Higgs
         index_data = Marshal.load(block_read(f, MAGIC_SYMBOL))
         migration_0_0_to_0_1(index_data)
         migration_0_1_to_0_2(index_data)
+        migration_0_2_to_0_3(index_data)
         if (index_data[:version] != [ MAJOR_VERSION, MINOR_VERSION ]) then
           raise "unsupported version: #{index_data[:version].join('.')}"
         end
@@ -181,7 +174,6 @@ module Higgs
           @eoa = index_data[:eoa]
           @free_lists = index_data[:free_lists]
           @index = index_data[:index]
-          @identities = index_data[:identities]
           @storage_id = index_data[:storage_id]
         }
       }
