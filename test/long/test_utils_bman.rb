@@ -176,30 +176,32 @@ module Higgs::Test
     def update_storage(options)
       count = 0
       while (options[:spin_lock])
-        count += 1
-        options[:end_of_warm_up].start if (count == WARM_START_ITEMS)
+        @from_st.transaction{|tx|
+          count += 1
+          options[:end_of_warm_up].start if (count == WARM_START_ITEMS)
 
-        write_list = []
-        ope = [ :write, :system_properties, :custom_properties, :delete ][rand(4)]
-        key = rand(STORAGE_ITEMS)
-        case (ope)
-        when :write
-          value = rand(256).chr * rand(MAX_ITEM_BYTES)
-          write_list << [ ope, key, value ]
-        when :system_properties
-          next unless (@from_st.key? key)
-          write_list << [ ope, key, { 'string_only' => [ true, false ][rand(2)] } ]
-        when :custom_properties
-          next unless (@from_st.key? key)
-          value = ITEM_CHARS[rand(ITEM_CHARS.length)] * rand(MAX_ITEM_BYTES)
-          write_list << [ ope, key, { 'foo' => value } ]
-        when :delete
-          next unless (@from_st.key? key)
-          write_list << [ ope, key ]
-        else
-          raise "unknown operation: #{ope}"
-        end
-        @from_st.write_and_commit(write_list)
+          write_list = []
+          ope = [ :write, :system_properties, :custom_properties, :delete ][rand(4)]
+          key = rand(STORAGE_ITEMS)
+          case (ope)
+          when :write
+            value = rand(256).chr * rand(MAX_ITEM_BYTES)
+            write_list << [ ope, key, value ]
+          when :system_properties
+            next unless (tx.key? key)
+            write_list << [ ope, key, { 'string_only' => [ true, false ][rand(2)] } ]
+          when :custom_properties
+            next unless (tx.key? key)
+            value = ITEM_CHARS[rand(ITEM_CHARS.length)] * rand(MAX_ITEM_BYTES)
+            write_list << [ ope, key, { 'foo' => value } ]
+          when :delete
+            next unless (tx.key? key)
+            write_list << [ ope, key ]
+          else
+            raise "unknown operation: #{ope}"
+          end
+          tx.write_and_commit(write_list)
+        }
       end
     end
     private :update_storage

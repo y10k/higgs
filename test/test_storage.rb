@@ -49,7 +49,9 @@ module Higgs::Test
         [ :write, :foo, :data, 'foo', "Hello world.\n" ],
         [ :write, :foo, :data, 'foo', 0xFF.chr * 1024 ]
       ]
-      @st.raw_write_and_commit(write_list)
+      @st.transaction{|tx|
+        tx.raw_write_and_commit(write_list)
+      }
     end
 
     def test_write_and_commit
@@ -60,68 +62,76 @@ module Higgs::Test
         [ :system_properties, :foo, { 'string_only' => true } ],
         [ :custom_properties, :foo, { 'TestDate' => '2007-04-29' } ]
       ]
-      @st.write_and_commit(write_list)
+      @st.transaction{|tx|
+        tx.write_and_commit(write_list)
+      }
     end
 
     def test_write_and_commit_fetch
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
+      @st.transaction{|tx|
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
 
-      # add
-      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+        # add
+        tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
 
-      assert_equal("Hello world.\n", @st.fetch('foo'))
-      properties = @st.fetch_properties('foo')
-      assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
-      assert_equal(false, properties['system_properties']['string_only'])
-      assert_equal({}, properties['custom_properties'])
+        assert_equal("Hello world.\n", tx.fetch('foo'))
+        properties = tx.fetch_properties('foo')
+        assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
+        assert_equal(false, properties['system_properties']['string_only'])
+        assert_equal({}, properties['custom_properties'])
 
-      # update properties
-      @st.write_and_commit([ [ :system_properties, 'foo', { 'string_only' => true } ] ])
-      @st.write_and_commit([ [ :custom_properties, 'foo', { :comment => 'test' } ] ])
+        # update properties
+        tx.write_and_commit([ [ :system_properties, 'foo', { 'string_only' => true } ] ])
+        tx.write_and_commit([ [ :custom_properties, 'foo', { :comment => 'test' } ] ])
 
-      assert_equal("Hello world.\n", @st.fetch('foo'))
-      properties = @st.fetch_properties('foo')
-      assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
-      assert_equal(true, properties['system_properties']['string_only'])
-      assert_equal({ :comment => 'test' }, properties['custom_properties'])
+        assert_equal("Hello world.\n", tx.fetch('foo'))
+        properties = tx.fetch_properties('foo')
+        assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
+        assert_equal(true, properties['system_properties']['string_only'])
+        assert_equal({ :comment => 'test' }, properties['custom_properties'])
 
-      # update
-      @st.write_and_commit([ [ :write, 'foo', "Good bye.\n" ] ])
+        # update
+        tx.write_and_commit([ [ :write, 'foo', "Good bye.\n" ] ])
 
-      assert_equal("Good bye.\n", @st.fetch('foo'))
-      properties = @st.fetch_properties('foo')
-      assert_equal(Digest::MD5.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
-      assert_equal(true, properties['system_properties']['string_only'])
-      assert_equal({ :comment => 'test' }, properties['custom_properties'])
+        assert_equal("Good bye.\n", tx.fetch('foo'))
+        properties = tx.fetch_properties('foo')
+        assert_equal(Digest::MD5.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
+        assert_equal(true, properties['system_properties']['string_only'])
+        assert_equal({ :comment => 'test' }, properties['custom_properties'])
 
-      # delete
-      @st.write_and_commit([ [ :delete, 'foo' ] ])
+        # delete
+        tx.write_and_commit([ [ :delete, 'foo' ] ])
 
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
+      }
     end
 
     def test_write_and_commit_fetch_zero_bytes
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
+      @st.transaction{|tx|
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
 
-      @st.write_and_commit([ [ :write, 'foo', '' ] ])
+        tx.write_and_commit([ [ :write, 'foo', '' ] ])
 
-      assert_equal('', @st.fetch('foo'))
-      properties = @st.fetch_properties('foo')
-      assert_equal(Digest::MD5.hexdigest(''), properties['system_properties']['hash_value'])
-      assert_equal({}, properties['custom_properties'])
+        assert_equal('', tx.fetch('foo'))
+        properties = tx.fetch_properties('foo')
+        assert_equal(Digest::MD5.hexdigest(''), properties['system_properties']['hash_value'])
+        assert_equal({}, properties['custom_properties'])
+      }
     end
 
     def test_write_and_commit_fetch_delete_no_data
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
+      @st.transaction{|tx|
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
 
-      @st.write_and_commit([ [ :delete , 'foo'] ])
+        tx.write_and_commit([ [ :delete , 'foo'] ])
 
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
+      }
     end
 
     def test_write_and_commit_read_only_NotWritableError
@@ -129,7 +139,9 @@ module Higgs::Test
       @st = nil
       @st = Storage.new(@st_name, :read_only => true, :logger => @logger)
       assert_raise(Storage::NotWritableError) {
-        @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+        @st.transaction{|tx|
+          tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+        }
       }
     end
 
@@ -138,211 +150,255 @@ module Higgs::Test
       @st = nil
       @st = Storage.new(@st_name, :read_only => :standby, :logger => @logger)
       assert_raise(Storage::NotWritableError) {
-        @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+        @st.transaction{|tx|
+          tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+        }
       }
     end
 
     def test_write_and_commit_IndexError_not_exist_properties
-      assert_raise(IndexError) {
-        @st.write_and_commit([ [ :system_properties, 'foo', {} ] ])
-      }
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
+      @st.transaction{|tx|
+        assert_raise(IndexError) {
+          tx.write_and_commit([ [ :system_properties, 'foo', {} ] ])
+        }
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
 
-      assert_raise(IndexError) {
-        @st.write_and_commit([ [ :custom_properties, 'foo', {} ] ])
-      }
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
+        assert_raise(IndexError) {
+          tx.write_and_commit([ [ :custom_properties, 'foo', {} ] ])
+        }
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
 
-      assert_raise(IndexError) {
-        write_list = [
-          [ :write, 'foo', "Hello world.\n" ],
-          [ :delete, 'foo' ],
-          [ :system_properties, 'foo', {} ]
-        ]
-        @st.write_and_commit(write_list)
-      }
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
+        assert_raise(IndexError) {
+          write_list = [
+            [ :write, 'foo', "Hello world.\n" ],
+            [ :delete, 'foo' ],
+            [ :system_properties, 'foo', {} ]
+          ]
+          tx.write_and_commit(write_list)
+        }
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
 
-      assert_raise(IndexError) {
-        write_list = [
-          [ :write, 'foo', "Hello world.\n" ],
-          [ :delete, 'foo' ],
-          [ :custom_properties, 'foo', {} ]
-        ]
-        @st.write_and_commit(write_list)
+        assert_raise(IndexError) {
+          write_list = [
+            [ :write, 'foo', "Hello world.\n" ],
+            [ :delete, 'foo' ],
+            [ :custom_properties, 'foo', {} ]
+          ]
+          tx.write_and_commit(write_list)
+        }
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
       }
-      assert_nil(@st.fetch('foo'))
-      assert_nil(@st.fetch_properties('foo'))
     end
 
     def test_write_and_commit_TypeError_value_not_string
       assert_raise(TypeError) {
-        @st.write_and_commit([ [ :write, 'foo', "Hello world.\n".to_sym ] ])
+        @st.transaction{|tx|
+          tx.write_and_commit([ [ :write, 'foo', "Hello world.\n".to_sym ] ])
+        }
       }
     end
 
     def test_write_and_commit_ArgumentError_operation_unknown
       assert_raise(ArgumentError) {
-        @st.write_and_commit([ [ :unknown, 'foo', "Hello world.\n" ] ])
+        @st.transaction{|tx|
+          tx.write_and_commit([ [ :unknown, 'foo', "Hello world.\n" ] ])
+        }
       }
     end
 
     def test_system_properties
-      @st.write_and_commit([ [ :write, :foo, 'apple' ] ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, :foo, 'apple' ] ])
 
-      cre_time = @st.fetch_properties(:foo)['system_properties']['created_time']
-      chg_time = @st.fetch_properties(:foo)['system_properties']['changed_time']
-      mod_time = @st.fetch_properties(:foo)['system_properties']['modified_time']
+        cre_time = tx.fetch_properties(:foo)['system_properties']['created_time']
+        chg_time = tx.fetch_properties(:foo)['system_properties']['changed_time']
+        mod_time = tx.fetch_properties(:foo)['system_properties']['modified_time']
 
-      sleep(0.001)
-      @st.write_and_commit([ [ :write, :foo, 'banana' ] ])
+        sleep(0.001)
+        tx.write_and_commit([ [ :write, :foo, 'banana' ] ])
 
-      assert_equal(cre_time, @st.fetch_properties(:foo)['system_properties']['created_time'])
-      assert_equal(chg_time, @st.fetch_properties(:foo)['system_properties']['changed_time'])
-      assert(@st.fetch_properties(:foo)['system_properties']['modified_time'] > mod_time)
+        assert_equal(cre_time, tx.fetch_properties(:foo)['system_properties']['created_time'])
+        assert_equal(chg_time, tx.fetch_properties(:foo)['system_properties']['changed_time'])
+        assert(tx.fetch_properties(:foo)['system_properties']['modified_time'] > mod_time)
 
-      mod_time2 = @st.fetch_properties(:foo)['system_properties']['modified_time']
-      sleep(0.001)
-      @st.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'orange' } ] ])
+        mod_time2 = tx.fetch_properties(:foo)['system_properties']['modified_time']
+        sleep(0.001)
+        tx.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'orange' } ] ])
 
-      assert_equal(cre_time, @st.fetch_properties(:foo)['system_properties']['created_time'])
-      assert(@st.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time)
-      assert_equal(mod_time2, @st.fetch_properties(:foo)['system_properties']['modified_time'])
+        assert_equal(cre_time, tx.fetch_properties(:foo)['system_properties']['created_time'])
+        assert(tx.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time)
+        assert_equal(mod_time2, tx.fetch_properties(:foo)['system_properties']['modified_time'])
 
-      chg_time2 = @st.fetch_properties(:foo)['system_properties']['changed_time']
-      sleep(0.001)
-      @st.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
+        chg_time2 = tx.fetch_properties(:foo)['system_properties']['changed_time']
+        sleep(0.001)
+        tx.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
 
-      assert_equal(cre_time, @st.fetch_properties(:foo)['system_properties']['created_time'])
-      assert(@st.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time2)
-      assert_equal(mod_time2, @st.fetch_properties(:foo)['system_properties']['modified_time'])
+        assert_equal(cre_time, tx.fetch_properties(:foo)['system_properties']['created_time'])
+        assert(tx.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time2)
+        assert_equal(mod_time2, tx.fetch_properties(:foo)['system_properties']['modified_time'])
+      }
     end
 
     def test_change_number_and_unique_data_id
-      assert_equal(nil, @st.data_change_number(:foo))
-      assert_equal(nil, @st.properties_change_number(:foo))
-      assert_equal(nil, @st.unique_data_id(:foo))
+      @st.transaction{|tx|
+        assert_equal(nil, tx.data_change_number(:foo))
+        assert_equal(nil, tx.properties_change_number(:foo))
+        assert_equal(nil, tx.unique_data_id(:foo))
 
-      @st.write_and_commit([ [ :write, :foo, 'apple' ] ])
+        tx.write_and_commit([ [ :write, :foo, 'apple' ] ])
+      }
 
-      assert_equal(1, @st.data_change_number(:foo))
-      assert_equal(1, @st.properties_change_number(:foo))
-      assert_equal("foo\t1", @st.unique_data_id(:foo))
+      @st.transaction{|tx|
+        assert_equal(1, tx.data_change_number(:foo))
+        assert_equal(1, tx.properties_change_number(:foo))
+        assert_equal("foo\t1", tx.unique_data_id(:foo))
 
-      @st.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'banana' } ] ])
+        tx.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'banana' } ] ])
+      }
 
-      assert_equal(1, @st.data_change_number(:foo))
-      assert_equal(2, @st.properties_change_number(:foo))
-      assert_equal("foo\t1", @st.unique_data_id(:foo))
+      @st.transaction{|tx|
+        assert_equal(1, tx.data_change_number(:foo))
+        assert_equal(2, tx.properties_change_number(:foo))
+        assert_equal("foo\t1", tx.unique_data_id(:foo))
 
-      @st.write_and_commit([ [ :write, :foo, 'orange' ] ])
+        tx.write_and_commit([ [ :write, :foo, 'orange' ] ])
+      }
 
-      assert_equal(3, @st.data_change_number(:foo))
-      assert_equal(3, @st.properties_change_number(:foo))
-      assert_equal("foo\t3", @st.unique_data_id(:foo))
+      @st.transaction{|tx|
+        assert_equal(3, tx.data_change_number(:foo))
+        assert_equal(3, tx.properties_change_number(:foo))
+        assert_equal("foo\t3", tx.unique_data_id(:foo))
 
-      @st.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
+        tx.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
+      }
 
-      assert_equal(3, @st.data_change_number(:foo))
-      assert_equal(4, @st.properties_change_number(:foo))
-      assert_equal("foo\t3", @st.unique_data_id(:foo))
+      @st.transaction{|tx|
+        assert_equal(3, tx.data_change_number(:foo))
+        assert_equal(4, tx.properties_change_number(:foo))
+        assert_equal("foo\t3", tx.unique_data_id(:foo))
+      }
     end
 
     def test_key
-      assert_equal(false, (@st.key? 'foo'))
-      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
-      assert_equal(true, (@st.key? 'foo'))
-      @st.write_and_commit([ [ :delete , 'foo' ] ])
-      assert_equal(false, (@st.key? 'foo'))
+      @st.transaction{|tx|
+        assert_equal(false, (tx.key? 'foo'))
+        tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+        assert_equal(true, (tx.key? 'foo'))
+        tx.write_and_commit([ [ :delete , 'foo' ] ])
+        assert_equal(false, (tx.key? 'foo'))
+      }
     end
 
     def test_key_read_only
-      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      }
       @st.shutdown
       @st = nil
       @st = Storage.new(@st_name, :read_only => true, :logger => @logger)
 
-      assert_equal(true, (@st.key? 'foo'))
-      assert_equal(false, (@st.key? 'bar'))
+      @st.transaction{|tx|
+        assert_equal(true, (tx.key? 'foo'))
+        assert_equal(false, (tx.key? 'bar'))
+      }
     end
 
     def test_key_standby
-      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      }
       @st.shutdown
       @st = nil
       @st = Storage.new(@st_name, :read_only => :standby, :logger => @logger)
 
-      assert_equal(true, (@st.key? 'foo'))
-      assert_equal(false, (@st.key? 'bar'))
+      @st.transaction{|tx|
+        assert_equal(true, (tx.key? 'foo'))
+        assert_equal(false, (tx.key? 'bar'))
+      }
     end
 
     def test_each_key
-      @st.each_key do |key|
-        flunk('not to reach')
-      end
+      @st.transaction{|tx|
+        tx.each_key do |key|
+          flunk('not to reach')
+        end
 
-      @st.write_and_commit([ [ :write, 'foo', 'one' ],
-                             [ :write, 'bar', 'two' ],
-                             [ :write, 'baz', 'three' ]
-                           ])
+        tx.write_and_commit([ [ :write, 'foo', 'one' ],
+                               [ :write, 'bar', 'two' ],
+                               [ :write, 'baz', 'three' ]
+                             ])
 
-      expected_keys = %w[ foo bar baz ]
-      @st.each_key do |key|
-        assert(expected_keys.delete(key), "each_key do |#{key}|")
-      end
-      assert(expected_keys.empty?)
+        expected_keys = %w[ foo bar baz ]
+        tx.each_key do |key|
+          assert(expected_keys.delete(key), "each_key do |#{key}|")
+        end
+        assert(expected_keys.empty?)
 
-      @st.write_and_commit([ [ :delete, 'bar' ] ])
+        tx.write_and_commit([ [ :delete, 'bar' ] ])
 
-      expected_keys = %w[ foo baz ]
-      @st.each_key do |key|
-        assert(expected_keys.delete(key), "each_key do |#{key}|")
-      end
-      assert(expected_keys.empty?)
+        expected_keys = %w[ foo baz ]
+        tx.each_key do |key|
+          assert(expected_keys.delete(key), "each_key do |#{key}|")
+        end
+        assert(expected_keys.empty?)
+      }
     end
 
     def test_each_key_read_only
-      @st.write_and_commit([ [ :write, 'foo', 'one' ],
-                             [ :write, 'bar', 'two' ],
-                             [ :write, 'baz', 'three' ]
-                           ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, 'foo', 'one' ],
+                               [ :write, 'bar', 'two' ],
+                               [ :write, 'baz', 'three' ]
+                             ])
+      }
       @st.shutdown
       @st = nil
       @st = Storage.new(@st_name, :read_only => true, :logger => @logger)
 
-      expected_keys = %w[ foo bar baz ]
-      @st.each_key do |key|
-        assert(expected_keys.delete(key), "each_key do |#{key}|")
-      end
-      assert(expected_keys.empty?)
+      @st.transaction{|tx|
+        expected_keys = %w[ foo bar baz ]
+        tx.each_key do |key|
+          assert(expected_keys.delete(key), "each_key do |#{key}|")
+        end
+        assert(expected_keys.empty?)
+      }
     end
 
     def test_each_key_standby
-      @st.write_and_commit([ [ :write, 'foo', 'one' ],
-                             [ :write, 'bar', 'two' ],
-                             [ :write, 'baz', 'three' ]
-                           ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, 'foo', 'one' ],
+                               [ :write, 'bar', 'two' ],
+                               [ :write, 'baz', 'three' ]
+                             ])
+      }
       @st.shutdown
       @st = nil
       @st = Storage.new(@st_name, :read_only => :standby, :logger => @logger)
 
-      expected_keys = %w[ foo bar baz ]
-      @st.each_key do |key|
-        assert(expected_keys.delete(key), "each_key do |#{key}|")
-      end
-      assert(expected_keys.empty?)
+      @st.transaction{|tx|
+        expected_keys = %w[ foo bar baz ]
+        tx.each_key do |key|
+          assert(expected_keys.delete(key), "each_key do |#{key}|")
+        end
+        assert(expected_keys.empty?)
+      }
     end
 
     def test_verify
-      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      }
       @st.verify
     end
 
     def test_verify_BrokenError_mismatch_content_hash
-      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      }
       File.open(@st_name + '.tar', File::WRONLY) {|w|
         size = w.stat.size
 
@@ -362,7 +418,9 @@ module Higgs::Test
     end
 
     def test_verify_BrokenError_failed_to_read_data
-      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      }
       File.open(@st_name + '.tar', File::WRONLY) {|w|
         size = w.stat.size
 
@@ -385,7 +443,9 @@ module Higgs::Test
     end
 
     def test_verify_BrokenError_failed_to_read_properties
-      @st.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      @st.transaction{|tx|
+        tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+      }
       File.open(@st_name + '.tar', File::WRONLY) {|w|
         size = w.stat.size
 
@@ -412,15 +472,17 @@ module Higgs::Test
       assert_equal(true, @st.shutdown?)
       assert_equal(false, @st.alive?)
       assert_raise(Storage::ShutdownException) { @st.shutdown }
-      assert_raise(Storage::ShutdownException) { @st.fetch('foo') }
-      assert_raise(Storage::ShutdownException) { @st.fetch_properties('foo') }
-      assert_raise(Storage::ShutdownException) { @st.key? 'foo' }
+      assert_raise(Storage::ShutdownException) { @st.transaction{|tx| tx.fetch('foo') } }
+      assert_raise(Storage::ShutdownException) { @st.transaction{|tx| tx.fetch_properties('foo') } }
+      assert_raise(Storage::ShutdownException) { @st.transaction{|tx| tx.key? 'foo' } }
       assert_raise(Storage::ShutdownException) {
-        @st.each_key do
-          flunk('not to reach')
-        end
+        @st.transaction{|tx|
+          tx.each_key do
+            flunk('not to reach')
+          end
+        }
       }
-      assert_raise(Storage::ShutdownException) { @st.write_and_commit([]) }
+      assert_raise(Storage::ShutdownException) { @st.transaction{|tx| tx.write_and_commit([]) } }
       assert_raise(Storage::ShutdownException) { @st.verify }
     end
 
@@ -471,21 +533,23 @@ module Higgs::Test
 
     def write_data(loop_count=100, data_count=10, data_max_size=1024*5)
       loop_count.times do
-        write_list = []
-        ope = [ :write, :delete ][rand(2)]
-        key = rand(data_count)
-        case (ope)
-        when :write
-          type = [ :a, :b ][rand(2)]
-          value = rand(256).chr * rand(data_max_size)
-          write_list << [ ope, key, type, key.to_s, value ]
-        when :delete
-          next unless (@st.key? key)
-          write_list << [ ope, key ]
-        else
-          raise "unknown operation: #{ope}"
-        end
-        @st.raw_write_and_commit(write_list)
+        @st.transaction{|tx|
+          write_list = []
+          ope = [ :write, :delete ][rand(2)]
+          key = rand(data_count)
+          case (ope)
+          when :write
+            type = [ :a, :b ][rand(2)]
+            value = rand(256).chr * rand(data_max_size)
+            write_list << [ ope, key, type, key.to_s, value ]
+          when :delete
+            next unless (tx.key? key)
+            write_list << [ ope, key ]
+          else
+            raise "unknown operation: #{ope}"
+          end
+          tx.raw_write_and_commit(write_list)
+        }
       end
     end
     private :write_data

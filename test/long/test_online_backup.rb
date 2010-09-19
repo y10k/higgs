@@ -74,27 +74,29 @@ module Higgs::Test
       begin
         FileUtils.touch(@start_latch)
         until (File.exist? @stop_latch)
-          write_list = []
-          ope = [ :write, :system_properties, :custom_properties, :delete ][rand(4)]
-          key = rand(STORAGE_ITEMS)
-          case (ope)
-          when :write
-            value = rand(256).chr * rand(MAX_ITEM_BYTES)
-            write_list << [ ope, key, value ]
-          when :system_properties
-            next unless (st.key? key)
-            write_list << [ ope, key, { 'string_only' => [ true, false ][rand(2)] } ]
-          when :custom_properties
-            next unless (st.key? key)
-            value = ITEM_CHARS[rand(ITEM_CHARS.size)] * rand(MAX_ITEM_BYTES)
-            write_list << [ ope, key, { 'foo' => value } ]
-          when :delete
-            next unless (st.key? key)
-            write_list << [ ope, key ]
-          else
-            raise "unknown operation: #{ope}"
-          end
-          st.write_and_commit(write_list)
+          st.transaction{|tx|
+            write_list = []
+            ope = [ :write, :system_properties, :custom_properties, :delete ][rand(4)]
+            key = rand(STORAGE_ITEMS)
+            case (ope)
+            when :write
+              value = rand(256).chr * rand(MAX_ITEM_BYTES)
+              write_list << [ ope, key, value ]
+            when :system_properties
+              next unless (tx.key? key)
+              write_list << [ ope, key, { 'string_only' => [ true, false ][rand(2)] } ]
+            when :custom_properties
+              next unless (tx.key? key)
+              value = ITEM_CHARS[rand(ITEM_CHARS.size)] * rand(MAX_ITEM_BYTES)
+              write_list << [ ope, key, { 'foo' => value } ]
+            when :delete
+              next unless (tx.key? key)
+              write_list << [ ope, key ]
+            else
+              raise "unknown operation: #{ope}"
+            end
+            tx.write_and_commit(write_list)
+          }
         end
         FileUtils.touch(@stopped_latch)
         until (File.exist? @end_latch)
