@@ -77,71 +77,80 @@ module Higgs
     end
     synchronized :to_h
 
-    # backward compatibility for migration.
-    def self.create_id(key, identities)
-      id = key.to_s
-      if (identities.key? id) then
-        id += '.a'
-        id.succ! while (identities.key? id)
+    class << self
+      # backward compatibility for migration.
+      def create_id(key, identities)
+        id = key.to_s
+        if (identities.key? id) then
+          id += '.a'
+          id.succ! while (identities.key? id)
+        end
+        id
       end
-      id
+      private :create_id
+
+      def migration_0_0_to_0_1(index_data)
+        if ((index_data[:version] <=> [ 0, 0 ]) > 0) then
+          return
+        end
+        if ((index_data[:version] <=> [ 0, 0 ]) < 0) then
+          raise "unexpected index format version: #{index_data[:version].join('.')}"
+        end
+
+        index = index_data[:index]
+        identities = index_data[:identities] = {}
+        for key in index.keys
+          id = create_id(key, identities)
+          identities[id] = key
+          value = index[key]
+          index[key] = [ id, value ]
+        end
+        index_data[:version] = [ 0, 1 ]
+
+        index_data
+      end
+      private :migration_0_0_to_0_1
+
+      def migration_0_1_to_0_2(index_data, idx)
+        if ((index_data[:version] <=> [ 0, 1 ]) > 0) then
+          return
+        end
+        if ((index_data[:version] <=> [ 0, 1 ]) < 0) then
+          raise "unexpected index format version: #{index_data[:version].join('.')}"
+        end
+
+        index_data[:storage_id] = idx.storage_id
+        index_data[:version] = [ 0, 2 ]
+
+        index_data
+      end
+      private :migration_0_1_to_0_2
+
+      def migration_0_2_to_0_3(index_data)
+        if ((index_data[:version] <=> [ 0, 2 ]) > 0) then
+          return
+        end
+        if ((index_data[:version] <=> [ 0, 2 ]) < 0) then
+          raise "unexpected index format version: #{index_data[:version].join('.')}"
+        end
+
+        index = index_data[:index]
+        for key in index.keys
+          index[key] = index[key][1]
+        end
+        index_data.delete(:identities)
+        index_data[:version] = [ 0, 3 ]
+
+        index_data
+      end
+      private :migration_0_2_to_0_3
+
+      def migration(index, index_data)
+        migration_0_0_to_0_1(index_data)
+        migration_0_1_to_0_2(index_data, index)
+        migration_0_2_to_0_3(index_data)
+      end
     end
-
-    def migration_0_0_to_0_1(index_data)
-      if ((index_data[:version] <=> [ 0, 0 ]) > 0) then
-        return
-      end
-      if ((index_data[:version] <=> [ 0, 0 ]) < 0) then
-        raise "unexpected index format version: #{index_data[:version].join('.')}"
-      end
-
-      index = index_data[:index]
-      identities = index_data[:identities] = {}
-      for key in index.keys
-        id = Index.create_id(key, identities)
-        identities[id] = key
-        value = index[key]
-        index[key] = [ id, value ]
-      end
-      index_data[:version] = [ 0, 1 ]
-
-      index_data
-    end
-    private :migration_0_0_to_0_1
-
-    def migration_0_1_to_0_2(index_data)
-      if ((index_data[:version] <=> [ 0, 1 ]) > 0) then
-        return
-      end
-      if ((index_data[:version] <=> [ 0, 1 ]) < 0) then
-        raise "unexpected index format version: #{index_data[:version].join('.')}"
-      end
-
-      index_data[:storage_id] = @storage_id
-      index_data[:version] = [ 0, 2 ]
-
-      index_data
-    end
-    private :migration_0_1_to_0_2
-
-    def migration_0_2_to_0_3(index_data)
-      if ((index_data[:version] <=> [ 0, 2 ]) > 0) then
-        return
-      end
-      if ((index_data[:version] <=> [ 0, 2 ]) < 0) then
-        raise "unexpected index format version: #{index_data[:version].join('.')}"
-      end
-
-      index = index_data[:index]
-      for key in index.keys
-        index[key] = index[key][1]
-      end
-      index_data.delete(:identities)
-      index_data[:version] = [ 0, 3 ]
-
-      index_data
-    end
-    private :migration_0_2_to_0_3
 
     def save(path)
       tmp_path = "#{path}.tmp.#{$$}"
@@ -163,9 +172,7 @@ module Higgs
         f.binmode
         f.set_encoding(Encoding::ASCII_8BIT)
         index_data = Marshal.load(block_read(f, MAGIC_SYMBOL))
-        migration_0_0_to_0_1(index_data)
-        migration_0_1_to_0_2(index_data)
-        migration_0_2_to_0_3(index_data)
+        self.class.migration(self, index_data)
         if (index_data[:version] != [ MAJOR_VERSION, MINOR_VERSION ]) then
           raise "unsupported version: #{index_data[:version].join('.')}"
         end
