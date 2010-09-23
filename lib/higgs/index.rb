@@ -9,7 +9,6 @@ module Higgs
   # = storage index
   class Index
     extend Forwardable
-    include Block
     include Synchronized
 
     MAGIC_SYMBOL = 'HIGGS_INDEX'
@@ -157,33 +156,44 @@ module Higgs
       File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
         f.binmode
         f.set_encoding(Encoding::ASCII_8BIT)
-        block_write(f, MAGIC_SYMBOL,
-                    __lock__.synchronize{
-                      Marshal.dump(thread_unsafe_to_h)
-                    })
+        Block.block_write(f, MAGIC_SYMBOL,
+                          __lock__.synchronize{
+                            Marshal.dump(thread_unsafe_to_h)
+                          })
         f.fsync
       }
       File.rename(tmp_path, path)
       self
     end
 
-    def load(path)
-      File.open(path, 'r') {|f|
-        f.binmode
-        f.set_encoding(Encoding::ASCII_8BIT)
-        index_data = Marshal.load(block_read(f, MAGIC_SYMBOL))
-        self.class.migration(self, index_data)
-        if (index_data[:version] != [ MAJOR_VERSION, MINOR_VERSION ]) then
-          raise "unsupported version: #{index_data[:version].join('.')}"
-        end
-        __lock__.synchronize{
-          @change_number = index_data[:change_number]
-          @eoa = index_data[:eoa]
-          @free_lists = index_data[:free_lists]
-          @index = index_data[:index]
-          @storage_id = index_data[:storage_id]
+    class << self
+      def load_data(path)
+        File.open(path, 'r') {|f|
+          f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
+          Marshal.load(Block.block_read(f, MAGIC_SYMBOL))
         }
+      end
+    end
+
+    def replace_data(index_data)
+      if (index_data[:version] != [ MAJOR_VERSION, MINOR_VERSION ]) then
+        raise "unsupported version: #{index_data[:version].join('.')}"
+      end
+      __lock__.synchronize{
+        @change_number = index_data[:change_number]
+        @eoa = index_data[:eoa]
+        @free_lists = index_data[:free_lists]
+        @index = index_data[:index]
+        @storage_id = index_data[:storage_id]
       }
+      self
+    end
+
+    def load(path)
+      index_data = self.class.load_data(path)
+      self.class.migration(self, index_data)
+      replace_data(index_data)
       self
     end
   end
