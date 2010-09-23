@@ -859,7 +859,7 @@ module Higgs
       if (change_number - 1 < index.change_number) then
         # skip old jounal log
       elsif (change_number - 1 > index.change_number) then
-        raise PanicError, "lost journal log (cnum: #{index.change_number + 1})"
+        raise PanicError, "lost journal log (cnum: #{index.change_number.succ})"
       else # if (change_number - 1 == index.change_number) then
         for cmd in commit_log
           case (cmd[:ope])
