@@ -202,6 +202,12 @@ module Higgs
   class MVCCIndex
     # :stopdoc:
     module EditUtils
+      def get_entry(cnum, entry_alist)
+        if (entry_pair = entry_alist.find{|c, e| c <= cnum}) then
+          entry_pair[1]
+        end
+      end
+      module_function :get_entry
     end
     include EditUtils
     # :startdoc:
