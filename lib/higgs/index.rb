@@ -224,9 +224,41 @@ module Higgs
         entry_alist
       end
       module_function :put_entry
+
+      def make_update_entry(cnum)
+        { :cnum => cnum,
+          :update_marks => {},
+          :flist_logs => [],
+          :ref_count => 0
+        }
+      end
+      module_function :make_update_entry
     end
     include EditUtils
     # :startdoc:
+
+    MAGIC_SYMBOL = 'HIGGS_INDEX'
+    MAJOR_VERSION = 0
+    MINOR_VERSION = 4
+
+    def initialize
+      @change_number = 0
+      @eoa = 0
+      @free_lists = {}
+      @index = {}
+      @update_queue = [ make_update_entry(0) ]
+      @storage_id = nil
+    end
+
+    attr_reader :change_number
+    attr_accessor :eoa
+    attr_accessor :storage_id
+
+    def succ!
+      @change_number = @change_number.succ
+      @update_queue.push(make_update_entry(@change_number))
+      self
+    end
   end
 end
 
