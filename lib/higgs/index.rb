@@ -200,6 +200,11 @@ module Higgs
 
   # = new MVCC storage index
   class MVCCIndex
+    # :stopdoc:
+    module EditUtils
+    end
+    include EditUtils
+    # :startdoc:
   end
 end
 
