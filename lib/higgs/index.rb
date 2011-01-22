@@ -197,6 +197,10 @@ module Higgs
       self
     end
   end
+
+  # = new MVCC storage index
+  class MVCCIndex
+  end
 end
 
 # Local Variables:
