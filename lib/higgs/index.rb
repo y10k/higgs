@@ -259,6 +259,48 @@ module Higgs
       @update_queue.push(make_update_entry(@change_number))
       self
     end
+
+    def clear_old_entries
+      while (@update_queue.length > 1 && @update_queue.first[:ref_count] == 0)
+        update_log = @update_queue.shift
+        update_log[:update_marks].each_key do |key|
+          entry_alist = @index[key]
+
+          # assertion
+          (entry_alist.length >= 2) or raise 'internal error.'
+          (entry_alist.last[0] <= update_log[:cnum]) or raise 'internal error.'
+
+          entry_alist = entry_alist.dup
+          entry_alist.pop
+          if (entry_alist.length == 1 && entry_alist[0][1] == nil) then
+            @index.delete(key)
+          else
+            @index[key] = entry_alist
+          end
+        end
+      end
+
+      nil
+    end
+    private :clear_old_entries
+
+    def transaction
+      update_entry = @update_queue.last
+
+      # assertion
+      (update_entry[:cnum] == @change_number) or raise 'internal error.'
+      (update_entry[:ref_count] >= 0) or raise 'internal error.'
+
+      update_entry[:ref_count] += 1
+      begin
+        r = yield(update_entry[:cnum])
+      ensure
+        update_entry[:ref_count] -= 1
+        clear_old_entries
+      end
+
+      r
+    end
   end
 end
 
