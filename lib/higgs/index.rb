@@ -278,6 +278,10 @@ module Higgs
             @index[key] = entry_alist
           end
         end
+        update_log[:flist_logs].each do |jlog|
+          @free_lists[jlog[:siz]] = [] unless (@free_lists.key? jlog[:siz])
+          @free_lists[jlog[:siz]] << jlog[:pos]
+        end
       end
 
       nil
@@ -300,6 +304,26 @@ module Higgs
       end
 
       r
+    end
+
+    def free_fetch(size)
+      @free_lists[size].shift if (@free_lists.key? size)
+    end
+
+    def free_fetch_at(pos, size)
+      @free_lists[size].delete(pos) or raise "not found free region: (#{pos},#{size})"
+    end
+
+    def free_store(pos, size)
+      update_log = @update_queue.last
+
+      # assertion
+      (update_log[:cnum] == @change_number) or raise 'internal error.'
+      (update_log[:ref_count] >= 0) or raise 'internal error.'
+
+      update_log[:free_list_logs] << { :pos => pos, :siz => size }
+
+      nil
     end
   end
 end
