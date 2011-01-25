@@ -325,6 +325,67 @@ module Higgs
 
       nil
     end
+
+    def [](cnum, key)
+      # assertion
+      # allowed next transaction access.
+      (@update_queue.first[:cnum] <= cnum && cnum <= @change_number.succ) or raise 'internal error.'
+
+      if (entry_alist = @index[key]) then
+        get_entry(cnum, entry_alist)
+      end
+    end
+
+    def []=(cnum, key, value)
+      update_log = @update_queue.last
+
+      # assertion
+      (update_log[:cnum] == @change_number) or raise 'internal error.'
+      (update_log[:ref_count] >= 0) or raise 'internal error.'
+
+      update_log[:update_marks][key] = true
+      new_entry_alist = put_entry(cnum, @index[key] || [], value)
+      @index[key] = new_entry_alist
+
+      value
+    end
+
+    def delete(cnum, key)
+      update_log = @update_queue.last
+
+      # assertion
+      (update_log[:cnum] == @change_number) or raise 'internal error.'
+      (update_log[:ref_count] >= 0) or raise 'internal error.'
+
+      if (entry_alist = @index[key]) then
+        if (value = get_entry(cnum, entry_alist)) then
+          update_log[:update_marks][key] = true
+          new_entry_alist = put_entry(cnum, entry_alist, nil)
+          @index[key] = new_entry_alist
+          return value
+        end
+      end
+
+      nil
+    end
+
+    def key?(cnum, key)
+      self[cnum, key] ? true : false
+    end
+
+    def keys(cnum)
+      key_list = @index.keys
+      key_list.delete_if{|key| ! key?(cnum, key) }
+      key_list
+    end
+
+    def each_key(cnum)
+      key_list = @index.keys
+      for key in key_list
+        yield(key) if key?(cnum, key)
+      end
+      self
+    end
   end
 end
 
