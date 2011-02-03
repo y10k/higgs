@@ -237,6 +237,8 @@ module Higgs
     include EditUtils
     # :startdoc:
 
+    include Synchronized
+
     MAGIC_SYMBOL = 'HIGGS_INDEX'
     MAJOR_VERSION = 0
     MINOR_VERSION = 4
@@ -248,17 +250,19 @@ module Higgs
       @index = {}
       @update_queue = [ make_update_entry(0) ]
       @storage_id = nil
+      self.__lock__ = Mutex.new
     end
 
-    attr_reader :change_number
-    attr_accessor :eoa
-    attr_accessor :storage_id
+    synchronized_reader :change_number
+    synchronized_accessor :eoa
+    synchronized_accessor :storage_id
 
     def succ!
       @change_number = @change_number.succ
       @update_queue.push(make_update_entry(@change_number))
       self
     end
+    synchronized :succ!
 
     def clear_old_entries
       while (@update_queue.length > 1 && @update_queue.first[:ref_count] == 0)
@@ -289,18 +293,27 @@ module Higgs
     private :clear_old_entries
 
     def transaction
-      update_log = @update_queue.last
+      update_log = nil
+      cnum = nil
 
-      # assertion
-      (update_log[:cnum] == @change_number) or raise 'internal error.'
-      (update_log[:ref_count] >= 0) or raise 'internal error.'
+      __lock__.synchronize{
+        update_log = @update_queue.last
 
-      update_log[:ref_count] += 1
+        # assertion
+        (update_log[:cnum] == @change_number) or raise 'internal error.'
+        (update_log[:ref_count] >= 0) or raise 'internal error.'
+
+        update_log[:ref_count] += 1
+        cnum = update_log[:cnum]
+      }
+
       begin
-        r = yield(update_log[:cnum])
+        r = yield(cnum)
       ensure
-        update_log[:ref_count] -= 1
-        clear_old_entries
+        __lock__.synchronize{
+          update_log[:ref_count] -= 1
+          clear_old_entries
+        }
       end
 
       r
@@ -309,10 +322,12 @@ module Higgs
     def free_fetch(size)
       @free_lists[size].shift if (@free_lists.key? size)
     end
+    synchronized :free_fetch
 
     def free_fetch_at(pos, size)
       @free_lists[size].delete(pos) or raise "not found free region: (#{pos},#{size})"
     end
+    synchronized :free_fetch_at
 
     def free_store(pos, size)
       update_log = @update_queue.last
@@ -325,6 +340,7 @@ module Higgs
 
       nil
     end
+    synchronized :free_store
 
     def [](cnum, key)
       # assertion
@@ -335,6 +351,7 @@ module Higgs
         get_entry(cnum, entry_alist)
       end
     end
+    synchronized :[]
 
     def []=(cnum, key, value)
       update_log = @update_queue.last
@@ -349,6 +366,7 @@ module Higgs
 
       value
     end
+    synchronized :[]=
 
     def delete(cnum, key)
       update_log = @update_queue.last
@@ -368,19 +386,20 @@ module Higgs
 
       nil
     end
+    synchronized :delete
 
     def key?(cnum, key)
       self[cnum, key] ? true : false
     end
 
     def keys(cnum)
-      key_list = @index.keys
+      key_list = __lock__.synchronize{ @index.keys }
       key_list.delete_if{|key| ! key?(cnum, key) }
       key_list
     end
 
     def each_key(cnum)
-      key_list = @index.keys
+      key_list = __lock__.synchronize{ @index.keys }
       for key in key_list
         yield(key) if key?(cnum, key)
       end
