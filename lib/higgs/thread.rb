@@ -23,26 +23,38 @@ module Higgs
         thread_unsafe_name = "thread_unsafe_#{name}".to_sym
 
         if (public_instance_methods(true).any?{|n| n.to_sym ==  name }) then
-          visibility = 'public'
+          visibility = :public
         elsif (private_instance_methods(true).any?{|n| n.to_sym == name }) then
-          visibility = 'private'
+          visibility = :private
         elsif (protected_instance_methods(true).any?{|n| n.to_sym == name }) then
-          visibility = 'protected'
+          visibility = :protected
         else
           raise NoMethodError, "undefined method `#{name}' for #{self}"
         end
 
-        class_eval(<<-EOF, "synchronized(#{name}) => #{__FILE__}", __LINE__ + 1)
-          alias_method #{thread_unsafe_name.inspect}, #{name.inspect}
-          private #{thread_unsafe_name.inspect}
+        # block for local scope.
+        class_eval{
+          alias_method thread_unsafe_name, name
+          private thread_unsafe_name
 
-          def #{name}(*args, &block)
+          orig_method = thread_unsafe_name
+          define_method name, lambda{|*args, &block|
             @__lock__.synchronize{
-              __send__(#{thread_unsafe_name.inspect}, *args, &block)
+              __send__(orig_method, *args, &block)
             }
+          }
+
+          case (visibility)
+          when :public
+            public name
+          when :private
+            private name
+          when :protected
+            protected name
+          else
+            raise 'internal error.'
           end
-          #{visibility} #{name.inspect}
-        EOF
+        }
       end
 
       nil
