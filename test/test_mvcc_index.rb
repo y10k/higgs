@@ -4,6 +4,7 @@
 require 'fileutils'
 require 'higgs/block'
 require 'higgs/index'
+require 'higgs/thread'
 require 'pp' if $DEBUG
 require 'test/unit'
 
@@ -303,6 +304,145 @@ module Higgs::Test
         assert_equal(false, @idx.key?(cnum, 'foo'))
         assert_equal(nil, @idx[cnum, 'foo'])
       }
+    end
+
+    def mt_mark(name)
+      "#{name}: #{caller[0]}"
+    end
+    private :mt_mark
+
+    def test_multi_thread_read_write
+      th_list = []
+      write_latch = Latch.new
+      write_read_latch = Latch.new
+      mt_end_barrier = Barrier.new(2)
+      mt_last_barrier = Barrier.new(2)
+
+      th_list << Thread.new{
+        @idx.transaction{|cnum|
+          dump_index if $DEBUG
+          assert_equal(nil, @idx[cnum, 'foo'], mt_mark('thread 0'))
+          assert_equal(false, @idx.key?(cnum, 'foo'), mt_mark('thread 0'))
+          assert_equal([], @idx.keys(cnum), mt_mark('thread 0'))
+
+          write_latch.start
+          write_read_latch.wait
+
+          dump_index if $DEBUG
+          assert_equal(nil, @idx[cnum, 'foo'], mt_mark('thread 0'))
+          assert_equal(false, @idx.key?(cnum, 'foo'), mt_mark('thread 0'))
+          assert_equal([], @idx.keys(cnum), mt_mark('thread 0'))
+
+          mt_end_barrier.wait
+        }
+        mt_last_barrier.wait
+      }
+
+      write_latch.wait
+      @idx.transaction{|cnum|
+        @idx[cnum, 'foo'] = 0
+        @idx.succ!
+      }
+      write_read_latch.start
+
+      @idx.transaction{|cnum|
+        assert_equal(0, @idx[cnum, 'foo'])
+        assert_equal(true, @idx.key?(cnum, 'foo'))
+        assert_equal(%w[ foo ], @idx.keys(cnum))
+
+        mt_end_barrier.wait
+        mt_last_barrier.wait
+
+        dump_index if $DEBUG
+        assert_equal(0, @idx[cnum, 'foo'])
+        assert_equal(true, @idx.key?(cnum, 'foo'))
+        assert_equal(%w[ foo ], @idx.keys(cnum))
+      }
+
+      for t in th_list
+        t.join
+      end
+    end
+
+    def test_multi_thread_read_write_delete
+      th_list = []
+      th0_read_latch = Latch.new
+      th1_read_latch = Latch.new
+      mt_update_latch = Latch.new
+      mt_end_barrier = Barrier.new(3)
+      mt_last_barrier = Barrier.new(3)
+
+      th_list << Thread.new{
+        @idx.transaction{|cnum|
+          dump_index if $DEBUG
+          assert_equal(nil, @idx[cnum, 'foo'], mt_mark('thread 0'))
+          assert_equal(false, @idx.key?(cnum, 'foo'), mt_mark('thread 0'))
+          assert_equal([], @idx.keys(cnum), mt_mark('thread 0'))
+
+          th0_read_latch.start
+          mt_update_latch.wait
+
+          assert_equal(nil, @idx[cnum, 'foo'], mt_mark('thread 0'))
+          assert_equal(false, @idx.key?(cnum, 'foo'), mt_mark('thread 0'))
+          assert_equal([], @idx.keys(cnum), mt_mark('thread 0'))
+
+          mt_end_barrier.wait
+        }
+        mt_last_barrier.wait
+      }
+
+      th0_read_latch.wait
+      @idx.transaction{|cnum|
+        @idx[cnum, 'foo'] = 0
+        @idx.succ!
+      }
+
+      th_list << Thread.new{
+        @idx.transaction{|cnum|
+          dump_index if $DEBUG
+          assert_equal(0, @idx[cnum, 'foo'], mt_mark('thread 1'))
+          assert_equal(true, @idx.key?(cnum, 'foo'), mt_mark('thread 1'))
+          assert_equal(%w[ foo ], @idx.keys(cnum), mt_mark('thread 1'))
+
+          th1_read_latch.start
+          mt_update_latch.wait
+
+          assert_equal(0, @idx[cnum, 'foo'], mt_mark('thread 1'))
+          assert_equal(true, @idx.key?(cnum, 'foo'), mt_mark('thread 1'))
+          assert_equal(%w[ foo ], @idx.keys(cnum), mt_mark('thread 1'))
+
+          mt_end_barrier.wait
+        }
+        mt_last_barrier.wait
+      }
+
+      th1_read_latch.wait
+      @idx.transaction{|cnum|
+        @idx.delete(cnum, 'foo')
+        @idx.succ!
+      }
+      mt_update_latch.start
+
+      th_list << Thread.new{
+        @idx.transaction{|cnum|
+          dump_index if $DEBUG
+          assert_equal(nil, @idx[cnum, 'foo'], mt_mark('thread 2'))
+          assert_equal(false, @idx.key?(cnum, 'foo'), mt_mark('thread 2'))
+          assert_equal([], @idx.keys(cnum), mt_mark('thread 2'))
+
+          mt_end_barrier.wait
+          mt_last_barrier.wait
+
+          dump_index if $DEBUG
+          assert_equal(nil, @idx[cnum, 'foo'], mt_mark('thread 2'))
+          assert_equal(false, @idx.key?(cnum, 'foo'), mt_mark('thread 2'))
+          assert_equal([], @idx.keys(cnum), mt_mark('thread 2'))
+        }
+      }
+
+      for t in th_list
+        t.join
+      end
     end
   end
 end
