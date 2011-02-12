@@ -460,6 +460,102 @@ module Higgs
       File.rename(tmp_path, path)
       self
     end
+
+    class << self
+      # backward compatibility for migration.
+      def create_id(key, identities)
+        id = key.to_s
+        if (identities.key? id) then
+          id += '.a'
+          id.succ! while (identities.key? id)
+        end
+        id
+      end
+      private :create_id
+
+      def migration_0_0_to_0_1(index_data)
+        if ((index_data[:version] <=> [ 0, 0 ]) > 0) then
+          return
+        end
+        if ((index_data[:version] <=> [ 0, 0 ]) < 0) then
+          raise "unexpected index format version: #{index_data[:version].join('.')}"
+        end
+
+        index = index_data[:index]
+        identities = index_data[:identities] = {}
+        for key in index.keys
+          id = create_id(key, identities)
+          identities[id] = key
+          value = index[key]
+          index[key] = [ id, value ]
+        end
+        index_data[:version] = [ 0, 1 ]
+
+        index_data
+      end
+      private :migration_0_0_to_0_1
+
+      def migration_0_1_to_0_2(index_data, idx)
+        if ((index_data[:version] <=> [ 0, 1 ]) > 0) then
+          return
+        end
+        if ((index_data[:version] <=> [ 0, 1 ]) < 0) then
+          raise "unexpected index format version: #{index_data[:version].join('.')}"
+        end
+
+        index_data[:storage_id] = idx.storage_id
+        index_data[:version] = [ 0, 2 ]
+
+        index_data
+      end
+      private :migration_0_1_to_0_2
+
+      def migration_0_2_to_0_3(index_data)
+        if ((index_data[:version] <=> [ 0, 2 ]) > 0) then
+          return
+        end
+        if ((index_data[:version] <=> [ 0, 2 ]) < 0) then
+          raise "unexpected index format version: #{index_data[:version].join('.')}"
+        end
+
+        index = index_data[:index]
+        for key in index.keys
+          index[key] = index[key][1]
+        end
+        index_data.delete(:identities)
+        index_data[:version] = [ 0, 3 ]
+
+        index_data
+      end
+      private :migration_0_2_to_0_3
+
+      def migration_0_3_to_0_4(index_data)
+        if ((index_data[:version] <=> [ 0, 3 ]) > 0) then
+          return
+        end
+        if ((index_data[:version] <=> [ 0, 3 ]) < 0) then
+          raise "unexpected index format version: #{index_data[:version].join('.')}"
+        end
+
+        cnum = index_data[:change_number]
+        index = index_data[:index]
+        for key in index.keys
+          index[key] = [ [ cnum, index[key] ] ]
+        end
+        index_data[:update_queue] = [ EditUtils.make_update_entry(cnum) ]
+        index_data[:version] = [ 0, 4 ]
+
+        index_data
+      end
+      private :migration_0_3_to_0_4
+
+      def migration(index, index_data)
+        migration_0_0_to_0_1(index_data)
+        migration_0_1_to_0_2(index_data, index)
+        migration_0_2_to_0_3(index_data)
+        migration_0_3_to_0_4(index_data)
+      end
+    end
   end
 end
 
