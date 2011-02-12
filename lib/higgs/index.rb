@@ -434,6 +434,19 @@ module Higgs
       self
     end
     synchronized :each_block_element
+
+    # notation: this method is thread unsafe.
+    # index internal data may be updated by other threads.
+    def to_h
+      { :version => [ MAJOR_VERSION, MINOR_VERSION ],
+        :change_number => @change_number,
+        :eoa => @eoa,
+        :free_lists => @free_lists,
+        :index => @index,
+        :update_queue => @update_queue,
+        :storage_id => @storage_id
+      }
+    end
   end
 end
 
