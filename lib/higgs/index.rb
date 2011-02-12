@@ -447,6 +447,19 @@ module Higgs
         :storage_id => @storage_id
       }
     end
+
+    def save(path)
+      tmp_path = "#{path}.tmp.#{$$}"
+      File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
+        f.binmode
+        f.set_encoding(Encoding::ASCII_8BIT)
+        Block.block_write(f, MAGIC_SYMBOL,
+                          __lock__.synchronize{ Marshal.dump(to_h) })
+        f.fsync
+      }
+      File.rename(tmp_path, path)
+      self
+    end
   end
 end
 
