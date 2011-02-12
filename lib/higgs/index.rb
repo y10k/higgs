@@ -405,6 +405,35 @@ module Higgs
       end
       self
     end
+
+    IndexBlockElement = Struct.new(:block_type, :key, :entry, :change_number)
+    FreeBlockElement = Struct.new(:block_type, :pos, :size)
+    FreeLogBlockElement = Struct.new(:block_type, :pos, :size, :change_number)
+
+    # all index operations are blocked while this method is
+    # processing.
+    def each_block_element
+      for key, entry_alist in @index
+        for cnum, entry in entry_alist
+          if (entry) then
+            yield(IndexBlockElement.new(:index, key, entry, cnum))
+          end
+        end
+      end
+      for size, free_list in @free_lists
+        for pos in free_list
+          yield(FreeBlockElement.new(:free, pos, size))
+        end
+      end
+      for update_log in @update_queue
+        for jlog in update_log[:free_list_logs]
+          yield(FreeLogBlockElement.new(:free_log, jlog[:pos], jlog[:siz], update_log[:cnum]))
+        end
+      end
+
+      self
+    end
+    synchronized :each_block_element
   end
 end
 

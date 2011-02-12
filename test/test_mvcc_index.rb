@@ -444,6 +444,60 @@ module Higgs::Test
         t.join
       end
     end
+
+    def test_each_block_element
+      dump_index if $DEBUG
+      @idx.each_block_element do |elem|
+        flunk('not to reach.')
+      end
+
+      @idx.transaction{|cnum|
+        @idx.free_store(0, 512)
+        @idx[cnum, :foo] = 1024
+        @idx.succ!
+
+        dump_index if $DEBUG
+        count = 0
+        @idx.each_block_element do |elem|
+          count += 1
+          case (elem.block_type)
+          when :index
+            assert_equal(:foo, elem.key)
+            assert_equal(1024, elem.entry)
+            assert_equal(1, elem.change_number)
+          when :free
+            flunk('not to reach.')
+          when :free_log
+            assert_equal(0, elem.pos)
+            assert_equal(512, elem.size)
+            assert_equal(0, elem.change_number)
+          else
+            raise "unknown block type: #{elem}"
+          end
+        end
+        assert_equal(2, count)
+      }
+
+      dump_index if $DEBUG
+      count = 0
+      @idx.each_block_element do |elem|
+        count += 1
+        case (elem.block_type)
+        when :index
+          assert_equal(:foo, elem.key)
+          assert_equal(1024, elem.entry)
+          assert_equal(1, elem.change_number)
+        when :free
+          assert_equal(0, elem.pos)
+          assert_equal(512, elem.size)
+        when :free_log
+          flunk('not to reach.')
+        else
+          raise "unknown block type: #{elem}"
+        end
+      end
+      assert_equal(2, count)
+    end
   end
 end
 
