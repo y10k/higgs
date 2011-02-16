@@ -26,10 +26,10 @@ module Higgs::Test
       idx1 = MVCCIndex.new
       idx2 = MVCCIndex.new
 
-      key_list = 'a'..'c'
+      key_list = 'a'..'z'
       val_max = 10
-      tx_count = 3
-      warm_up_count = 10
+      tx_count = 30
+      warm_up_count = 100
       concurrent_read_thread_count = 3
       spin_lock = true
 
@@ -162,10 +162,10 @@ module Higgs::Test
     def test_mvcc_many_transaction_and_free_list
       idx = MVCCIndex.new
 
-      key_list = 'a'..'c'
-      tx_count = 3
-      block_count_max = 3
-      warm_up_count = 10
+      key_list = 'a'..'z'
+      tx_count = 500
+      block_count_max = 10
+      warm_up_count = 100
       concurrent_read_thread_count = 3
 
       operations = []
