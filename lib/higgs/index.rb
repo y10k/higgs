@@ -477,6 +477,14 @@ module Higgs
     end
 
     class << self
+      def load_data(path)
+        File.open(path, 'r') {|f|
+          f.binmode
+          f.set_encoding(Encoding::ASCII_8BIT)
+          Marshal.load(Block.block_read(f, MAGIC_SYMBOL))
+        }
+      end
+
       # backward compatibility for migration.
       def create_id(key, identities)
         id = key.to_s
