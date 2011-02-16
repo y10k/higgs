@@ -448,6 +448,21 @@ module Higgs
       }
     end
 
+    def replace_data(index_data)
+      if (index_data[:version] != [ MAJOR_VERSION, MINOR_VERSION ]) then
+        raise "unsupported version: #{index_data[:version].join('.')}"
+      end
+      __lock__.synchronize{
+        @change_number = index_data[:change_number]
+        @eoa = index_data[:eoa]
+        @free_lists = index_data[:free_lists]
+        @index = index_data[:index]
+        @update_queue = index_data[:update_queue]
+        @storage_id = index_data[:storage_id]
+      }
+      self
+    end
+
     def save(path)
       tmp_path = "#{path}.tmp.#{$$}"
       File.open(tmp_path, File::WRONLY | File::CREAT | File::TRUNC, 0660) {|f|
