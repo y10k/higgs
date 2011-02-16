@@ -249,6 +249,7 @@ module Higgs
       @free_lists = {}
       @index = {}
       @update_queue = [ make_update_entry(0) ]
+      @no_refresh_update_queue = false
       @storage_id = nil
       self.__lock__ = Mutex.new
     end
@@ -297,6 +298,7 @@ module Higgs
       cnum = nil
 
       __lock__.synchronize{
+        @no_refresh_update_queue = true
         update_log = @update_queue.last
 
         # assertion
@@ -459,6 +461,7 @@ module Higgs
         @index = index_data[:index]
         @update_queue = index_data[:update_queue]
         @storage_id = index_data[:storage_id]
+        @no_refresh_update_queue = false
       }
       self
     end
@@ -578,6 +581,28 @@ module Higgs
         migration_0_2_to_0_3(index_data)
         migration_0_3_to_0_4(index_data)
       end
+    end
+
+    def refresh_update_queue
+      if (@no_refresh_update_queue) then
+        raise 'failed to refresh because of updated @update_queue.'
+      end
+
+      for update_log in @update_queue
+        update_log[:ref_count] = 0
+      end
+      clear_old_entries
+
+      self
+    end
+    synchronized :refresh_update_queue
+
+    def load(path)
+      index_data = self.class.load_data(path)
+      self.class.migration(self, index_data)
+      replace_data(index_data)
+      refresh_update_queue
+      self
     end
   end
 end
