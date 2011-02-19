@@ -560,6 +560,47 @@ module Higgs::Test
         assert_equal(1024, j[cnum, :foo])
       }
     end
+
+    def test_migration
+      index_data_0_0 = {
+        :version => [ 0, 0 ],
+        :change_number => 1,
+        :eoa => 1024,
+        :free_lists => { 512 => [ 0 ] },
+        :index => { :foo => 512 }
+      }
+      File.open(@path, 'w') {|w|
+        w.binmode
+        w.set_encoding(Encoding::ASCII_8BIT)
+        Block.block_write(w, Index::MAGIC_SYMBOL, Marshal.dump(index_data_0_0))
+      }
+
+      i = MVCCIndex.new
+      i.storage_id = '68c6b76688d84b4d72856d8f589a5551'
+      i.load(@path)
+
+      h = i.to_h
+      assert_equal([ MVCCIndex::MAJOR_VERSION, MVCCIndex::MINOR_VERSION ], h[:version])
+      assert_equal(1, h[:change_number])
+      assert_equal(1024, h[:eoa])
+      assert_equal({ 512 => [ 0 ] }, h[:free_lists])
+      assert_equal({ :foo => [ [ 1, 512 ] ] }, h[:index])
+      assert_equal([ { :cnum=>1,
+                       :update_marks=>{},
+                       :free_list_logs=>[],
+                       :ref_count=>0}
+                   ], h[:update_queue])
+      assert_equal('68c6b76688d84b4d72856d8f589a5551', h[:storage_id])
+
+      i.transaction{|cnum|
+        assert_equal(1, cnum)
+        assert_equal(1, i.change_number)
+        assert_equal(1024, i.eoa)
+        assert_equal(0, i.free_fetch(512))
+        assert_equal(512, i[cnum, :foo])
+        assert_equal('68c6b76688d84b4d72856d8f589a5551', i.storage_id)
+      }
+    end
   end
 end
 
