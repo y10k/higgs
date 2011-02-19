@@ -499,6 +499,46 @@ module Higgs::Test
       assert_equal(2, count)
     end
   end
+
+  class MVCCIndexLoadSaveTest < Test::Unit::TestCase
+    include Higgs
+
+    def setup
+      @path = 'test.idx'
+    end
+
+    def teardown
+      FileUtils.rm_f(@path)
+    end
+
+    def dump_value(value)
+      puts caller[0]
+      pp value
+    end
+    private :dump_value
+
+    def test_save_load
+      i = MVCCIndex.new
+      i.transaction{|cnum|
+        i.free_store(0, 512)
+        i[cnum, :foo] = 1024
+        i.eoa = 2048
+        i.succ!
+      }
+      dump_value(i) if $DEBUG
+      i.save(@path)
+
+      j = MVCCIndex.new
+      j.load(@path)
+      dump_value(j) if $DEBUG
+      j.transaction{|cnum|
+        assert_equal(1, j.change_number)
+        assert_equal(2048, j.eoa)
+        assert_equal(0, j.free_fetch(512))
+        assert_equal(1024, j[cnum, :foo])
+      }
+    end
+  end
 end
 
 # Local Variables:
