@@ -228,7 +228,7 @@ module Higgs
       def make_update_entry(cnum)
         { :cnum => cnum,
           :update_marks => {},
-          :flist_logs => [],
+          :free_list_logs => [],
           :ref_count => 0
         }
       end
@@ -278,7 +278,7 @@ module Higgs
             @index[key] = entry_alist
           end
         end
-        update_log[:flist_logs].each do |jlog|
+        update_log[:free_list_logs].each do |jlog|
           @free_lists[jlog[:siz]] = [] unless (@free_lists.key? jlog[:siz])
           @free_lists[jlog[:siz]] << jlog[:pos]
         end
@@ -289,17 +289,17 @@ module Higgs
     private :clear_old_entries
 
     def transaction
-      update_entry = @update_queue.last
+      update_log = @update_queue.last
 
       # assertion
-      (update_entry[:cnum] == @change_number) or raise 'internal error.'
-      (update_entry[:ref_count] >= 0) or raise 'internal error.'
+      (update_log[:cnum] == @change_number) or raise 'internal error.'
+      (update_log[:ref_count] >= 0) or raise 'internal error.'
 
-      update_entry[:ref_count] += 1
+      update_log[:ref_count] += 1
       begin
-        r = yield(update_entry[:cnum])
+        r = yield(update_log[:cnum])
       ensure
-        update_entry[:ref_count] -= 1
+        update_log[:ref_count] -= 1
         clear_old_entries
       end
 
