@@ -861,51 +861,54 @@ module Higgs
       elsif (change_number - 1 > index.change_number) then
         raise PanicError, "lost journal log (cnum: #{index.change_number.succ})"
       else # if (change_number - 1 == index.change_number) then
-        for cmd in commit_log
-          case (cmd[:ope])
-          when :write
-            yield(cmd[:key]) if block_given?
-            name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
-            w_tar.seek(cmd[:pos])
-            w_tar.add(cmd[:nam], cmd[:val], :mtime => cmd[:mod])
-            blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(cmd[:val].length)
-            if (i = index[cmd[:key]]) then
-              i = i.dup
-              if (j = i[cmd[:typ]]) then
-                j = j.dup; i[cmd[:typ]] = j
-                j[:pos] = cmd[:pos]
-                j[:siz] = blocked_size
-                j[:cnum] = index.change_number
+        index.transaction{|cnum|
+          next_cnum = cnum.succ
+          for cmd in commit_log
+            case (cmd[:ope])
+            when :write
+              yield(cmd[:key]) if block_given?
+              name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
+              w_tar.seek(cmd[:pos])
+              w_tar.add(cmd[:nam], cmd[:val], :mtime => cmd[:mod])
+              blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(cmd[:val].length)
+              if (i = index[cnum, cmd[:key]]) then
+                i = i.dup
+                if (j = i[cmd[:typ]]) then
+                  j = j.dup; i[cmd[:typ]] = j
+                  j[:pos] = cmd[:pos]
+                  j[:siz] = blocked_size
+                  j[:cnum] = next_cnum
+                else
+                  i[cmd[:typ]] = { :pos => cmd[:pos], :siz => blocked_size, :cnum => next_cnum }
+                end
+                index[cnum, cmd[:key]] = i
               else
-                i[cmd[:typ]] = { :pos => cmd[:pos], :siz => blocked_size, :cnum => index.change_number }
+                index[cnum, cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size, :cnum => next_cnum } }
               end
-              index[cmd[:key]] = i
+            when :delete
+              yield(cmd[:key]) if block_given?
+              index.delete(cnum, cmd[:key])
+            when :free_fetch
+              index.free_fetch_at(cmd[:pos], cmd[:siz])
+            when :free_store
+              index.free_store(cmd[:pos], cmd[:siz])
+              name = format('.free.%x', cmd[:pos] >> 9)
+              w_tar.seek(cmd[:pos])
+              w_tar.write_header(:name => name, :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
+            when :eoa
+              index.eoa = cmd[:pos]
+              w_tar.seek(cmd[:pos])
+              w_tar.write_EOA
+            when :succ
+              index.succ!
+              if (index.change_number != cmd[:cnum]) then
+                raise PanicError, "invalid journal log (succ: #{cmd[:cnum]})"
+              end
             else
-              index[cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size, :cnum => index.change_number } }
+              raise "unknown operation: #{cmd[:ope]}"
             end
-          when :delete
-            yield(cmd[:key]) if block_given?
-            index.delete(cmd[:key])
-          when :free_fetch
-            index.free_fetch_at(cmd[:pos], cmd[:siz])
-          when :free_store
-            index.free_store(cmd[:pos], cmd[:siz])
-            name = format('.free.%x', cmd[:pos] >> 9)
-            w_tar.seek(cmd[:pos])
-            w_tar.write_header(:name => name, :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
-          when :eoa
-            index.eoa = cmd[:pos]
-            w_tar.seek(cmd[:pos])
-            w_tar.write_EOA
-          when :succ
-            index.succ!
-            if (index.change_number != cmd[:cnum]) then
-              raise PanicError, "invalid journal log (succ: #{cmd[:cnum]})"
-            end
-          else
-            raise "unknown operation: #{cmd[:ope]}"
           end
-        end
+        }
       end
 
       nil
