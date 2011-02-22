@@ -206,7 +206,7 @@ module Higgs
     # <tt>name.log</tt>:: event log. default logging level is <tt>WARN</tt>.
     # <tt>name.tar</tt>:: data file compatible with unix TAR format.
     # <tt>name.idx</tt>:: index snapshot. genuine index is Hash in memory.
-    #                     see Higgs::Index for detail.
+    #                     see Higgs::MVCCIndex for detail.
     # <tt>name.jlog</tt>:: transaction journal log. see Higgs::JournalLogger for detail.
     # <tt>name.lock</tt>:: lock file for File#flock. see Higgs::FileLock for detail.
     #
@@ -245,7 +245,7 @@ module Higgs
 
         @logger.info format('block format version: 0x%04X', Block::FMT_VERSION)
         @logger.info("journal log hash type: #{@jlog_hash_type}")
-        @logger.info("index format version: #{Index::MAJOR_VERSION}.#{Index::MINOR_VERSION}")
+        @logger.info("index format version: #{MVCCIndex::MAJOR_VERSION}.#{MVCCIndex::MINOR_VERSION}")
         @logger.info("storage data hash type: #{@data_hash_type}")
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
 
@@ -271,7 +271,7 @@ module Higgs
         }
         @core.r_tar_pool = @r_tar_pool
 
-        @index = Index.new
+        @index = MVCCIndex.new
         if (File.exist? @idx_name) then
           @logger.info("load index: #{@idx_name}")
           @index.load(@idx_name)
