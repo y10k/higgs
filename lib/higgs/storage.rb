@@ -593,50 +593,80 @@ module Higgs
       nil
     end
 
-    class ReadHandler
-      extend Forwardable
-
-      def initialize(storage)
+    class TransactionHandler
+      def initialize(storage, change_number)
         @storage = storage
+        @cnum = change_number
       end
 
-      def_delegator :@storage, :fetch_properties
-      def_delegator :@storage, :fetch
-      def_delegator :@storage, :data_change_number
-      def_delegator :@storage, :properties_change_number
-      def_delegator :@storage, :key?
-      def_delegator :@storage, :keys
-      def_delegator :@storage, :each_key
-      def_delegator :@storage, :verify
+      # methods to write.
+
+      def raw_write_and_commit(write_list, *optional)
+        @storage.raw_write_and_commit(@cnum, write_list, *optional)
+      end
+
+      def write_and_commit(write_list, *optional)
+        @storage.write_and_commit(@cnum, write_list, *optional)
+      end
+
+      def change_number
+        @cnum
+      end
+
+      # methods to read.
+
+      def fetch_properties(key)
+        @storage.fetch_properties(@cnum, key)
+      end
+
+      def fetch(key)
+        @storage.fetch(@cnum, key)
+      end
+
+      def data_change_number(key)
+        @storage.data_change_number(@cnum, key)
+      end
+
+      def properties_change_number(key)
+        @storage.properties_change_number(@cnum, key)
+      end
+
+      def key?(key)
+        @storage.key?(@cnum, key)
+      end
+
+      def keys(*optional)
+        @storage.keys(@cnum, *optional)
+      end
+
+      def each_key(&block)
+        @storage.each_key(@cnum, &block)
+      end
+
+      def verify(*optional)
+        @storage.verify(*optional)
+      end
     end
 
-    class WriteHandler
-      extend Forwardable
+    class ReadHandler < TransactionHandler
+      undef raw_write_and_commit
+      undef write_and_commit
+      undef change_number
+    end
 
-      def initialize(storage)
-        @storage = storage
-      end
-
-      def_delegator :@storage, :raw_write_and_commit
-      def_delegator :@storage, :write_and_commit
-      def_delegator :@storage, :change_number
-
-      def_delegator :@storage, :fetch_properties
-      def_delegator :@storage, :fetch
-      def_delegator :@storage, :data_change_number
-      def_delegator :@storage, :properties_change_number
-      def_delegator :@storage, :key?
-      def_delegator :@storage, :keys
-      def_delegator :@storage, :each_key
-      def_delegator :@storage, :verify
+    class WriteHandler < TransactionHandler
     end
 
     # <tt>tx</tt> is storage handler to read or write.
     def transaction(read_only=false) # :yields: tx
       if (@read_only || read_only) then
-        yield(ReadHandler.new(self))
+        @index.transaction{|cnum|
+          yield(ReadHandler.new(self, cnum))
+        }
       else
-        yield(WriteHandler.new(self))
+        @index.transaction{|cnum|
+          yield(WriteHandler.new(self, cnum))
+        }
       end
     end
 
