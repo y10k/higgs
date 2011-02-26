@@ -1164,10 +1164,11 @@ module Higgs
       internal_fetch_properties(cnum, key)
     end
 
-    def fetch(key)
+    # should be called in a block of transaction method.
+    def fetch(cnum, key)
       @core.check_read
-      value = read_record_body(key, :d) or return
-      unless (properties = internal_fetch_properties(key)) then
+      value = read_record_body(cnum, key, :d) or return
+      unless (properties = internal_fetch_properties(cnum, key)) then
         @stat.state_lock.synchronize{ @stat.panic = true }
         @logger.error("panic: failed to read properties: #{key}")
         raise PanicError, "failed to read properties: #{key}"
