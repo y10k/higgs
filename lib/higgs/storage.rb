@@ -1024,7 +1024,8 @@ module Higgs
       nil
     end
 
-    def write_and_commit(write_list, commit_time=Time.now)
+    # should be called in a block of transaction method.
+    def write_and_commit(cnum, write_list, commit_time=Time.now)
       check_read_write
 
       raw_write_list = []
@@ -1095,7 +1096,7 @@ module Higgs
         raw_write_list << [ :write, key, :p, "#{key}.p", encode_properties(properties) ]
       end
 
-      raw_write_and_commit(raw_write_list, commit_time)
+      raw_write_and_commit(cnum, raw_write_list, commit_time)
 
       nil
     end
