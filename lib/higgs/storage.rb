@@ -1202,9 +1202,10 @@ module Higgs
       i = @index[cnum, key] and i[:p][:cnum] || -1
     end
 
-    def key?(key)
+    # should be called in a block of transaction method.
+    def key?(cnum, key)
       @core.check_read
-      @index.key? key
+      @index.key?(cnum, key)
     end
 
     def keys(order_by_pos=false)
