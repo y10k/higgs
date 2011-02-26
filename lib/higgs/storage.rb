@@ -1208,9 +1208,14 @@ module Higgs
       @index.key?(cnum, key)
     end
 
-    def keys(order_by_pos=false)
-      keys = @index.keys
-      keys.sort!{|a, b| @index[a][:d][:pos] <=> @index[b][:d][:pos] } if order_by_pos
+    # should be called in a block of transaction method.
+    def keys(cnum, order_by_pos=false)
+      keys = @index.keys(cnum)
+      if (order_by_pos) then
+        keys.sort!{|a, b|
+          @index[cnum, a][:d][:pos] <=> @index[cnum, b][:d][:pos]
+        }
+      end
       keys
     end
 
