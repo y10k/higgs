@@ -673,7 +673,8 @@ module Higgs
       end
     end
 
-    def raw_write_and_commit(write_list, commit_time=Time.now)
+    # should be called in a block of transaction method.
+    def raw_write_and_commit(cnum, write_list, commit_time=Time.now)
       @stat.commit_lock.synchronize{
         @logger.debug("start raw_write_and_commit.") if @logger.debug?
 
@@ -683,10 +684,9 @@ module Higgs
         eoa = @index.eoa
 
         begin
-          @stat.cnum_lock.synchronize{ @stat.saved_change_number = @index.change_number }
-          @index.succ!
-          @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
-          commit_log << { :ope => :succ, :cnum => @index.change_number }
+          (@index.change_number == cnum) or raise 'internal error.' # assertion
+          @stat.cnum_lock.synchronize{ @stat.saved_change_number = cnum }
+          next_cnum = cnum.succ
 
           for ope, key, type, name, value in write_list
             case (ope)
@@ -714,7 +714,7 @@ module Higgs
                   :nam => name,
                   :val => value
                 }
-                if (i = @index[key]) then
+                if (i = @index[cnum, key]) then
                   i = i.dup
                   if (j = i[type]) then
                     j = j.dup; i[type] = j
@@ -727,48 +727,15 @@ module Higgs
                     @index.free_store(j[:pos], j[:siz])
                     j[:pos] = pos
                     j[:siz] = blocked_size
-                    j[:cnum] = @index.change_number
+                    j[:cnum] = next_cnum
                   else
-                    i[type] = { :pos => pos, :siz => blocked_size, :cnum => @index.change_number }
+                    i[type] = { :pos => pos, :siz => blocked_size, :cnum => next_cnum }
                   end
-                  @index[key] = i
+                  @index[cnum, key] = i
                 else
-                  @index[key] = { type => { :pos => pos, :siz => blocked_size, :cnum => @index.change_number } }
+                  @index[cnum, key] = { type => { :pos => pos, :siz => blocked_size, :cnum => next_cnum } }
                 end
                 next
-              end
-
-              # overwrite
-              if (i = @index[key]) then
-                if (j = i[type]) then
-                  if (j[:siz] >= blocked_size) then
-                    i = i.dup; j = j.dup; i[type] = j
-                    @logger.debug("write type of overwrite: (pos,size)=(#{j[:pos]},#{blocked_size})") if @logger.debug?
-                    commit_log << {
-                      :ope => :write,
-                      :key => key,
-                      :pos => j[:pos],
-                      :typ => type,
-                      :mod => commit_time,
-                      :nam => name,
-                      :val => value
-                    }
-                    j[:cnum] = @index.change_number
-                    if (j[:siz] > blocked_size) then
-                      commit_log << {
-                        :ope => :free_store,
-                        :pos => j[:pos] + blocked_size,
-                        :siz => j[:siz] - blocked_size,
-                        :mod => commit_time
-                      }
-                      @logger.debug("tail free region: (pos,size)=(#{commit_log[-1][:pos]},#{commit_log[-1][:siz]})") if @logger.debug?
-                      @index.free_store(commit_log.last[:pos], commit_log.last[:siz])
-                      j[:siz] = blocked_size
-                    end
-                    @index[key] = i
-                    next
-                  end
-                end
               end
 
               # append
@@ -782,7 +749,7 @@ module Higgs
                 :nam => name,
                 :val => value
               }
-              if (i = @index[key]) then
+              if (i = @index[cnum, key]) then
                 i = i.dup
                 if (j = i[type]) then
                   j = j.dup; i[type] = j
@@ -795,22 +762,19 @@ module Higgs
                   @index.free_store(j[:pos], j[:siz])
                   j[:pos] = eoa
                   j[:siz] = blocked_size
-                  j[:cnum] = @index.change_number
+                  j[:cnum] = next_cnum
                 else
-                  i[type] = { :pos => eoa, :siz => blocked_size, :cnum => @index.change_number }
+                  i[type] = { :pos => eoa, :siz => blocked_size, :cnum => next_cnum }
                 end
-                @index[key] = i
+                @index[cnum, key] = i
               else
-                @index[key] = { type => { :pos => eoa, :siz => blocked_size, :cnum => @index.change_number } }
+                @index[cnum, key] = { type => { :pos => eoa, :siz => blocked_size, :cnum => next_cnum } }
               end
               eoa += blocked_size
-              commit_log << {
-                :ope => :eoa,
-                :pos => eoa
-              }
+              commit_log << { :ope => :eoa, :pos => eoa }
             when :delete
               @logger.debug("journal log for delete: #{key}") if @logger.debug?
-              if (i = @index.delete(key)) then
+              if (i = @index.delete(cnum, key)) then
                 commit_log << {
                   :ope => :delete,
                   :key => key
@@ -830,8 +794,11 @@ module Higgs
             end
           end
 
-          @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
-          @jlog.write([ @index.change_number, commit_log, @index.storage_id ])
+          @logger.debug("index succ: #{next_cnum}") if @logger.debug?
+          commit_log << { :ope => :succ, :cnum => next_cnum }
+
+          @logger.debug("write journal log: #{next_cnum}") if @logger.debug?
+          @jlog.write([ next_cnum, commit_log, @index.storage_id ])
 
           for cmd in commit_log
             case (cmd[:ope])
@@ -859,6 +826,9 @@ module Higgs
           end
           @logger.debug("flush storage.")
           @w_tar.flush
+
+          # release updated entries.
+          @index.succ!
 
           if (@jlog_rotate_size > 0 && @jlog.size >= @jlog_rotate_size) then
             internal_rotate_journal_log(true)
