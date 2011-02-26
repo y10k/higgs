@@ -1192,8 +1192,9 @@ module Higgs
       @stat.cnum_lock.synchronize{ @stat.saved_change_number || @index.change_number }
     end
 
-    def data_change_number(key)
-      i = @index[key] and i[:d][:cnum] || -1
+    # should be called in a block of transaction method.
+    def data_change_number(cnum, key)
+      i = @index[cnum, key] and i[:d][:cnum] || -1
     end
 
     def properties_change_number(key)
