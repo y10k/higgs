@@ -1158,9 +1158,10 @@ module Higgs
     end
     private :internal_fetch_properties
 
-    def fetch_properties(key)
+    # should be called in a block of transaction method.
+    def fetch_properties(cnum, key)
       @core.check_read
-      internal_fetch_properties(key)
+      internal_fetch_properties(cnum, key)
     end
 
     def fetch(key)
