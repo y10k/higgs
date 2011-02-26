@@ -530,30 +530,33 @@ module Higgs
     def internal_rotate_journal_log(save_index)
       @logger.info("start journal log rotation.")
 
-      commit_log = []
-      while (File.exist? "#{@jlog_name}.#{@index.change_number}")
-        @index.succ!
-        @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
-        commit_log << { :ope => :succ, :cnum => @index.change_number }
-      end
-      unless (commit_log.empty?) then
-        @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
-        @jlog.write([ @index.change_number, commit_log, @index.storage_id ])
-      end
-      rot_jlog_name = "#{@jlog_name}.#{@index.change_number}"
-
-      if (save_index) then
-        case (save_index)
-        when String
-          @logger.info("save index: #{save_index}")
-          @index.save(save_index)
-        else
-          @logger.info("save index: #{@idx_name}")
-          @index.save(@idx_name)
+      rot_jlog_name = nil
+      @index.transaction{|cnum|
+        commit_log = []
+        while (File.exist? "#{@jlog_name}.#{@index.change_number}")
+          @index.succ!
+          @logger.debug("index succ: #{@index.change_number}") if @logger.debug?
+          commit_log << { :ope => :succ, :cnum => @index.change_number }
         end
-      else
-        @logger.info("no save index.")
-      end
+        unless (commit_log.empty?) then
+          @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
+          @jlog.write([ @index.change_number, commit_log, @index.storage_id ])
+        end
+        rot_jlog_name = "#{@jlog_name}.#{@index.change_number}"
+
+        if (save_index) then
+          case (save_index)
+          when String
+            @logger.info("save index: #{save_index}")
+            @index.save(save_index)
+          else
+            @logger.info("save index: #{@idx_name}")
+            @index.save(@idx_name)
+          end
+        else
+          @logger.info("no save index.")
+        end
+      }
 
       @logger.info("close journal log.")
       @jlog.close
