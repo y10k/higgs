@@ -1197,8 +1197,9 @@ module Higgs
       i = @index[cnum, key] and i[:d][:cnum] || -1
     end
 
-    def properties_change_number(key)
-      i = @index[key] and i[:p][:cnum] || -1
+    # should be called in a block of transaction method.
+    def properties_change_number(cnum, key)
+      i = @index[cnum, key] and i[:p][:cnum] || -1
     end
 
     def key?(key)
