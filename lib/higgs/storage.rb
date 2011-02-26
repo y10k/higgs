@@ -1042,7 +1042,7 @@ module Higgs
           deleted_entries[key] = false
           if (properties = update_properties[key]) then
             # nothing to do.
-          elsif (properties = internal_fetch_properties(key)) then
+          elsif (properties = internal_fetch_properties(cnum, key)) then
             update_properties[key] = properties
           else
             # new properties
@@ -1071,7 +1071,7 @@ module Higgs
           end
           if (properties = update_properties[key]) then
             # nothing to do.
-          elsif (properties = internal_fetch_properties(key)) then
+          elsif (properties = internal_fetch_properties(cnum, key)) then
             update_properties[key] = properties
           else
             raise IndexError, "not exist properties at key: #{key}"
@@ -1152,8 +1152,9 @@ module Higgs
     end
     private :decode_properties
 
-    def internal_fetch_properties(key)
-      value = read_record_body(key, :p) and decode_properties(key, value)
+    # should be called in a block of transaction method.
+    def internal_fetch_properties(cnum, key)
+      value = read_record_body(cnum, key, :p) and decode_properties(key, value)
     end
     private :internal_fetch_properties
 
