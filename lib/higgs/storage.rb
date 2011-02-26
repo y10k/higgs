@@ -645,10 +645,6 @@ module Higgs
       def each_key(&block)
         @storage.each_key(@cnum, &block)
       end
-
-      def verify(*optional)
-        @storage.verify(*optional)
-      end
     end
 
     class ReadHandler < TransactionHandler
