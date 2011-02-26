@@ -934,7 +934,7 @@ module Higgs
           w_io.set_encoding(Encoding::ASCII_8BIT)
           w_tar = Tar::ArchiveWriter.new(w_io)
 
-          index = Index.new
+          index = MVCCIndex.new
           index.load(idx_name) if (File.exist? idx_name)
 
           out << "recovery target: #{name}\n" if (out && verbose_level >= 1)
