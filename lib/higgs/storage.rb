@@ -1226,28 +1226,79 @@ module Higgs
     VERIFY_VERBOSE_LIST = [
       [ 'hash_type', proc{|type| type } ],
       [ 'hash_value', proc{|value| value } ],
-      [ 'created_time', proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
-      [ 'changed_time', proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
-      [ 'modified_time', proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
+      [ 'created_time',
+        proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
+      [ 'changed_time',
+        proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
+      [ 'modified_time',
+        proc{|t| t.strftime('%Y-%m-%d %H:%M:%S.') + format('%03d', Integer(t.to_f % 1000)) } ],
       [ 'string_only', proc{|flag| flag.to_s } ]
     ]
 
+    # storage access is blocked while this method is processing.
     def verify(out=nil, verbose_level=1)
-      @core.check_read
-      for key in keys(true)
-        if (out && verbose_level >= 1) then
-          out << "check #{key}\n"
-        end
-        data = fetch(key)
-        if (out && verbose_level >= 2) then
-          out << "  #{data.length} bytes\n"
-          properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"
-          for key, format in VERIFY_VERBOSE_LIST
-            value = properties['system_properties'][key]
-            out << '  ' << key << ': ' << format.call(value) << "\n"
+      @stat.commit_lock.synchronize{
+        @core.check_read
+        @index.transaction{|cnum|
+
+          key_pos_alist = []
+          block_set = {}
+
+          @index.each_block_element do |elem|
+            case (elem.block_type)
+            when :index
+              key_pos_alist << [ elem.key, elem.entry[:d][:pos] ]
+              elem.entry.each_value{|j|
+                block_set[j[:pos]] = j[:siz]
+              }
+            when :free, :free_log
+              block_set[elem.pos] = elem.size
+            else
+              raise "unknown block element: #{elem}"
+            end
           end
-        end
-      end
+
+          key_pos_alist.sort_by!{|i| i[1] }
+          for key, pos in key_pos_alist
+            if (out && verbose_level >= 1) then
+              out << "check #{key}\n"
+            end
+            data = fetch(cnum, key) or raise PanicError, "not exist data at key: #{key}"
+            if (out && verbose_level >= 2) then
+              out << "  #{data.length} bytes\n"
+              properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"
+              for key, format in VERIFY_VERBOSE_LIST
+                value = properties['system_properties'][key]
+                out << '  ' << key << ': ' << format.call(value) << "\n"
+              end
+            end
+          end
+
+          pos = 0
+          @r_tar_pool.transaction{|r_tar|
+            while (size = block_set.delete(pos))
+              if (out && verbose_level >= 1) then
+                out << "check TAR header at #{pos} bytes\n"
+              end
+              r_tar.seek(pos)
+              head = r_tar.read_header
+              tar_blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(head[:size])
+              if (tar_blocked_size != size) then
+                raise PanicError, "broken tar file at #{pos} bytes."
+              end
+              pos += size
+            end
+          }
+
+          unless (block_set.empty?) then
+            raise PanicError, 'broken tar file.'
+          end
+          if (@index.eoa != pos) then
+            raise PanicError, 'broken index eoa.'
+          end
+        }
+      }
+
       nil
     end
 
