@@ -1101,9 +1101,10 @@ module Higgs
       nil
     end
 
-    def read_record(key, type)
+    # should be called in a block of transaction method.
+    def read_record(cnum, key, type)
       head_and_body = nil
-      if (i = @index[key]) then
+      if (i = @index[cnum, key]) then
         if (j = i[type]) then
           @r_tar_pool.transaction{|r_tar|
             r_tar.seek(j[:pos])
