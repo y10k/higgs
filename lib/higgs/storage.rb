@@ -1219,9 +1219,9 @@ module Higgs
       keys
     end
 
-    def each_key
+    def each_key(cnum)
       @core.check_read
-      @index.each_key do |key|
+      @index.each_key(cnum) do |key|
         yield(key)
       end
       self
