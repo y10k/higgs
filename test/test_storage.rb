@@ -5,6 +5,7 @@ require 'digest'
 require 'fileutils'
 require 'higgs/storage'
 require 'logger'
+require 'pp' if $DEBUG
 require 'test/unit'
 
 module Higgs::Test
@@ -519,6 +520,12 @@ module Higgs::Test
 
   class StorageRecoveryTest < Test::Unit::TestCase
     include StorageTestCase
+
+    def dump_value(value)
+      puts caller[0]
+      pp value
+    end
+    private :dump_value
 
     def new_storage
       Storage.new(@st_name,
