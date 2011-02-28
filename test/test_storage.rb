@@ -723,8 +723,12 @@ module Higgs::Test
       end
 
       assert(FileUtils.cmp("#{@st_name}.tar", "#{other_name}.tar"), 'DATA should be same.')
-      assert(MVCCIndex.new.load("#{@st_name}.idx").to_h ==
-             MVCCIndex.new.load("#{other_name}.idx").to_h, 'INDEX should be same.')
+
+      index1 = MVCCIndex.new.load("#{@st_name}.idx").to_h
+      dump_value(index1) if $DEBUG
+      index2 = MVCCIndex.new.load("#{other_name}.idx").to_h
+      dump_value(index2) if $DEBUG
+      assert(index1 == index2, 'INDEX should be same.')
     end
 
     def test_apply_journal_log_on_standby_mode
