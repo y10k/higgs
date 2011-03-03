@@ -1121,8 +1121,9 @@ module Higgs
     end
     private :read_record
 
-    def read_record_body(key, type)
-      head_and_body = read_record(key, type) or return
+    # should be called in a block of transaction method.
+    def read_record_body(cnum, key, type)
+      head_and_body = read_record(cnum, key, type) or return
       head_and_body[:body]
     end
     private :read_record_body
