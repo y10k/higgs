@@ -579,8 +579,11 @@ module Higgs::Test
       Storage.recover(other_name)
 
       assert(FileUtils.cmp("#{@st_name}.tar", "#{other_name}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@st_name}.idx").to_h ==
-             Index.new.load("#{other_name}.idx").to_h, 'INDEX should be same.')
+
+      index1 = MVCCIndex.new.load("#{@st_name}.idx").to_h
+      dump_value(index1) if $DEBUG
+      index2 = MVCCIndex.new.load("#{other_name}.idx").to_h
+      dump_value(index2) if $DEBUG
     end
 
     def test_recovery_PanicError_unexpected_storage_id
