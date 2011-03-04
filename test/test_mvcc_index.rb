@@ -26,14 +26,14 @@ module Higgs::Test
     end
 
     def test_put_entry_new
-      entry_alist = put_entry(0, [], 'foo')
+      entry_alist = put_entry(1, [], 'foo')
       assert_equal([ [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
       assert_equal('foo', get_entry(1, entry_alist))
       assert_equal(nil, get_entry(0, entry_alist))
     end
 
     def test_put_entry_update
-      entry_alist = put_entry(2, [ [ 1, 'foo' ], [ 0, nil ] ], 'bar')
+      entry_alist = put_entry(3, [ [ 1, 'foo' ], [ 0, nil ] ], 'bar')
       assert_equal([ [ 3, 'bar' ], [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
       assert_equal('bar', get_entry(3, entry_alist))
       assert_equal('foo', get_entry(2, entry_alist))

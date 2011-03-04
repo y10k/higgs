@@ -209,13 +209,13 @@ module Higgs
       end
       module_function :get_entry
 
-      def put_entry(cnum, entry_alist, new_entry)
-        new_cnum = cnum.succ
+      def put_entry(new_cnum, entry_alist, new_entry)
         if (entry_alist.empty?) then
           # at first putting, nil value is placed to current change
           # number point corresponding to its update mark. nil value
           # means empty because index entry will not be nil.
-          entry_alist = [ [ new_cnum, new_entry ], [ cnum, nil ] ]
+          curr_cnum = new_cnum.pred
+          entry_alist = [ [ new_cnum, new_entry ], [ curr_cnum, nil ] ]
         else
           entry_alist = entry_alist.dup
           entry_alist.unshift([ new_cnum, new_entry ])
