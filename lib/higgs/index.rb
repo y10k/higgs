@@ -216,6 +216,9 @@ module Higgs
           # means empty because index entry will not be nil.
           curr_cnum = new_cnum.pred
           entry_alist = [ [ new_cnum, new_entry ], [ curr_cnum, nil ] ]
+        elsif (entry_alist[0][0] == new_cnum) then
+          entry_alist = entry_alist.dup
+          entry_alist[0] = [ new_cnum, new_entry ]
         else
           entry_alist = entry_alist.dup
           entry_alist.unshift([ new_cnum, new_entry ])

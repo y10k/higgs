@@ -40,6 +40,16 @@ module Higgs::Test
       assert_equal('foo', get_entry(1, entry_alist))
       assert_equal(nil, get_entry(0, entry_alist))
     end
+
+    def test_put_entry_overwrite
+      entry_alist = put_entry(3, [ [ 1, 'foo' ], [ 0, nil ] ], 'bar')
+      assert_equal([ [ 3, 'bar' ], [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
+      assert_equal('bar', get_entry(3, entry_alist))
+
+      entry_alist = put_entry(3, entry_alist, 'baz')
+      assert_equal([ [ 3, 'baz' ],  [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
+      assert_equal('baz', get_entry(3, entry_alist))
+    end
   end
 
   class MVCCIndexTest < Test::Unit::TestCase
