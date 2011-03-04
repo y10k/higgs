@@ -26,15 +26,25 @@ module Higgs::Test
     end
 
     def test_put_entry_new
+      entry_alist0 = []
       entry_alist = put_entry(1, [], 'foo')
+
       assert_equal([ [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
+      assert_not_same(entry_alist0, entry_alist, 'copy on write')
+
       assert_equal('foo', get_entry(1, entry_alist))
       assert_equal(nil, get_entry(0, entry_alist))
     end
 
     def test_put_entry_update
-      entry_alist = put_entry(3, [ [ 1, 'foo' ], [ 0, nil ] ], 'bar')
+      entry_alist0 = [ [ 1, 'foo' ], [ 0, nil ] ]
+      entry_alist = put_entry(3, entry_alist0, 'bar')
+
       assert_equal([ [ 3, 'bar' ], [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
+      assert_not_same(entry_alist0, entry_alist, 'copy on write')
+      assert_same(entry_alist0[0], entry_alist[1], 'copy on write')
+      assert_same(entry_alist0[1], entry_alist[2], 'copy on write')
+
       assert_equal('bar', get_entry(3, entry_alist))
       assert_equal('foo', get_entry(2, entry_alist))
       assert_equal('foo', get_entry(1, entry_alist))
@@ -42,13 +52,22 @@ module Higgs::Test
     end
 
     def test_put_entry_overwrite
-      entry_alist = put_entry(3, [ [ 1, 'foo' ], [ 0, nil ] ], 'bar')
-      assert_equal([ [ 3, 'bar' ], [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
-      assert_equal('bar', get_entry(3, entry_alist))
+      entry_alist0 = [ [ 1, 'foo' ], [ 0, nil ] ]
 
-      entry_alist = put_entry(3, entry_alist, 'baz')
-      assert_equal([ [ 3, 'baz' ],  [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
-      assert_equal('baz', get_entry(3, entry_alist))
+      entry_alist1 = put_entry(3, entry_alist0, 'bar')
+      assert_equal([ [ 3, 'bar' ], [ 1, 'foo' ], [ 0, nil ] ], entry_alist1)
+      assert_not_same(entry_alist0, entry_alist1, 'copy on write')
+      assert_same(entry_alist0[0], entry_alist1[1], 'copy on write')
+      assert_same(entry_alist0[1], entry_alist1[2], 'copy on write')
+      assert_equal('bar', get_entry(3, entry_alist1), 'copy on write')
+
+      entry_alist2 = put_entry(3, entry_alist1, 'baz')
+      assert_equal([ [ 3, 'baz' ],  [ 1, 'foo' ], [ 0, nil ] ], entry_alist2)
+      assert_not_same(entry_alist1, entry_alist2, 'copy on write')
+      assert_not_same(entry_alist1[0], entry_alist2[0], 'copy on write')
+      assert_same(entry_alist1[1], entry_alist2[1], 'copy on write')
+      assert_same(entry_alist1[2], entry_alist2[2], 'copy on write')
+      assert_equal('baz', get_entry(3, entry_alist2))
     end
   end
 
