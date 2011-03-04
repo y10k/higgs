@@ -358,32 +358,34 @@ module Higgs
     end
     synchronized :[]
 
-    def []=(cnum, key, value)
+    def []=(new_cnum, key, value)
       update_log = @update_queue.last
 
       # assertion
+      (new_cnum == @change_number.succ) or raise 'internal error.'
       (update_log[:cnum] == @change_number) or raise 'internal error.'
       (update_log[:ref_count] >= 0) or raise 'internal error.'
 
       update_log[:update_marks][key] = true
-      new_entry_alist = put_entry(cnum, @index[key] || [], value)
+      new_entry_alist = put_entry(new_cnum, @index[key] || [], value)
       @index[key] = new_entry_alist
 
       value
     end
     synchronized :[]=
 
-    def delete(cnum, key)
+    def delete(new_cnum, key)
       update_log = @update_queue.last
 
       # assertion
+      (new_cnum == @change_number.succ) or raise 'internal error.'
       (update_log[:cnum] == @change_number) or raise 'internal error.'
       (update_log[:ref_count] >= 0) or raise 'internal error.'
 
       if (entry_alist = @index[key]) then
-        if (value = get_entry(cnum, entry_alist)) then
+        if (value = get_entry(new_cnum, entry_alist)) then
           update_log[:update_marks][key] = true
-          new_entry_alist = put_entry(cnum, entry_alist, nil)
+          new_entry_alist = put_entry(new_cnum, entry_alist, nil)
           @index[key] = new_entry_alist
           return value
         end
