@@ -66,12 +66,14 @@ module Higgs::Test
 
       for ope in operations
         idx1.transaction{|cnum|
+          next_cnum = cnum.succ
+
           for c in ope[:cmds]
             case (c[:cmd])
             when :write
-              idx1[cnum, c[:key]] = c[:val]
+              idx1[next_cnum, c[:key]] = c[:val]
             when :delete
-              idx1.delete(cnum, c[:key])
+              idx1.delete(next_cnum, c[:key])
             else
               raise "unknown command: #{c[:cmd]}"
             end
@@ -123,12 +125,13 @@ module Higgs::Test
 
         ope[:next_update_latch].wait
         idx2.transaction{|cnum|
+          next_cnum = cnum.succ
           for c in ope[:cmds]
             case (c[:cmd])
             when :write
-              idx2[cnum, c[:key]] = c[:val]
+              idx2[next_cnum, c[:key]] = c[:val]
             when :delete
-              idx2.delete(cnum, c[:key])
+              idx2.delete(next_cnum, c[:key])
             else
               raise "unknown command: #{c[:cmd]}"
             end
@@ -233,6 +236,7 @@ module Higgs::Test
 
         ope[:next_update_latch].wait
         idx.transaction{|cnum|
+          next_cnum = cnum.succ
           for c in ope[:cmds]
             case (c[:cmd])
             when :write
@@ -240,12 +244,12 @@ module Higgs::Test
                 new_pos = idx.eoa
                 idx.eoa += c[:siz]
               end
-              if (old_entry = idx[cnum, c[:key]]) then
+              if (old_entry = idx[next_cnum, c[:key]]) then
                 idx.free_store(old_entry[:pos], old_entry[:siz])
               end
-              idx[cnum, c[:key]] = { :pos => new_pos, :siz => c[:siz] }
+              idx[next_cnum, c[:key]] = { :pos => new_pos, :siz => c[:siz] }
             when :delete
-              if (old_entry = idx.delete(cnum, c[:key])) then
+              if (old_entry = idx.delete(next_cnum, c[:key])) then
                 idx.free_store(old_entry[:pos], old_entry[:siz])
               end
             end

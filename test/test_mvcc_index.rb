@@ -26,19 +26,48 @@ module Higgs::Test
     end
 
     def test_put_entry_new
-      entry_alist = put_entry(0, [], 'foo')
+      entry_alist0 = []
+      entry_alist = put_entry(1, [], 'foo')
+
       assert_equal([ [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
+      assert_not_same(entry_alist0, entry_alist, 'copy on write')
+
       assert_equal('foo', get_entry(1, entry_alist))
       assert_equal(nil, get_entry(0, entry_alist))
     end
 
     def test_put_entry_update
-      entry_alist = put_entry(2, [ [ 1, 'foo' ], [ 0, nil ] ], 'bar')
+      entry_alist0 = [ [ 1, 'foo' ], [ 0, nil ] ]
+      entry_alist = put_entry(3, entry_alist0, 'bar')
+
       assert_equal([ [ 3, 'bar' ], [ 1, 'foo' ], [ 0, nil ] ], entry_alist)
+      assert_not_same(entry_alist0, entry_alist, 'copy on write')
+      assert_same(entry_alist0[0], entry_alist[1], 'copy on write')
+      assert_same(entry_alist0[1], entry_alist[2], 'copy on write')
+
       assert_equal('bar', get_entry(3, entry_alist))
       assert_equal('foo', get_entry(2, entry_alist))
       assert_equal('foo', get_entry(1, entry_alist))
       assert_equal(nil, get_entry(0, entry_alist))
+    end
+
+    def test_put_entry_overwrite
+      entry_alist0 = [ [ 1, 'foo' ], [ 0, nil ] ]
+
+      entry_alist1 = put_entry(3, entry_alist0, 'bar')
+      assert_equal([ [ 3, 'bar' ], [ 1, 'foo' ], [ 0, nil ] ], entry_alist1)
+      assert_not_same(entry_alist0, entry_alist1, 'copy on write')
+      assert_same(entry_alist0[0], entry_alist1[1], 'copy on write')
+      assert_same(entry_alist0[1], entry_alist1[2], 'copy on write')
+      assert_equal('bar', get_entry(3, entry_alist1), 'copy on write')
+
+      entry_alist2 = put_entry(3, entry_alist1, 'baz')
+      assert_equal([ [ 3, 'baz' ],  [ 1, 'foo' ], [ 0, nil ] ], entry_alist2)
+      assert_not_same(entry_alist1, entry_alist2, 'copy on write')
+      assert_not_same(entry_alist1[0], entry_alist2[0], 'copy on write')
+      assert_same(entry_alist1[1], entry_alist2[1], 'copy on write')
+      assert_same(entry_alist1[2], entry_alist2[2], 'copy on write')
+      assert_equal('baz', get_entry(3, entry_alist2))
     end
   end
 
@@ -143,10 +172,11 @@ module Higgs::Test
       @idx.transaction{|cnum|
         assert_equal(nil, @idx[cnum, 'foo'])
         dump_index if $DEBUG
-        @idx[cnum, 'foo'] = 0
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'foo'] = 0
         dump_index if $DEBUG
         assert_equal(nil, @idx[cnum, 'foo'])
-        assert_equal(0, @idx[cnum.succ, 'foo'])
+        assert_equal(0, @idx[next_cnum, 'foo'])
         @idx.succ!
       }
 
@@ -161,13 +191,14 @@ module Higgs::Test
         assert_equal(nil, @idx[cnum, 'foo'])
         assert_equal(nil, @idx[cnum, 'bar'])
         dump_index if $DEBUG
-        @idx[cnum, 'foo'] = 0
-        @idx[cnum, 'bar'] = 8192
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'foo'] = 0
+        @idx[next_cnum, 'bar'] = 8192
         dump_index if $DEBUG
         assert_equal(nil, @idx[cnum, 'foo'])
         assert_equal(nil, @idx[cnum, 'bar'])
-        assert_equal(0, @idx[cnum.succ, 'foo'])
-        assert_equal(8192, @idx[cnum.succ, 'bar'])
+        assert_equal(0, @idx[next_cnum, 'foo'])
+        assert_equal(8192, @idx[next_cnum, 'bar'])
         @idx.succ!
       }
 
@@ -182,10 +213,11 @@ module Higgs::Test
       @idx.transaction{|cnum|
         assert_equal(false, @idx.key?(cnum, 'foo'))
         dump_index if $DEBUG
-        @idx[cnum, 'foo'] = 0
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'foo'] = 0
         dump_index if $DEBUG
         assert_equal(false, @idx.key?(cnum, 'foo'))
-        assert_equal(true, @idx.key?(cnum.succ, 'foo'))
+        assert_equal(true, @idx.key?(next_cnum, 'foo'))
         @idx.succ!
       }
 
@@ -199,21 +231,23 @@ module Higgs::Test
       @idx.transaction{|cnum|
         assert_equal([], @idx.keys(cnum))
         dump_index if $DEBUG
-        @idx[cnum, 'foo'] = 0
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'foo'] = 0
         dump_index if $DEBUG
         assert_equal([], @idx.keys(cnum))
-        assert_equal(%w[ foo ], @idx.keys(cnum.succ))
+        assert_equal(%w[ foo ], @idx.keys(next_cnum))
         @idx.succ!
       }
 
       @idx.transaction{|cnum|
         assert_equal(%w[ foo ], @idx.keys(cnum))
         dump_index if $DEBUG
-        @idx[cnum, 'bar'] = 512
-        @idx[cnum, 'baz'] = 1024
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'bar'] = 512
+        @idx[next_cnum, 'baz'] = 1024
         dump_index if $DEBUG
         assert_equal(%w[ foo ], @idx.keys(cnum))
-        assert_equal(%w[ foo bar baz ].sort, @idx.keys(cnum.succ).sort)
+        assert_equal(%w[ foo bar baz ].sort, @idx.keys(next_cnum).sort)
         @idx.succ!
       }
 
@@ -230,7 +264,8 @@ module Higgs::Test
         end
 
         dump_index if $DEBUG
-        @idx[cnum, 'foo'] = 0
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'foo'] = 0
         dump_index if $DEBUG
 
         @idx.each_key(cnum) do |key|
@@ -238,7 +273,7 @@ module Higgs::Test
         end
 
         expected_keys = %w[ foo ]
-        @idx.each_key(cnum.succ) do |key|
+        @idx.each_key(next_cnum) do |key|
           assert(expected_keys.delete(key), "key: #{key}")
         end
 
@@ -252,8 +287,9 @@ module Higgs::Test
         end
 
         dump_index if $DEBUG
-        @idx[cnum, 'bar'] = 512
-        @idx[cnum, 'baz'] = 1024
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'bar'] = 512
+        @idx[next_cnum, 'baz'] = 1024
         dump_index if $DEBUG
 
         expected_keys = %w[ foo ]
@@ -263,7 +299,7 @@ module Higgs::Test
 
         dump_index if $DEBUG
         expected_keys = %w[ foo bar baz ]
-        @idx.each_key(cnum.succ) do |key|
+        @idx.each_key(next_cnum) do |key|
           assert(expected_keys.delete(key), "key: #{key}")
         end
 
@@ -281,19 +317,26 @@ module Higgs::Test
 
     def test_delete
       @idx.transaction{|cnum|
-        assert_equal(nil, @idx.delete(cnum, 'foo'))
-        @idx[cnum, 'foo'] = 0
+        next_cnum = cnum.succ
+        assert_equal(nil, @idx.delete(next_cnum, 'foo'))
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'foo'] = 0
         @idx.succ!
       }
 
       @idx.transaction{|cnum|
         dump_index if $DEBUG
-        assert_equal(0, @idx.delete(cnum, 'foo'))
+        next_cnum = cnum.succ
+        assert_equal(0, @idx.delete(next_cnum, 'foo'))
         dump_index if $DEBUG
 
         assert_equal(%w[ foo ], @idx.keys(cnum))
         assert_equal(true, @idx.key?(cnum, 'foo'))
         assert_equal(0, @idx[cnum, 'foo'])
+
+        assert_equal([], @idx.keys(next_cnum))
+        assert_equal(false, @idx.key?(next_cnum, 'foo'))
+        assert_equal(nil, @idx[next_cnum, 'foo'])
 
         @idx.succ!
       }
@@ -340,7 +383,8 @@ module Higgs::Test
 
       write_latch.wait
       @idx.transaction{|cnum|
-        @idx[cnum, 'foo'] = 0
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'foo'] = 0
         @idx.succ!
       }
       write_read_latch.start
@@ -365,6 +409,8 @@ module Higgs::Test
     end
 
     def test_multi_thread_read_write_delete
+      Thread.abort_on_exception = true
+
       th_list = []
       th0_read_latch = Latch.new
       th1_read_latch = Latch.new
@@ -393,7 +439,8 @@ module Higgs::Test
 
       th0_read_latch.wait
       @idx.transaction{|cnum|
-        @idx[cnum, 'foo'] = 0
+        next_cnum = cnum.succ
+        @idx[next_cnum, 'foo'] = 0
         @idx.succ!
       }
 
@@ -418,7 +465,8 @@ module Higgs::Test
 
       th1_read_latch.wait
       @idx.transaction{|cnum|
-        @idx.delete(cnum, 'foo')
+        next_cnum = cnum.succ
+        @idx.delete(next_cnum, 'foo')
         @idx.succ!
       }
       mt_update_latch.start
@@ -452,8 +500,9 @@ module Higgs::Test
       end
 
       @idx.transaction{|cnum|
+        next_cnum = cnum.succ
         @idx.free_store(0, 512)
-        @idx[cnum, :foo] = 1024
+        @idx[next_cnum, :foo] = 1024
         @idx.succ!
 
         dump_index if $DEBUG
@@ -520,8 +569,9 @@ module Higgs::Test
     def test_save_load
       i = MVCCIndex.new
       i.transaction{|cnum|
+        next_cnum = cnum.succ
         i.free_store(0, 512)
-        i[cnum, :foo] = 1024
+        i[next_cnum, :foo] = 1024
         i.eoa = 2048
         i.succ!
       }
@@ -542,8 +592,9 @@ module Higgs::Test
     def test_save_load_update_queue
       i = MVCCIndex.new
       i.transaction{|cnum|
+        next_cnum = cnum.succ
         i.free_store(0, 512)
-        i[cnum, :foo] = 1024
+        i[next_cnum, :foo] = 1024
         i.eoa = 2048
         i.succ!
         dump_value(i) if $DEBUG
