@@ -328,6 +328,12 @@ module Higgs::Test
                                [ :write, 'baz', 'three' ]
                              ])
 
+        tx.each_key do |key|
+          flunk('not to reach')
+        end
+      }
+
+      @st.transaction{|tx|
         expected_keys = %w[ foo bar baz ]
         tx.each_key do |key|
           assert(expected_keys.delete(key), "each_key do |#{key}|")
@@ -336,6 +342,14 @@ module Higgs::Test
 
         tx.write_and_commit([ [ :delete, 'bar' ] ])
 
+        expected_keys = %w[ foo bar baz ]
+        tx.each_key do |key|
+          assert(expected_keys.delete(key), "each_key do |#{key}|")
+        end
+        assert(expected_keys.empty?)
+      }
+
+      @st.transaction{|tx|
         expected_keys = %w[ foo baz ]
         tx.each_key do |key|
           assert(expected_keys.delete(key), "each_key do |#{key}|")
