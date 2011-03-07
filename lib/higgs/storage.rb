@@ -710,7 +710,7 @@ module Higgs
                   :nam => name,
                   :val => value
                 }
-                if (i = @index[cnum, key]) then
+                if (i = @index[next_cnum, key]) then
                   i = i.dup
                   if (j = i[type]) then
                     j = j.dup; i[type] = j
@@ -727,9 +727,9 @@ module Higgs
                   else
                     i[type] = { :pos => pos, :siz => blocked_size, :cnum => next_cnum }
                   end
-                  @index[cnum, key] = i
+                  @index[next_cnum, key] = i
                 else
-                  @index[cnum, key] = { type => { :pos => pos, :siz => blocked_size, :cnum => next_cnum } }
+                  @index[next_cnum, key] = { type => { :pos => pos, :siz => blocked_size, :cnum => next_cnum } }
                 end
                 next
               end
@@ -745,7 +745,7 @@ module Higgs
                 :nam => name,
                 :val => value
               }
-              if (i = @index[cnum, key]) then
+              if (i = @index[next_cnum, key]) then
                 i = i.dup
                 if (j = i[type]) then
                   j = j.dup; i[type] = j
@@ -762,15 +762,15 @@ module Higgs
                 else
                   i[type] = { :pos => eoa, :siz => blocked_size, :cnum => next_cnum }
                 end
-                @index[cnum, key] = i
+                @index[next_cnum, key] = i
               else
-                @index[cnum, key] = { type => { :pos => eoa, :siz => blocked_size, :cnum => next_cnum } }
+                @index[next_cnum, key] = { type => { :pos => eoa, :siz => blocked_size, :cnum => next_cnum } }
               end
               eoa += blocked_size
               commit_log << { :ope => :eoa, :pos => eoa }
             when :delete
               @logger.debug("journal log for delete: #{key}") if @logger.debug?
-              if (i = @index.delete(cnum, key)) then
+              if (i = @index.delete(next_cnum, key)) then
                 commit_log << {
                   :ope => :delete,
                   :key => key
@@ -870,7 +870,7 @@ module Higgs
               w_tar.seek(cmd[:pos])
               w_tar.add(cmd[:nam], cmd[:val], :mtime => cmd[:mod])
               blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(cmd[:val].length)
-              if (i = index[cnum, cmd[:key]]) then
+              if (i = index[next_cnum, cmd[:key]]) then
                 i = i.dup
                 if (j = i[cmd[:typ]]) then
                   j = j.dup; i[cmd[:typ]] = j
@@ -880,13 +880,13 @@ module Higgs
                 else
                   i[cmd[:typ]] = { :pos => cmd[:pos], :siz => blocked_size, :cnum => next_cnum }
                 end
-                index[cnum, cmd[:key]] = i
+                index[next_cnum, cmd[:key]] = i
               else
-                index[cnum, cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size, :cnum => next_cnum } }
+                index[next_cnum, cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size, :cnum => next_cnum } }
               end
             when :delete
               yield(cmd[:key]) if block_given?
-              index.delete(cnum, cmd[:key])
+              index.delete(next_cnum, cmd[:key])
             when :free_fetch
               index.free_fetch_at(cmd[:pos], cmd[:siz])
             when :free_store
