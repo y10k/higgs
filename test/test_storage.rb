@@ -116,6 +116,11 @@ module Higgs::Test
 
         tx.write_and_commit([ [ :write, 'foo', '' ] ])
 
+        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_properties('foo'))
+      }
+
+      @st.transaction{|tx|
         assert_equal('', tx.fetch('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest(''), properties['system_properties']['hash_value'])
