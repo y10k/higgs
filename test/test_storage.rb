@@ -214,14 +214,22 @@ module Higgs::Test
     def test_system_properties
       @st.transaction{|tx|
         tx.write_and_commit([ [ :write, :foo, 'apple' ] ])
+      }
 
+      cre_time = nil
+      chg_time = nil
+      mod_time = nil
+      @st.transaction{|tx|
         cre_time = tx.fetch_properties(:foo)['system_properties']['created_time']
         chg_time = tx.fetch_properties(:foo)['system_properties']['changed_time']
         mod_time = tx.fetch_properties(:foo)['system_properties']['modified_time']
 
         sleep(0.001)
         tx.write_and_commit([ [ :write, :foo, 'banana' ] ])
+      }
 
+      mod_time2 = nil
+      @st.transaction{|tx|
         assert_equal(cre_time, tx.fetch_properties(:foo)['system_properties']['created_time'])
         assert_equal(chg_time, tx.fetch_properties(:foo)['system_properties']['changed_time'])
         assert(tx.fetch_properties(:foo)['system_properties']['modified_time'] > mod_time)
@@ -229,7 +237,10 @@ module Higgs::Test
         mod_time2 = tx.fetch_properties(:foo)['system_properties']['modified_time']
         sleep(0.001)
         tx.write_and_commit([ [ :custom_properties, :foo, { 'bar' => 'orange' } ] ])
+      }
 
+      chg_time2 = nil
+      @st.transaction{|tx|
         assert_equal(cre_time, tx.fetch_properties(:foo)['system_properties']['created_time'])
         assert(tx.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time)
         assert_equal(mod_time2, tx.fetch_properties(:foo)['system_properties']['modified_time'])
@@ -237,7 +248,9 @@ module Higgs::Test
         chg_time2 = tx.fetch_properties(:foo)['system_properties']['changed_time']
         sleep(0.001)
         tx.write_and_commit([ [ :system_properties, :foo, { 'string_only' => true } ] ])
+      }
 
+      @st.transaction{|tx|
         assert_equal(cre_time, tx.fetch_properties(:foo)['system_properties']['created_time'])
         assert(tx.fetch_properties(:foo)['system_properties']['changed_time'] > chg_time2)
         assert_equal(mod_time2, tx.fetch_properties(:foo)['system_properties']['modified_time'])
