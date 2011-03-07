@@ -283,8 +283,16 @@ module Higgs::Test
       @st.transaction{|tx|
         assert_equal(false, (tx.key? 'foo'))
         tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
+        assert_equal(false, (tx.key? 'foo'))
+      }
+
+      @st.transaction{|tx|
         assert_equal(true, (tx.key? 'foo'))
         tx.write_and_commit([ [ :delete , 'foo' ] ])
+        assert_equal(true, (tx.key? 'foo'))
+      }
+
+      @st.transaction{|tx|
         assert_equal(false, (tx.key? 'foo'))
       }
     end
