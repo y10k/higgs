@@ -669,6 +669,16 @@ module Higgs
       end
     end
 
+    # internal utility functions
+    module IndexUtils
+      def tar_blocked_size(siz)
+        Tar::Block::BLKSIZ + Tar::Block.blocked_size(siz)
+      end
+      module_function :tar_blocked_size
+    end
+    extend IndexUtils
+    include IndexUtils
+
     # should be called in a block of transaction method.
     def raw_write_and_commit(cnum, write_list, commit_time=Time.now)
       @stat.commit_lock.synchronize{
@@ -691,7 +701,7 @@ module Higgs
               unless (value.kind_of? String) then
                 raise TypeError, "can't convert #{value.class} (value) to String"
               end
-              blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(value.length)
+              blocked_size = tar_blocked_size(value.length)
 
               # recycle
               if (pos = @index.free_fetch(blocked_size)) then
@@ -699,7 +709,7 @@ module Higgs
                 commit_log << {
                   :ope => :free_fetch,
                   :pos => pos,
-                  :siz => blocked_size
+                  :siz => value.length
                 }
                 commit_log << {
                   :ope => :write,
@@ -720,16 +730,16 @@ module Higgs
                       :siz => j[:siz],
                       :mod => commit_time
                     }
-                    @index.free_store(j[:pos], j[:siz])
+                    @index.free_store(j[:pos], tar_blocked_size(j[:siz]))
                     j[:pos] = pos
-                    j[:siz] = blocked_size
+                    j[:siz] = value.length
                     j[:cnum] = next_cnum
                   else
-                    i[type] = { :pos => pos, :siz => blocked_size, :cnum => next_cnum }
+                    i[type] = { :pos => pos, :siz => value.length, :cnum => next_cnum }
                   end
                   @index[next_cnum, key] = i
                 else
-                  @index[next_cnum, key] = { type => { :pos => pos, :siz => blocked_size, :cnum => next_cnum } }
+                  @index[next_cnum, key] = { type => { :pos => pos, :siz => value.length, :cnum => next_cnum } }
                 end
                 next
               end
@@ -755,16 +765,16 @@ module Higgs
                     :siz => j[:siz],
                     :mod => commit_time
                   }
-                  @index.free_store(j[:pos], j[:siz])
+                  @index.free_store(j[:pos], tar_blocked_size(j[:siz]))
                   j[:pos] = eoa
-                  j[:siz] = blocked_size
+                  j[:siz] = value.length
                   j[:cnum] = next_cnum
                 else
-                  i[type] = { :pos => eoa, :siz => blocked_size, :cnum => next_cnum }
+                  i[type] = { :pos => eoa, :siz => value.length, :cnum => next_cnum }
                 end
                 @index[next_cnum, key] = i
               else
-                @index[next_cnum, key] = { type => { :pos => eoa, :siz => blocked_size, :cnum => next_cnum } }
+                @index[next_cnum, key] = { type => { :pos => eoa, :siz => value.length, :cnum => next_cnum } }
               end
               eoa += blocked_size
               commit_log << { :ope => :eoa, :pos => eoa }
@@ -782,7 +792,7 @@ module Higgs
                     :siz => j[:siz],
                     :mod => commit_time
                   }
-                  @index.free_store(j[:pos], j[:siz])
+                  @index.free_store(j[:pos], tar_blocked_size(j[:siz]))
                 }
               end
             else
@@ -807,7 +817,7 @@ module Higgs
               @logger.debug("write free region to storage: (pos,size)=(#{cmd[:pos]},#{cmd[:siz]})") if @logger.debug?
               name = format('.free.%x', cmd[:pos] >> 9)
               @w_tar.seek(cmd[:pos])
-              @w_tar.write_header(:name => name, :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
+              @w_tar.write_header(:name => name, :size => cmd[:siz], :mtime => cmd[:mod])
             when :delete, :eoa, :free_fetch, :succ
               # nothing to do.
             else
@@ -869,31 +879,30 @@ module Higgs
               name = "#{cmd[:key]}.#{cmd[:typ]}"[0, Tar::Block::MAX_LEN]
               w_tar.seek(cmd[:pos])
               w_tar.add(cmd[:nam], cmd[:val], :mtime => cmd[:mod])
-              blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(cmd[:val].length)
               if (i = index[next_cnum, cmd[:key]]) then
                 i = i.dup
                 if (j = i[cmd[:typ]]) then
                   j = j.dup; i[cmd[:typ]] = j
                   j[:pos] = cmd[:pos]
-                  j[:siz] = blocked_size
+                  j[:siz] = cmd[:val].length
                   j[:cnum] = next_cnum
                 else
-                  i[cmd[:typ]] = { :pos => cmd[:pos], :siz => blocked_size, :cnum => next_cnum }
+                  i[cmd[:typ]] = { :pos => cmd[:pos], :siz => cmd[:val].length, :cnum => next_cnum }
                 end
                 index[next_cnum, cmd[:key]] = i
               else
-                index[next_cnum, cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => blocked_size, :cnum => next_cnum } }
+                index[next_cnum, cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => cmd[:val].length, :cnum => next_cnum } }
               end
             when :delete
               yield(cmd[:key]) if block_given?
               index.delete(next_cnum, cmd[:key])
             when :free_fetch
-              index.free_fetch_at(cmd[:pos], cmd[:siz])
+              index.free_fetch_at(cmd[:pos], tar_blocked_size(cmd[:siz]))
             when :free_store
-              index.free_store(cmd[:pos], cmd[:siz])
+              index.free_store(cmd[:pos], tar_blocked_size(cmd[:siz]))
               name = format('.free.%x', cmd[:pos] >> 9)
               w_tar.seek(cmd[:pos])
-              w_tar.write_header(:name => name, :size => cmd[:siz] - Tar::Block::BLKSIZ, :mtime => cmd[:mod])
+              w_tar.write_header(:name => name, :size => cmd[:siz], :mtime => cmd[:mod])
             when :eoa
               index.eoa = cmd[:pos]
               w_tar.seek(cmd[:pos])
@@ -1249,7 +1258,7 @@ module Higgs
             when :index
               key_pos_alist << [ elem.key, elem.entry[:d][:pos] ]
               elem.entry.each_value{|j|
-                block_set[j[:pos]] = j[:siz]
+                block_set[j[:pos]] = tar_blocked_size(j[:siz])
               }
             when :free, :free_log
               block_set[elem.pos] = elem.size
@@ -1282,8 +1291,7 @@ module Higgs
               end
               r_tar.seek(pos)
               head = r_tar.read_header
-              tar_blocked_size = Tar::Block::BLKSIZ + Tar::Block.blocked_size(head[:size])
-              if (tar_blocked_size != size) then
+              if (tar_blocked_size(head[:size]) != size) then
                 raise PanicError, "broken tar file at #{pos} bytes."
               end
               pos += size
