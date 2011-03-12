@@ -280,8 +280,31 @@ module Higgs
             @logger.info("save storage id: #{@index.storage_id}")
             @index.save(@idx_name)
           end
+
+          # index type migration
+          unless (@index.index_type) then
+            @index.transaction{|cnum|
+              next_cnum = cnum.succ
+              @r_tar_pool.transaction{|r_tar|
+                @index.each_key(cnum) do |key|
+                  i = @index[cnum, key] or raise PanicError, "not found an index entry at: #{key}"
+                  i = i.dup
+                  i.each do |type, j|
+                    r_tar.seek(j[:pos])
+                    head = r_tar.read_header or raise PanicError, "unexpected EOA at: #{key}"
+                    i[type] = { :pos => j[:pos], :siz => head[:size], :cnum => next_cnum }
+                  end
+                  @index[next_cnum, key] = i
+                end
+              }
+              @index.succ!
+            }
+            @index.index_type = '1'
+          end
+          (@index.index_type == '1') or raise PanicError, "uknown index type: #{@index.index_type}"
         else
           @index.storage_id = create_storage_id
+          @index.index_type = '1'
           @logger.info("save storage id: #{@index.storage_id}")
           @index.save(@idx_name)
         end
