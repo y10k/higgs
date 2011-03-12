@@ -254,12 +254,14 @@ module Higgs
       @update_queue = [ make_update_entry(0) ]
       @no_refresh_update_queue = false
       @storage_id = nil
+      @index_type = nil
       self.__lock__ = Mutex.new
     end
 
     synchronized_reader :change_number
     synchronized_accessor :eoa
     synchronized_accessor :storage_id
+    synchronized_accessor :index_type
 
     def succ!
       @change_number = @change_number.succ
@@ -451,7 +453,8 @@ module Higgs
         :free_lists => @free_lists,
         :index => @index,
         :update_queue => @update_queue,
-        :storage_id => @storage_id
+        :storage_id => @storage_id,
+        :index_type => @index_type
       }
     end
 
@@ -466,6 +469,7 @@ module Higgs
         @index = index_data[:index]
         @update_queue = index_data[:update_queue]
         @storage_id = index_data[:storage_id]
+        @index_type = index_data[:index_type]
         @no_refresh_update_queue = false
       }
       self
@@ -560,7 +564,7 @@ module Higgs
       end
       private :migration_0_2_to_0_3
 
-      def migration_0_3_to_0_4(index_data)
+      def migration_0_3_to_0_4(index_data, idx)
         if ((index_data[:version] <=> [ 0, 3 ]) > 0) then
           return
         end
@@ -573,6 +577,7 @@ module Higgs
         for key in index.keys
           index[key] = [ [ cnum, index[key] ] ]
         end
+        index_data[:index_type] = idx.index_type
         index_data[:update_queue] = [ EditUtils.make_update_entry(cnum) ]
         index_data[:version] = [ 0, 4 ]
 
@@ -584,7 +589,7 @@ module Higgs
         migration_0_0_to_0_1(index_data)
         migration_0_1_to_0_2(index_data, index)
         migration_0_2_to_0_3(index_data)
-        migration_0_3_to_0_4(index_data)
+        migration_0_3_to_0_4(index_data, index)
       end
     end
 
