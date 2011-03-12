@@ -563,7 +563,7 @@ module Higgs
         end
         unless (commit_log.empty?) then
           @logger.debug("write journal log: #{@index.change_number}") if @logger.debug?
-          @jlog.write([ @index.change_number, commit_log, @index.storage_id ])
+          @jlog.write([ @index.change_number, commit_log, @index.storage_id, @index.index_type ])
         end
         rot_jlog_name = "#{@jlog_name}.#{@index.change_number}"
 
@@ -827,7 +827,7 @@ module Higgs
           commit_log << { :ope => :succ, :cnum => next_cnum }
 
           @logger.debug("write journal log: #{next_cnum}") if @logger.debug?
-          @jlog.write([ next_cnum, commit_log, @index.storage_id ])
+          @jlog.write([ next_cnum, commit_log, @index.storage_id, @index.index_type ])
 
           for cmd in commit_log
             case (cmd[:ope])
@@ -880,7 +880,7 @@ module Higgs
     end
 
     def self.apply_journal(w_tar, index, log)
-      change_number, commit_log, storage_id = log
+      change_number, commit_log, storage_id, index_type = log
 
       if (storage_id) then # check for backward compatibility
         if (storage_id != index.storage_id) then
@@ -893,6 +893,9 @@ module Higgs
       elsif (change_number - 1 > index.change_number) then
         raise PanicError, "lost journal log (cnum: #{index.change_number.succ})"
       else # if (change_number - 1 == index.change_number) then
+        if (index_type != index.index_type) then
+          raise PanicError, "unexpected index type: expected <#{index.index_type}> but was <#{index_type}>"
+        end
         index.transaction{|cnum|
           next_cnum = cnum.succ
           for cmd in commit_log
