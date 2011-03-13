@@ -92,7 +92,7 @@ module Higgs
             r_io.set_encoding(Encoding::ASCII_8BIT)
             r_io.read(BLKSIZ)
           }
-          if (head && head.length == BLKSIZ) then
+          if (head && head.bytesize == BLKSIZ) then
             if (head.unpack(HEAD_FMT)[9] == MAGIC) then
               return true
             end
@@ -181,7 +181,7 @@ module Higgs
         unless (head_data) then
           raise FormatError, 'unexpected EOF'
         end
-        if (head_data.length != BLKSIZ) then
+        if (head_data.bytesize != BLKSIZ) then
           raise FormatError, 'too short header'
         end
         if (head_data == EOA) then
@@ -273,7 +273,7 @@ module Higgs
 
       def write_header(head)
         name = head[:name] or raise FormatError, "required name: #{head.inspect}"
-        if (name.length > MAX_LEN) then
+        if (name.bytesize > MAX_LEN) then
           raise TooLongPathError, "too long path: #{name}"
         end
         mode     = format('%-8o', head[:mode] || 0100644) # 0100644 => -rw-r--r--
@@ -325,7 +325,7 @@ module Higgs
       def add(name, body, options=nil)
         head = {
           :name => name,
-          :size => body.length
+          :size => body.bytesize
         }
         if (options) then
           head.update(options) 
@@ -334,7 +334,7 @@ module Higgs
           yield(head)
         end
         write_header(head)
-        body += "\0" * padding_size(body.length)
+        body += "\0" * padding_size(body.bytesize)
         @io.write(body)
         nil
       end

@@ -724,7 +724,7 @@ module Higgs
               unless (value.kind_of? String) then
                 raise TypeError, "can't convert #{value.class} (value) to String"
               end
-              blocked_size = tar_blocked_size(value.length)
+              blocked_size = tar_blocked_size(value.bytesize)
 
               # recycle
               if (pos = @index.free_fetch(blocked_size)) then
@@ -732,7 +732,7 @@ module Higgs
                 commit_log << {
                   :ope => :free_fetch,
                   :pos => pos,
-                  :siz => value.length
+                  :siz => value.bytesize
                 }
                 commit_log << {
                   :ope => :write,
@@ -755,14 +755,14 @@ module Higgs
                     }
                     @index.free_store(j[:pos], tar_blocked_size(j[:siz]))
                     j[:pos] = pos
-                    j[:siz] = value.length
+                    j[:siz] = value.bytesize
                     j[:cnum] = next_cnum
                   else
-                    i[type] = { :pos => pos, :siz => value.length, :cnum => next_cnum }
+                    i[type] = { :pos => pos, :siz => value.bytesize, :cnum => next_cnum }
                   end
                   @index[next_cnum, key] = i
                 else
-                  @index[next_cnum, key] = { type => { :pos => pos, :siz => value.length, :cnum => next_cnum } }
+                  @index[next_cnum, key] = { type => { :pos => pos, :siz => value.bytesize, :cnum => next_cnum } }
                 end
                 next
               end
@@ -790,14 +790,14 @@ module Higgs
                   }
                   @index.free_store(j[:pos], tar_blocked_size(j[:siz]))
                   j[:pos] = eoa
-                  j[:siz] = value.length
+                  j[:siz] = value.bytesize
                   j[:cnum] = next_cnum
                 else
-                  i[type] = { :pos => eoa, :siz => value.length, :cnum => next_cnum }
+                  i[type] = { :pos => eoa, :siz => value.bytesize, :cnum => next_cnum }
                 end
                 @index[next_cnum, key] = i
               else
-                @index[next_cnum, key] = { type => { :pos => eoa, :siz => value.length, :cnum => next_cnum } }
+                @index[next_cnum, key] = { type => { :pos => eoa, :siz => value.bytesize, :cnum => next_cnum } }
               end
               eoa += blocked_size
               commit_log << { :ope => :eoa, :pos => eoa }
@@ -910,14 +910,14 @@ module Higgs
                 if (j = i[cmd[:typ]]) then
                   j = j.dup; i[cmd[:typ]] = j
                   j[:pos] = cmd[:pos]
-                  j[:siz] = cmd[:val].length
+                  j[:siz] = cmd[:val].bytesize
                   j[:cnum] = next_cnum
                 else
-                  i[cmd[:typ]] = { :pos => cmd[:pos], :siz => cmd[:val].length, :cnum => next_cnum }
+                  i[cmd[:typ]] = { :pos => cmd[:pos], :siz => cmd[:val].bytesize, :cnum => next_cnum }
                 end
                 index[next_cnum, cmd[:key]] = i
               else
-                index[next_cnum, cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => cmd[:val].length, :cnum => next_cnum } }
+                index[next_cnum, cmd[:key]] = { cmd[:typ] => { :pos => cmd[:pos], :siz => cmd[:val].bytesize, :cnum => next_cnum } }
               end
             when :delete
               yield(cmd[:key]) if block_given?
@@ -1300,7 +1300,7 @@ module Higgs
             end
             data = fetch(cnum, key) or raise PanicError, "not exist data at key: #{key}"
             if (out && verbose_level >= 2) then
-              out << "  #{data.length} bytes\n"
+              out << "  #{data.bytesize} bytes\n"
               properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"
               for key, format in VERIFY_VERBOSE_LIST
                 value = properties['system_properties'][key]

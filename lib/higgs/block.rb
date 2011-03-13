@@ -102,7 +102,7 @@ module Higgs
         FMT_VERSION,
         0,
         body_hash_type,
-        body_hash_bin.length,
+        body_hash_bin.bytesize,
         body_hash_bin
       ].pack(HEAD_FMT)
 
@@ -124,7 +124,7 @@ module Higgs
       end
 
       body = io.read(body_len) or raise BrokenError, 'unexpected EOF'
-      if (body.length != body_len) then
+      if (body.bytesize != body_len) then
         raise BrokenError, 'short read'
       end
 
@@ -150,14 +150,14 @@ module Higgs
       hash_proc = BODY_HASH[body_hash_type.to_sym] or
         raise ArgumentError, "unknown body hash type: #{body_hash_type}"
       body_hash = hash_proc.call(body)
-      head_write(io, magic_symbol, body.length, body_hash_type.to_s, body_hash)
+      head_write(io, magic_symbol, body.bytesize, body_hash_type.to_s, body_hash)
 
       bytes = io.write(body)
       if (bytes != body.size) then
         raise BrokenError, 'short write'
       end
 
-      padding_size = padding_size(body.length)
+      padding_size = padding_size(body.bytesize)
       bytes = io.write("\0" * padding_size)
       if (bytes != padding_size) then
         raise BrokenError, 'short write'

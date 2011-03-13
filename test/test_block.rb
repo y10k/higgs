@@ -24,11 +24,11 @@ module Higgs::Test
     def test_single_head_write_read
       body = 'foo'
       body_cksum_bin = Digest::SHA512.digest(body)
-      head_write(@io, 'FOO', body.length, 'SHA512', body_cksum_bin)
+      head_write(@io, 'FOO', body.bytesize, 'SHA512', body_cksum_bin)
 
       @io.seek(0)
       r = head_read(@io, 'FOO')
-      assert_equal(body.length,    r[0])
+      assert_equal(body.bytesize,    r[0])
       assert_equal('SHA512',       r[1])
       assert_equal(body_cksum_bin, r[2])
     end
@@ -72,7 +72,7 @@ module Higgs::Test
     def test_head_read_BrokenError_broken_head_block
       body = 'foo'
       body_cksum_bin = Digest::SHA512.digest(body)
-      head_write(@io, 'FOO', body.length, 'SHA512', body_cksum_bin)
+      head_write(@io, 'FOO', body.bytesize, 'SHA512', body_cksum_bin)
 
       @io.seek(511)
       @io.write("\xFF")
@@ -86,7 +86,7 @@ module Higgs::Test
     def test_head_read_BrokenError_unknown_magic_symbol
       body = 'foo'
       body_cksum_bin = Digest::SHA512.digest(body)
-      head_write(@io, 'BAR', body.length, 'SHA512', body_cksum_bin)
+      head_write(@io, 'BAR', body.bytesize, 'SHA512', body_cksum_bin)
       @io.seek(0)
 
       assert_raise(BrokenError) {
@@ -134,7 +134,7 @@ module Higgs::Test
       body = 'foo'
       block_write(@io, 'FOO', body)
       @io.seek(0)
-      head_write(@io, 'FOO', body.length, 'UNKNOWN', Digest::SHA512.digest(body))
+      head_write(@io, 'FOO', body.bytesize, 'UNKNOWN', Digest::SHA512.digest(body))
       @io.seek(0)
 
       assert_raise(BrokenError) {
@@ -146,7 +146,7 @@ module Higgs::Test
       body = 'foo'
       block_write(@io, 'FOO', body)
       @io.seek(0)
-      head_write(@io, 'FOO', body.length, 'SHA512', '')
+      head_write(@io, 'FOO', body.bytesize, 'SHA512', '')
       @io.seek(0)
 
       assert_raise(BrokenError) {
@@ -163,7 +163,7 @@ module Higgs::Test
       body = 'foo'
       body_cksum_bin = Digest::SHA512.digest(body)
       assert_raise(BrokenError) {
-        head_write(@io, 'FOO', body.length, 'SHA512', body_cksum_bin)
+        head_write(@io, 'FOO', body.bytesize, 'SHA512', body_cksum_bin)
       }
     end
 
