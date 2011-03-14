@@ -61,7 +61,9 @@ module Higgs::Test
         assert_equal(nil,     tx[:bar])
       }
 
-      assert_equal('apple', @st.fetch(:foo))
+      @st.transaction(true) {|tx|
+        assert_equal('apple', tx.fetch(:foo))
+      }
 
       @tman.transaction{|tx|
         assert_equal('apple', tx[:foo])
@@ -80,7 +82,9 @@ module Higgs::Test
         assert_equal(false, (tx.key? :bar))
       }
 
-      assert_equal(true, (@st.key? :foo))
+      @st.transaction(true) {|tx|
+        assert_equal(true, (tx.key? :foo))
+      }
 
       @tman.transaction{|tx|
         assert_equal(true,  (tx.key? :foo))
@@ -96,8 +100,10 @@ module Higgs::Test
         assert_equal(false, (tx.key? :bar))
       }
 
-      assert_equal(false, (@st.key? :foo))
-      assert_equal(false, (@st.key? :bar))
+      @st.transaction(true) {|tx|
+        assert_equal(false, (tx.key? :foo))
+        assert_equal(false, (tx.key? :bar))
+      }
     end
 
     def test_store_and_each_key
@@ -117,11 +123,13 @@ module Higgs::Test
         assert(expected_keys.empty?)
       }
 
-      expected_keys = [ :foo, :bar, :baz ]
-      @st.each_key do |key|
-        assert_equal(expected_keys.delete(key), key)
-      end
-      assert(expected_keys.empty?)
+      @st.transaction(true) {|tx|
+        expected_keys = [ :foo, :bar, :baz ]
+        tx.each_key do |key|
+          assert_equal(expected_keys.delete(key), key)
+        end
+        assert(expected_keys.empty?)
+      }
 
       @tman.transaction{|tx|
         expected_keys = [ :foo, :bar, :baz ]
@@ -139,11 +147,13 @@ module Higgs::Test
         tx[:baz] = 'orange'
       }
 
-      expected_keys = [ :foo, :bar, :baz ]
-      @st.each_key do |key|
-        assert_equal(expected_keys.delete(key), key)
-      end
-      assert(expected_keys.empty?)
+      @st.transaction(true) {|tx|
+        expected_keys = [ :foo, :bar, :baz ]
+        tx.each_key do |key|
+          assert_equal(expected_keys.delete(key), key)
+        end
+        assert(expected_keys.empty?)
+      }
 
       @tman.transaction{|tx|
         tx[:foo]                # load to cache
@@ -279,8 +289,10 @@ module Higgs::Test
         assert_equal(nil, tx[:bar])
       }
 
-      assert_equal(nil, @st.fetch(:foo))
-      assert_equal(nil, @st.fetch(:bar))
+      @st.transaction(true) {|tx|
+        assert_equal(nil, tx.fetch(:foo))
+        assert_equal(nil, tx.fetch(:bar))
+      }
 
       @tman.transaction{|tx|
         assert_equal(nil, tx.delete(:foo))
@@ -297,8 +309,10 @@ module Higgs::Test
         tx[:bar] = 'banana'
       }
 
-      assert_equal('apple',  @st.fetch(:foo))
-      assert_equal('banana', @st.fetch(:bar))
+      @st.transaction(true) {|tx|
+        assert_equal('apple',  tx.fetch(:foo))
+        assert_equal('banana', tx.fetch(:bar))
+      }
 
       @tman.transaction{|tx|
         assert_equal('apple',  tx[:foo])
@@ -310,8 +324,10 @@ module Higgs::Test
         assert_equal('banana', tx[:bar])
       }
 
-      assert_equal(nil,      @st.fetch(:foo))
-      assert_equal('banana', @st.fetch(:bar))
+      @st.transaction(true) {|tx|
+        assert_equal(nil,      tx.fetch(:foo))
+        assert_equal('banana', tx.fetch(:bar))
+      }
 
       @tman.transaction{|tx|
         assert_equal(nil,      tx[:foo])
@@ -334,9 +350,11 @@ module Higgs::Test
         assert_equal(nil,     tx[:baz])
       }
 
-      assert_equal('apple', @st.fetch(:foo))
-      assert_equal(nil,     @st.fetch(:bar))
-      assert_equal(nil,     @st.fetch(:baz))
+      @st.transaction(true) {|tx|
+        assert_equal('apple', tx.fetch(:foo))
+        assert_equal(nil,     tx.fetch(:bar))
+        assert_equal(nil,     tx.fetch(:baz))
+      }
 
       @tman.transaction{|tx|
         assert_equal('apple', tx[:foo])
@@ -360,9 +378,11 @@ module Higgs::Test
         assert_equal('orange', tx[:baz])
       }
 
-      assert_equal('apple',  @st.fetch(:foo))
-      assert_equal(nil,      @st.fetch(:bar))
-      assert_equal('orange', @st.fetch(:baz))
+      @st.transaction(true) {|tx|
+        assert_equal('apple',  tx.fetch(:foo))
+        assert_equal(nil,      tx.fetch(:bar))
+        assert_equal('orange', tx.fetch(:baz))
+      }
 
       @tman.transaction{|tx|
         assert_equal('apple',  tx[:foo])
@@ -384,9 +404,11 @@ module Higgs::Test
         assert_equal(nil, tx[:baz])
       }
 
-      assert_equal(nil, @st.fetch(:foo))
-      assert_equal(nil, @st.fetch(:bar))
-      assert_equal(nil, @st.fetch(:baz))
+      @st.transaction(true) {|tx|
+        assert_equal(nil, tx.fetch(:foo))
+        assert_equal(nil, tx.fetch(:bar))
+        assert_equal(nil, tx.fetch(:baz))
+      }
 
       @tman.transaction{|tx|
         assert_equal(nil, tx[:foo])
@@ -430,18 +452,20 @@ module Higgs::Test
         assert_nil(tx.property(:bar, 'baz'))
       }
 
-      assert_equal(1, @st.data_change_number(:foo))
-      assert_equal(1, @st.properties_change_number(:foo))
-      assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['created_time'])
-      assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['changed_time'])
-      assert_instance_of(Time, @st.fetch_properties(:foo)['system_properties']['modified_time'])
-      assert_equal('MD5', @st.fetch_properties(:foo)['system_properties']['hash_type'])
-      assert_equal(Digest::MD5.hexdigest('apple'), @st.fetch_properties(:foo)['system_properties']['hash_value'])
-      assert_equal('banana', @st.fetch_properties(:foo)['custom_properties']['bar'])
+      @st.transaction(true) {|tx|
+        assert_equal(1, tx.data_change_number(:foo))
+        assert_equal(1, tx.properties_change_number(:foo))
+        assert_instance_of(Time, tx.fetch_properties(:foo)['system_properties']['created_time'])
+        assert_instance_of(Time, tx.fetch_properties(:foo)['system_properties']['changed_time'])
+        assert_instance_of(Time, tx.fetch_properties(:foo)['system_properties']['modified_time'])
+        assert_equal('MD5', tx.fetch_properties(:foo)['system_properties']['hash_type'])
+        assert_equal(Digest::MD5.hexdigest('apple'), tx.fetch_properties(:foo)['system_properties']['hash_value'])
+        assert_equal('banana', tx.fetch_properties(:foo)['custom_properties']['bar'])
 
-      assert_nil(@st.data_change_number(:bar))
-      assert_nil(@st.properties_change_number(:bar))
-      assert_nil(@st.fetch_properties(:bar))
+        assert_nil(tx.data_change_number(:bar))
+        assert_nil(tx.properties_change_number(:bar))
+        assert_nil(tx.fetch_properties(:bar))
+      }
 
       @tman.transaction{|tx|
         assert_equal(1, tx.property(:foo, :data_change_number))
@@ -742,8 +766,10 @@ module Higgs::Test
         tx.set_property(:foo, 'baz', 'orange')
       }
 
-      assert_equal('banana', @st.fetch_properties(:foo)['custom_properties']['bar'])
-      assert_equal('orange', @st.fetch_properties(:foo)['custom_properties']['baz'])
+      @st.transaction(true) {|tx|
+        assert_equal('banana', tx.fetch_properties(:foo)['custom_properties']['bar'])
+        assert_equal('orange', tx.fetch_properties(:foo)['custom_properties']['baz'])
+      }
 
       @tman.transaction{|tx|
         assert_equal('banana', tx.property(:foo, 'bar'))
@@ -760,8 +786,10 @@ module Higgs::Test
         assert_equal(true,     (tx.property? :foo, 'baz'))
       }
 
-      assert_equal(false,   (@st.fetch_properties(:foo)['custom_properties'].key? 'bar'))
-      assert_equal('orange', @st.fetch_properties(:foo)['custom_properties']['baz'])
+      @st.transaction(true) {|tx|
+        assert_equal(false,   (tx.fetch_properties(:foo)['custom_properties'].key? 'bar'))
+        assert_equal('orange', tx.fetch_properties(:foo)['custom_properties']['baz'])
+      }
 
       @tman.transaction{|tx|
         assert_equal(nil,      tx.property(:foo, 'bar'))
@@ -828,9 +856,11 @@ module Higgs::Test
         assert_equal(nil,     tx[:baz])
       }
 
-      assert_equal('apple', @st.fetch(:foo))
-      assert_equal(nil,     @st.fetch(:bar))
-      assert_equal(nil,     @st.fetch(:baz))
+      @st.transaction(true) {|tx|
+        assert_equal('apple', tx.fetch(:foo))
+        assert_equal(nil,     tx.fetch(:bar))
+        assert_equal(nil,     tx.fetch(:baz))
+      }
 
       @tman.transaction{|tx|
         assert_equal('apple', tx[:foo])
