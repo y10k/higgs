@@ -227,8 +227,8 @@ module Higgs::Test
       @bman.clean_jlog_to
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
       assert_equal(0, Storage.rotated_entries("#{@from}.jlog").length)
       assert_equal(0, Storage.rotated_entries("#{@to}.jlog").length)
     end
@@ -268,16 +268,16 @@ module Higgs::Test
       @from_st.shutdown
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
       assert(! FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"), 'JOURNAL LOG should NOT be same.')
 
       st = Storage.new(@to)
       st.shutdown
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
       assert(FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"), 'JOURNAL LOG should be same.')
     end
 
@@ -300,16 +300,16 @@ module Higgs::Test
       @from_st.shutdown
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
       assert(! FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"), 'JOURNAL LOG should NOT be same.')
 
       st = Storage.new(@to)
       st.shutdown
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
       assert(FileUtils.cmp("#{@from}.jlog", "#{@to}.jlog"), 'JOURNAL LOG should be same.')
     end
 
@@ -328,14 +328,14 @@ module Higgs::Test
       @from_st.shutdown
 
       assert(! FileUtils.cmp("#{@from}.tar", "#{@to}.tar"), 'DATA should NOT be same.')
-      assert(Index.new.load("#{@from}.idx").to_h !=
-             Index.new.load("#{@to}.idx").to_h, 'INDEX should NOT be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h !=
+             MVCCIndex.new.load("#{@to}.idx").to_h, 'INDEX should NOT be same.')
 
       @bman.restore_files
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@to}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@to}.idx").to_h, 'INDEX should be same.')
     end
 
     def test_restore_recover_and_verify
@@ -359,8 +359,8 @@ module Higgs::Test
       @bman.restore_verify
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@from}.idx.orig").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@from}.idx.orig").to_h, 'INDEX should be same.')
     end
 
     def test_restore
@@ -382,8 +382,8 @@ module Higgs::Test
       @bman.restore
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@from}.idx.orig").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@from}.idx.orig").to_h, 'INDEX should be same.')
     end
 
     def test_incremental_backup_with_recovery_and_restore
@@ -417,8 +417,8 @@ module Higgs::Test
       @bman.restore
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@from}.idx.orig").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@from}.idx.orig").to_h, 'INDEX should be same.')
     end
 
     def test_incremental_backup_without_recovery_and_restore
@@ -449,8 +449,8 @@ module Higgs::Test
       @bman.restore
 
       assert(FileUtils.cmp("#{@from}.tar", "#{@from}.tar.orig"), 'DATA should be same.')
-      assert(Index.new.load("#{@from}.idx").to_h ==
-             Index.new.load("#{@from}.idx.orig").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@from}.idx").to_h ==
+             MVCCIndex.new.load("#{@from}.idx.orig").to_h, 'INDEX should be same.')
     end
   end
 end
