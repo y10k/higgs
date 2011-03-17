@@ -153,8 +153,8 @@ module Higgs::Test
 
         # recovered files are same as original files.
         assert(FileUtils.cmp("#{@backup_name}.tar", "#{@restore_name}.tar"), 'DATA should be same.')
-        assert(Index.new.load("#{@backup_name}.idx").to_h ==
-               Index.new.load("#{@restore_name}.idx").to_h, 'INDEX should be same.')
+        assert(MVCCIndex.new.load("#{@backup_name}.idx").to_h ==
+               MVCCIndex.new.load("#{@restore_name}.idx").to_h, 'INDEX should be same.')
       ensure
         FileUtils.touch(@stop_latch)
         FileUtils.touch(@end_latch)
