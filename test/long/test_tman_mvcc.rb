@@ -249,12 +249,6 @@ module Higgs::Test
       }
     end
   end
-
-  class TransactionManagerMVCCTest_with_OptimisticLockManager < TransactionManagerMVCCTest
-    def create_lock_manager
-      OptimisticLockManager.new
-    end
-  end
 end
 
 # Local Variables:

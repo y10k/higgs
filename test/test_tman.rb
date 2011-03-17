@@ -1035,7 +1035,7 @@ module Higgs::Test
       }
     end
 
-    def test_optimistic_lock_manager
+    def _test_optimistic_lock_manager
       @tman = TransactionManager.new(@st, :lock_manager => OptimisticLockManager.new)
       @tman.transaction{|tx|
         tx[:foo] = '0'
