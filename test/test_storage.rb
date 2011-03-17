@@ -76,11 +76,6 @@ module Higgs::Test
         # add
         tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
 
-        assert_nil(tx.fetch('foo'))
-        assert_nil(tx.fetch_properties('foo'))
-      }
-
-      @st.transaction{|tx|
         assert_equal("Hello world.\n", tx.fetch('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
@@ -88,17 +83,9 @@ module Higgs::Test
         assert_equal({}, properties['custom_properties'])
 
         # update properties
-        tx.write_and_commit([ [ :system_properties, 'foo', { 'string_only' => true } ],
-                              [ :custom_properties, 'foo', { :comment => 'test' } ] ])
+        tx.write_and_commit([ [ :system_properties, 'foo', { 'string_only' => true } ] ])
+        tx.write_and_commit([ [ :custom_properties, 'foo', { :comment => 'test' } ] ])
 
-        assert_equal("Hello world.\n", tx.fetch('foo'))
-        properties = tx.fetch_properties('foo')
-        assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
-        assert_equal(false, properties['system_properties']['string_only'])
-        assert_equal({}, properties['custom_properties'])
-      }
-
-      @st.transaction{|tx|
         assert_equal("Hello world.\n", tx.fetch('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
@@ -108,14 +95,6 @@ module Higgs::Test
         # update
         tx.write_and_commit([ [ :write, 'foo', "Good bye.\n" ] ])
 
-        assert_equal("Hello world.\n", tx.fetch('foo'))
-        properties = tx.fetch_properties('foo')
-        assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
-        assert_equal(true, properties['system_properties']['string_only'])
-        assert_equal({ :comment => 'test' }, properties['custom_properties'])
-      }
-
-      @st.transaction{|tx|
         assert_equal("Good bye.\n", tx.fetch('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
@@ -125,14 +104,6 @@ module Higgs::Test
         # delete
         tx.write_and_commit([ [ :delete, 'foo' ] ])
 
-        assert_equal("Good bye.\n", tx.fetch('foo'))
-        properties = tx.fetch_properties('foo')
-        assert_equal(Digest::MD5.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
-        assert_equal(true, properties['system_properties']['string_only'])
-        assert_equal({ :comment => 'test' }, properties['custom_properties'])
-      }
-
-      @st.transaction{|tx|
         assert_nil(tx.fetch('foo'))
         assert_nil(tx.fetch_properties('foo'))
       }
@@ -145,11 +116,6 @@ module Higgs::Test
 
         tx.write_and_commit([ [ :write, 'foo', '' ] ])
 
-        assert_nil(tx.fetch('foo'))
-        assert_nil(tx.fetch_properties('foo'))
-      }
-
-      @st.transaction{|tx|
         assert_equal('', tx.fetch('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest(''), properties['system_properties']['hash_value'])
@@ -330,16 +296,8 @@ module Higgs::Test
       @st.transaction{|tx|
         assert_equal(false, (tx.key? 'foo'))
         tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
-        assert_equal(false, (tx.key? 'foo'))
-      }
-
-      @st.transaction{|tx|
         assert_equal(true, (tx.key? 'foo'))
         tx.write_and_commit([ [ :delete , 'foo' ] ])
-        assert_equal(true, (tx.key? 'foo'))
-      }
-
-      @st.transaction{|tx|
         assert_equal(false, (tx.key? 'foo'))
       }
     end
@@ -383,12 +341,6 @@ module Higgs::Test
                                [ :write, 'baz', 'three' ]
                              ])
 
-        tx.each_key do |key|
-          flunk('not to reach')
-        end
-      }
-
-      @st.transaction{|tx|
         expected_keys = %w[ foo bar baz ]
         tx.each_key do |key|
           assert(expected_keys.delete(key), "each_key do |#{key}|")
@@ -397,14 +349,6 @@ module Higgs::Test
 
         tx.write_and_commit([ [ :delete, 'bar' ] ])
 
-        expected_keys = %w[ foo bar baz ]
-        tx.each_key do |key|
-          assert(expected_keys.delete(key), "each_key do |#{key}|")
-        end
-        assert(expected_keys.empty?)
-      }
-
-      @st.transaction{|tx|
         expected_keys = %w[ foo baz ]
         tx.each_key do |key|
           assert(expected_keys.delete(key), "each_key do |#{key}|")
