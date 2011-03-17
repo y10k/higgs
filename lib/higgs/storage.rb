@@ -628,11 +628,15 @@ module Higgs
       # methods to write.
 
       def raw_write_and_commit(write_list, *optional)
-        @storage.raw_write_and_commit(@cnum, write_list, *optional)
+        @storage.raw_write_and_commit(write_list, *optional)
+        @cnum = @storage.change_number
+        nil
       end
 
       def write_and_commit(write_list, *optional)
         @storage.write_and_commit(@cnum, write_list, *optional)
+        @cnum = @storage.change_number
+        nil
       end
 
       def change_number
@@ -703,10 +707,11 @@ module Higgs
     include IndexUtils
 
     # should be called in a block of transaction method.
-    def raw_write_and_commit(cnum, write_list, commit_time=Time.now)
+    def raw_write_and_commit(write_list, commit_time=Time.now)
       @stat.commit_lock.synchronize{
         @logger.debug("start raw_write_and_commit.") if @logger.debug?
 
+        cnum = @index.change_number
         check_read_write
         commit_log = []
         commit_completed = false
@@ -1127,7 +1132,7 @@ module Higgs
         raw_write_list << [ :write, key, :p, "#{key}.p", encode_properties(properties) ]
       end
 
-      raw_write_and_commit(cnum, raw_write_list, commit_time)
+      raw_write_and_commit(raw_write_list, commit_time)
 
       nil
     end
