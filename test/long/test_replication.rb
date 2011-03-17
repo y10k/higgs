@@ -186,8 +186,8 @@ module Higgs::Test
       shutdown_storage
 
       assert(FileUtils.cmp("#{@src_name}.tar", "#{@dst_name}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@src_name}.idx").to_h ==
-             Index.new.load("#{@dst_name}.idx").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@src_name}.idx").to_h ==
+             MVCCIndex.new.load("#{@dst_name}.idx").to_h, 'INDEX should be same.')
     end
 
     def update_source_storage(options)
@@ -276,8 +276,8 @@ module Higgs::Test
       shutdown_storage
 
       assert(FileUtils.cmp("#{@src_name}.tar", "#{@dst_name}.tar"), 'DATA should be same.')
-      assert(Index.new.load("#{@src_name}.idx").to_h ==
-             Index.new.load("#{@dst_name}.idx").to_h, 'INDEX should be same.')
+      assert(MVCCIndex.new.load("#{@src_name}.idx").to_h ==
+             MVCCIndex.new.load("#{@dst_name}.idx").to_h, 'INDEX should be same.')
     end
 
     def test_switch_to_write
