@@ -677,7 +677,6 @@ module Higgs
     class ReadHandler < TransactionHandler
       undef raw_write_and_commit
       undef write_and_commit
-      undef change_number
     end
 
     class WriteHandler < TransactionHandler
