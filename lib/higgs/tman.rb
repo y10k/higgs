@@ -2,7 +2,6 @@
 
 require 'higgs/cache'
 require 'higgs/exceptions'
-require 'higgs/lock'
 require 'higgs/storage'
 require 'singleton'
 require 'thread'
@@ -32,8 +31,6 @@ module Higgs
       # [<tt>:encode</tt>] procedure to encode data on write. if <tt>:string_only</tt>
       #                    property at an entry is <tt>true</tt> then <tt>encode</tt>
       #                    is not used to write the entry. default is <tt>proc{|w| w }</tt>.
-      # [<tt>:lock_manager</tt>] lock of a transaction and individual data. default is
-      #                          a new instance of Higgs::GiantLockManager.
       # [<tt>:jlog_apply_dir</tt>] journal logs under the directory of this parameter is
       #                            applied to storage on call of
       #                            Higgs::TransactionManager#apply_journal_log
@@ -46,7 +43,6 @@ module Higgs
 
         @decode = options[:decode] || proc{|r| r }
         @encode = options[:encode] || proc{|w| w }
-        @lock_manager = options[:lock_manager] || GiantLockManager.new
         @jlog_apply_dir = options[:jlog_apply_dir] || nil
       end
 

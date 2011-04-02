@@ -993,8 +993,8 @@ module Higgs::Test
       }
     end
 
-    def test_giant_lock_manager
-      @tman = TransactionManager.new(@st, :lock_manager => GiantLockManager.new)
+    def test_write_lock
+      @tman = TransactionManager.new(@st)
       @tman.transaction{|tx|
         tx[:foo] = '0'
         tx[:bar] = '0'

@@ -15,7 +15,6 @@ module Higgs::Test
       assert_equal(false, self.read_only)
       assert_equal(:foo, @decode.call(:foo))
       assert_equal(:bar, @encode.call(:bar))
-      assert_instance_of(Higgs::GiantLockManager, @lock_manager) # auto: require 'higgs/lock'
     end
 
     def test_read_only_true
@@ -38,11 +37,6 @@ module Higgs::Test
     def test_encode
       init_options(:encode => proc{|w| w.to_yaml })
       assert_equal([ 1, 2, 3 ].to_yaml, @encode.call([ 1, 2, 3 ]))
-    end
-
-    def test_lock_manager
-      init_options(:lock_manager => :dummy_lock_manager)
-      assert_equal(:dummy_lock_manager, @lock_manager)
     end
   end
 end
