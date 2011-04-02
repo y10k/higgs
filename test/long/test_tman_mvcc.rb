@@ -16,10 +16,6 @@ module Higgs::Test
     include Higgs
     include Timeout
 
-    def create_lock_manager
-      GiantLockManager.new
-    end
-
     def setup
       @test_dir = 'st_test'
       FileUtils.rm_rf(@test_dir) # for debug
@@ -31,7 +27,7 @@ module Higgs::Test
         logger
       }
       @st = Storage.new(@st_name, :logger => @logger)
-      @tman = TransactionManager.new(@st, :lock_manager => create_lock_manager)
+      @tman = TransactionManager.new(@st)
     end
 
     def teardown
@@ -221,15 +217,11 @@ module Higgs::Test
         th_write_list << Thread.new{
           barrier.wait
           WORK_COUNT.times do |j|
-            begin
-              @tman.transaction{|tx|
-                value = tx[:foo] || '0'
-                assert_equal(tx.change_number.to_s, value, "thread-count: #{i}-#{j}")
-                tx[:foo] = value.succ
-              }
-            rescue LockManager::CollisionError
-              retry
-            end
+            @tman.transaction{|tx|
+              value = tx[:foo] || '0'
+              assert_equal(tx.change_number.to_s, value, "thread-count: #{i}-#{j}")
+              tx[:foo] = value.succ
+            }
           end
         }
       }
