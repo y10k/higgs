@@ -5,6 +5,7 @@ require 'higgs/exceptions'
 require 'higgs/lock'
 require 'higgs/storage'
 require 'singleton'
+require 'thread'
 
 module Higgs
   class TransactionManager
@@ -56,6 +57,7 @@ module Higgs
     # see Higgs::TransactionManager::InitOptions for <tt>options</tt>.
     def initialize(storage, options={})
       @storage = storage
+      @write_lock = Mutex.new
       init_options(options)
       if (@read_only == :standby && ! @jlog_apply_dir) then
         raise ArgumentError, "need for `:jlog_apply_dir' parameter in standby mode"
@@ -66,25 +68,29 @@ module Higgs
     # Higgs::TransactionContext for detail.
     def transaction(read_only=@read_only)
       r = nil
-      @lock_manager.transaction(read_only) {|lock_handler|
+      if (read_only) then
         @storage.transaction(read_only) {|st_hndl|
-          if (read_only) then
-            tx = ReadOnlyTransactionContext.new(lock_handler, st_hndl, @decode, @encode)
-          else
-            if (@read_only) then
-              raise NotWritableError, 'not writable'
-            end
-            tx = ReadWriteTransactionContext.new(lock_handler, st_hndl, @decode, @encode)
-          end
+          tx = ReadOnlyTransactionContext.new(st_hndl, @decode, @encode)
           r = yield(tx)
-          tx.commit unless read_only
         }
-      }
+      else
+        if (@read_only) then
+          raise NotWritableError, 'not writable'
+        end
+        @write_lock.synchronize{
+          @storage.transaction(read_only) {|st_hndl|
+            tx = ReadWriteTransactionContext.new(st_hndl, @decode, @encode)
+            r = yield(tx)
+            tx.commit
+          }
+        }
+      end
+
       r
     end
 
     def apply_journal_log(not_delete=false)
-      @lock_manager.exclusive{
+      @write_lock.synchronize{
         if (@read_only != :standby) then
           raise "not standby mode: #{@read_only}"
         end
@@ -98,7 +104,7 @@ module Higgs
     end
 
     def switch_to_write
-      @lock_manager.exclusive{
+      @write_lock.synchronize{
         if (@read_only != :standby) then
           raise "not standby mode: #{@read_only}"
         end
@@ -123,8 +129,7 @@ module Higgs
     end
     private :string_only
 
-    def initialize(lock_handler, st_hndl, decode, encode)
-      @lock_handler = lock_handler
+    def initialize(st_hndl, decode, encode)
       @st_hndl = st_hndl
       @decode = decode
       @encode = encode
@@ -147,8 +152,6 @@ module Higgs
         end
       }
 
-      @locked_map = {}
-      @locked_map.default = false
       @update_system_properties = {}
       @update_custom_properties = {}
       @ope_map = {}
@@ -158,27 +161,11 @@ module Higgs
       @st_hndl.change_number
     end
 
-    def locked?(key)
-      @locked_map[key]
-    end
-
-    def lock(key)
-      unless (@locked_map[key]) then
-        @lock_handler.lock(key, :data, @st_hndl.data_change_number(key))
-        @lock_handler.lock(key, :properties, @st_hndl.properties_change_number(key))
-        @locked_map[key] = true
-      end
-
-      nil
-    end
-
     def [](key)
-      lock(key)
       (@ope_map[key] != :delete) ? @local_data_cache[key] : nil
     end
 
     def []=(key, value)
-      lock(key)
       @ope_map[key] = :write
       @local_data_cache[key] = value
     end
@@ -198,7 +185,6 @@ module Higgs
     end
 
     def delete(key)
-      lock(key)
       if (@ope_map[key] != :delete) then
         @ope_map[key] = :delete
         @update_system_properties.delete(key)
@@ -210,7 +196,6 @@ module Higgs
     end
 
     def key?(key)
-      lock(key)
       if (@ope_map[key] != :delete) then
         if (@local_data_cache.key? key) then
           return true
@@ -228,13 +213,11 @@ module Higgs
 
     def each_key
       @local_data_cache.each_key do |key|
-        lock(key)
         if (@ope_map[key] != :delete) then
           yield(key)
         end
       end
       @st_hndl.each_key do |key|
-        lock(key)
         if (@ope_map[key] != :delete) then
           unless (@local_data_cache.key? key) then
             yield(key)
@@ -298,7 +281,6 @@ module Higgs
         raise TypeError, "can't convert #{name.class} (name) to Symbol or String"
       end
 
-      lock(key)
       if (@ope_map[key] != :delete) then
         if (properties = @local_properties_cache[key]) then
           case (name)
@@ -451,27 +433,14 @@ module Higgs
         return
       end
 
-      @lock_handler.critical{
-        @lock_handler.check_collision{|key, type|
-          case (type)
-          when :data
-            @st_hndl.data_change_number(key)
-          when :properties
-            @st_hndl.properties_change_number(key)
-          else
-            raise "unknown type: #{type}"
-          end
-        }
+      for ope, key, value in write_list
+        @local_properties_cache.delete(key)
+      end
+      @update_system_properties.clear
+      @update_custom_properties.clear
+      @ope_map.clear
 
-        for ope, key, value in write_list
-          @local_properties_cache.delete(key)
-        end
-        @update_system_properties.clear
-        @update_custom_properties.clear
-        @ope_map.clear
-
-        @st_hndl.write_and_commit(write_list)
-      }
+      @st_hndl.write_and_commit(write_list)
 
       nil
     end
