@@ -16,7 +16,6 @@ module Higgs::Test
       assert_equal(:foo, @decode.call(:foo))
       assert_equal(:bar, @encode.call(:bar))
       assert_instance_of(Higgs::GiantLockManager, @lock_manager) # auto: require 'higgs/lock'
-      assert_instance_of(Higgs::LRUCache, @master_cache) # auto: require 'higgs/cache'
     end
 
     def test_read_only_true
@@ -44,11 +43,6 @@ module Higgs::Test
     def test_lock_manager
       init_options(:lock_manager => :dummy_lock_manager)
       assert_equal(:dummy_lock_manager, @lock_manager)
-    end
-
-    def test_master_cache
-      init_options(:master_cache => :dummy_master_cache)
-      assert_equal(:dummy_master_cache, @master_cache)
     end
   end
 end

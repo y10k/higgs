@@ -16,20 +16,6 @@ module Higgs
     class NotWritableError < Error
     end
 
-    class PseudoSecondaryCache
-      include Singleton
-
-      def [](key)
-      end
-
-      def []=(key, value)
-        value
-      end
-
-      def delete(key)
-      end
-    end
-
     # options for Higgs::TransactionManager
     module InitOptions
       # these options are defined.
@@ -47,11 +33,6 @@ module Higgs
       #                    is not used to write the entry. default is <tt>proc{|w| w }</tt>.
       # [<tt>:lock_manager</tt>] lock of a transaction and individual data. default is
       #                          a new instance of Higgs::GiantLockManager.
-      # [<tt>:master_cache</tt>] read-cache for encoded string data. defauilt is
-      #                          a new instance of Higgs::LRUCache.
-      # [<tt>:secondary_cache</tt>] secondary read-cache for encoded string data.
-      #                             key of cache is always unique string.
-      #                             default is no effect.
       # [<tt>:jlog_apply_dir</tt>] journal logs under the directory of this parameter is
       #                            applied to storage on call of
       #                            Higgs::TransactionManager#apply_journal_log
@@ -65,8 +46,6 @@ module Higgs
         @decode = options[:decode] || proc{|r| r }
         @encode = options[:encode] || proc{|w| w }
         @lock_manager = options[:lock_manager] || GiantLockManager.new
-        @master_cache = options[:master_cache] || LRUCache.new
-        @secondary_cache = options[:secondary_cache] || PseudoSecondaryCache.instance
         @jlog_apply_dir = options[:jlog_apply_dir] || nil
       end
 

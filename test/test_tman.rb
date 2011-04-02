@@ -1085,19 +1085,6 @@ module Higgs::Test
       }
     end
   end
-
-  class TransactionManagerTest_with_SecondaryCache < TransactionManagerTest
-    def setup
-      super
-      @secondary_cache = {}
-      @tman = TransactionManager.new(@st, :secondary_cache => @secondary_cache)
-    end
-
-#     def teardown
-#       require 'pp'
-#       pp @secondary_cache
-#     end
-  end
 end
 
 # Local Variables:
