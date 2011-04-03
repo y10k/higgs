@@ -357,7 +357,7 @@ module Higgs
       unless (self.key? key) then # lock
         raise IndexError, "not exist properties at key: #{key}"
       end
-      if (value =@st_hndl.data_change_number(key)) then
+      if (value = @st_hndl.data_change_number(key)) then
         yield(:data_change_number, value)
       end
       if (value = @st_hndl.properties_change_number(key)) then
