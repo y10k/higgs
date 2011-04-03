@@ -164,7 +164,6 @@ module Higgs
         @cnum_lock = Mutex.new
         @panic = false
         @shutdown = false
-        @saved_change_number = nil
       end
 
       attr_reader :commit_lock
@@ -173,7 +172,6 @@ module Higgs
 
       attr_accessor :panic
       attr_accessor :shutdown
-      attr_accessor :saved_change_number
     end
 
     class Core
@@ -718,7 +716,6 @@ module Higgs
 
         begin
           (@index.change_number == cnum) or raise 'internal error.' # assertion
-          @stat.cnum_lock.synchronize{ @stat.saved_change_number = cnum }
           next_cnum = cnum.succ
 
           for ope, key, type, name, value in write_list
@@ -874,7 +871,6 @@ module Higgs
             @logger.error("panic: failed to commit.")
             @logger.error($!) if $!
           end
-          @stat.cnum_lock.synchronize{ @stat.saved_change_number = nil }
         end
 
         @logger.debug("completed raw_write_and_commit.") if @logger.debug?
@@ -1224,7 +1220,7 @@ module Higgs
     end
 
     def change_number
-      @stat.cnum_lock.synchronize{ @stat.saved_change_number || @index.change_number }
+      @index.change_number
     end
 
     # should be called in a block of transaction method.
