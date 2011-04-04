@@ -174,29 +174,6 @@ module Higgs
       attr_accessor :shutdown
     end
 
-    class Core
-      attr_writer :logger
-      attr_writer :stat
-      attr_writer :w_tar
-      attr_writer :r_tar_pool
-      attr_writer :jlog
-
-      def check_panic
-        if (@stat.shutdown) then
-          raise ShutdownException, 'storage shutdown'
-        end
-        if (@stat.panic) then
-          raise PanicError, 'broken storage'
-        end
-      end
-
-      def check_read
-        @stat.state_lock.synchronize{
-          check_panic
-        }
-      end
-    end
-
     # <tt>name</tt> is storage name.
     # see Higgs::Storage::InitOptions for <tt>options</tt>.
     #
@@ -216,9 +193,7 @@ module Higgs
       @jlog_name = "#{@name}.jlog"
       @lock_name = "#{@name}.lock"
 
-      @core = Core.new
       @stat = Stat.new
-      @core.stat = @stat
 
       init_options(options)
 
@@ -239,7 +214,6 @@ module Higgs
         else
           @logger.info("get file lock for write")
         end
-        @core.logger = @logger
 
         @logger.info format('block format version: 0x%04X', Block::FMT_VERSION)
         @logger.info("journal log hash type: #{@jlog_hash_type}")
@@ -258,7 +232,6 @@ module Higgs
           w_io.binmode
           w_io.set_encoding(Encoding::ASCII_8BIT)
           @w_tar = Tar::ArchiveWriter.new(w_io)
-          @core.w_tar = @w_tar
         end
 
         @logger.info("build I/O handle pool for read.")
@@ -267,7 +240,6 @@ module Higgs
           @logger.info("open I/O handle for read: #{@tar_name}")
           Tar::ArchiveReader.new(r_io)
         }
-        @core.r_tar_pool = @r_tar_pool
 
         @index = MVCCIndex.new
         if (File.exist? @idx_name) then
@@ -313,7 +285,6 @@ module Higgs
           @logger.info("journal log sync mode: #{@jlog_sync}")
           @logger.info("open journal log for write: #{@jlog_name}")
           @jlog = JournalLogger.open(@jlog_name, @jlog_sync, @jlog_hash_type)
-          @core.jlog = @jlog
         end
 
         init_completed = true
@@ -402,9 +373,26 @@ module Higgs
     end
     private :create_storage_id
 
+    def check_panic
+      if (@stat.shutdown) then
+        raise ShutdownException, 'storage shutdown'
+      end
+      if (@stat.panic) then
+        raise PanicError, 'broken storage'
+      end
+    end
+    private :check_panic
+
+    def check_read
+      @stat.state_lock.synchronize{
+        check_panic
+      }
+    end
+    private :check_read
+
     def check_standby
       @stat.state_lock.synchronize{
-        @core.check_panic
+        check_panic
         if (@read_only && @read_only != :standby) then
           raise NotWritableError, 'failed to write to read only storage'
         end
@@ -414,7 +402,7 @@ module Higgs
 
     def check_read_write
       @stat.state_lock.synchronize{
-        @core.check_panic
+        check_panic
         if (@read_only) then
           raise NotWritableError, 'failed to write to read only storage'
         end
@@ -1191,13 +1179,13 @@ module Higgs
 
     # should be called in a block of transaction method.
     def fetch_properties(cnum, key)
-      @core.check_read
+      check_read
       internal_fetch_properties(cnum, key)
     end
 
     # should be called in a block of transaction method.
     def fetch(cnum, key)
-      @core.check_read
+      check_read
       value = read_record_body(cnum, key, :d) or return
       unless (properties = internal_fetch_properties(cnum, key)) then
         @stat.state_lock.synchronize{ @stat.panic = true }
@@ -1235,7 +1223,7 @@ module Higgs
 
     # should be called in a block of transaction method.
     def key?(cnum, key)
-      @core.check_read
+      check_read
       @index.key?(cnum, key)
     end
 
@@ -1251,7 +1239,7 @@ module Higgs
     end
 
     def each_key(cnum)
-      @core.check_read
+      check_read
       @index.each_key(cnum) do |key|
         yield(key)
       end
@@ -1273,7 +1261,7 @@ module Higgs
     # storage access is blocked while this method is processing.
     def verify(out=nil, verbose_level=1)
       @stat.commit_lock.synchronize{
-        @core.check_read
+        check_read
         @index.transaction{|cnum|
 
           key_pos_alist = []
