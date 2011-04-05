@@ -133,9 +133,9 @@ module Higgs
       @local_data_cache = Hash.new{|hash, key|
         if (@st_hndl.key? key) then
           if (string_only(key)) then
-            hash[key] = @st_hndl.fetch(key).freeze
+            hash[key] = @st_hndl.fetch_data(key).freeze
           else
-            hash[key] = @decode.call(@st_hndl.fetch(key).freeze)
+            hash[key] = @decode.call(@st_hndl.fetch_data(key).freeze)
           end
         end
       }

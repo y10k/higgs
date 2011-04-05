@@ -70,13 +70,13 @@ module Higgs::Test
 
     def test_write_and_commit_fetch
       @st.transaction{|tx|
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
 
         # add
         tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
 
-        assert_equal("Hello world.\n", tx.fetch('foo'))
+        assert_equal("Hello world.\n", tx.fetch_data('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
         assert_equal(false, properties['system_properties']['string_only'])
@@ -86,7 +86,7 @@ module Higgs::Test
         tx.write_and_commit([ [ :system_properties, 'foo', { 'string_only' => true } ] ])
         tx.write_and_commit([ [ :custom_properties, 'foo', { :comment => 'test' } ] ])
 
-        assert_equal("Hello world.\n", tx.fetch('foo'))
+        assert_equal("Hello world.\n", tx.fetch_data('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest("Hello world.\n"), properties['system_properties']['hash_value'])
         assert_equal(true, properties['system_properties']['string_only'])
@@ -95,7 +95,7 @@ module Higgs::Test
         # update
         tx.write_and_commit([ [ :write, 'foo', "Good bye.\n" ] ])
 
-        assert_equal("Good bye.\n", tx.fetch('foo'))
+        assert_equal("Good bye.\n", tx.fetch_data('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest("Good bye.\n"), properties['system_properties']['hash_value'])
         assert_equal(true, properties['system_properties']['string_only'])
@@ -104,19 +104,19 @@ module Higgs::Test
         # delete
         tx.write_and_commit([ [ :delete, 'foo' ] ])
 
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
       }
     end
 
     def test_write_and_commit_fetch_zero_bytes
       @st.transaction{|tx|
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
 
         tx.write_and_commit([ [ :write, 'foo', '' ] ])
 
-        assert_equal('', tx.fetch('foo'))
+        assert_equal('', tx.fetch_data('foo'))
         properties = tx.fetch_properties('foo')
         assert_equal(Digest::MD5.hexdigest(''), properties['system_properties']['hash_value'])
         assert_equal({}, properties['custom_properties'])
@@ -125,12 +125,12 @@ module Higgs::Test
 
     def test_write_and_commit_fetch_delete_no_data
       @st.transaction{|tx|
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
 
         tx.write_and_commit([ [ :delete , 'foo'] ])
 
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
       }
     end
@@ -162,13 +162,13 @@ module Higgs::Test
         assert_raise(IndexError) {
           tx.write_and_commit([ [ :system_properties, 'foo', {} ] ])
         }
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
 
         assert_raise(IndexError) {
           tx.write_and_commit([ [ :custom_properties, 'foo', {} ] ])
         }
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
 
         assert_raise(IndexError) {
@@ -179,7 +179,7 @@ module Higgs::Test
           ]
           tx.write_and_commit(write_list)
         }
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
 
         assert_raise(IndexError) {
@@ -190,7 +190,7 @@ module Higgs::Test
           ]
           tx.write_and_commit(write_list)
         }
-        assert_nil(tx.fetch('foo'))
+        assert_nil(tx.fetch_data('foo'))
         assert_nil(tx.fetch_properties('foo'))
       }
     end
@@ -481,7 +481,7 @@ module Higgs::Test
       assert_equal(true, @st.shutdown?)
       assert_equal(false, @st.alive?)
       assert_raise(Storage::ShutdownException) { @st.shutdown }
-      assert_raise(Storage::ShutdownException) { @st.transaction{|tx| tx.fetch('foo') } }
+      assert_raise(Storage::ShutdownException) { @st.transaction{|tx| tx.fetch_data('foo') } }
       assert_raise(Storage::ShutdownException) { @st.transaction{|tx| tx.fetch_properties('foo') } }
       assert_raise(Storage::ShutdownException) { @st.transaction{|tx| tx.key? 'foo' } }
       assert_raise(Storage::ShutdownException) {

@@ -621,8 +621,8 @@ module Higgs
         @storage.fetch_properties(@cnum, key)
       end
 
-      def fetch(key)
-        @storage.fetch(@cnum, key)
+      def fetch_data(key)
+        @storage.fetch_data(@cnum, key)
       end
 
       def data_change_number(key)
@@ -1170,7 +1170,7 @@ module Higgs
     end
 
     # should be called in a block of transaction method.
-    def fetch(cnum, key)
+    def fetch_data(cnum, key)
       check_read
       value = read_record_body(cnum, key, :d) or return
       unless (properties = internal_fetch_properties(cnum, key)) then
@@ -1272,7 +1272,7 @@ module Higgs
             if (out && verbose_level >= 1) then
               out << "check #{key}\n"
             end
-            data = fetch(cnum, key) or raise PanicError, "not exist data at key: #{key}"
+            data = fetch_data(cnum, key) or raise PanicError, "not exist data at key: #{key}"
             if (out && verbose_level >= 2) then
               out << "  #{data.bytesize} bytes\n"
               properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"

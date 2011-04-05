@@ -62,7 +62,7 @@ module Higgs::Test
       }
 
       @st.transaction(true) {|tx|
-        assert_equal('apple', tx.fetch(:foo))
+        assert_equal('apple', tx.fetch_data(:foo))
       }
 
       @tman.transaction{|tx|
@@ -290,8 +290,8 @@ module Higgs::Test
       }
 
       @st.transaction(true) {|tx|
-        assert_equal(nil, tx.fetch(:foo))
-        assert_equal(nil, tx.fetch(:bar))
+        assert_equal(nil, tx.fetch_data(:foo))
+        assert_equal(nil, tx.fetch_data(:bar))
       }
 
       @tman.transaction{|tx|
@@ -310,8 +310,8 @@ module Higgs::Test
       }
 
       @st.transaction(true) {|tx|
-        assert_equal('apple',  tx.fetch(:foo))
-        assert_equal('banana', tx.fetch(:bar))
+        assert_equal('apple',  tx.fetch_data(:foo))
+        assert_equal('banana', tx.fetch_data(:bar))
       }
 
       @tman.transaction{|tx|
@@ -325,8 +325,8 @@ module Higgs::Test
       }
 
       @st.transaction(true) {|tx|
-        assert_equal(nil,      tx.fetch(:foo))
-        assert_equal('banana', tx.fetch(:bar))
+        assert_equal(nil,      tx.fetch_data(:foo))
+        assert_equal('banana', tx.fetch_data(:bar))
       }
 
       @tman.transaction{|tx|
@@ -351,9 +351,9 @@ module Higgs::Test
       }
 
       @st.transaction(true) {|tx|
-        assert_equal('apple', tx.fetch(:foo))
-        assert_equal(nil,     tx.fetch(:bar))
-        assert_equal(nil,     tx.fetch(:baz))
+        assert_equal('apple', tx.fetch_data(:foo))
+        assert_equal(nil,     tx.fetch_data(:bar))
+        assert_equal(nil,     tx.fetch_data(:baz))
       }
 
       @tman.transaction{|tx|
@@ -379,9 +379,9 @@ module Higgs::Test
       }
 
       @st.transaction(true) {|tx|
-        assert_equal('apple',  tx.fetch(:foo))
-        assert_equal(nil,      tx.fetch(:bar))
-        assert_equal('orange', tx.fetch(:baz))
+        assert_equal('apple',  tx.fetch_data(:foo))
+        assert_equal(nil,      tx.fetch_data(:bar))
+        assert_equal('orange', tx.fetch_data(:baz))
       }
 
       @tman.transaction{|tx|
@@ -405,9 +405,9 @@ module Higgs::Test
       }
 
       @st.transaction(true) {|tx|
-        assert_equal(nil, tx.fetch(:foo))
-        assert_equal(nil, tx.fetch(:bar))
-        assert_equal(nil, tx.fetch(:baz))
+        assert_equal(nil, tx.fetch_data(:foo))
+        assert_equal(nil, tx.fetch_data(:bar))
+        assert_equal(nil, tx.fetch_data(:baz))
       }
 
       @tman.transaction{|tx|
@@ -857,9 +857,9 @@ module Higgs::Test
       }
 
       @st.transaction(true) {|tx|
-        assert_equal('apple', tx.fetch(:foo))
-        assert_equal(nil,     tx.fetch(:bar))
-        assert_equal(nil,     tx.fetch(:baz))
+        assert_equal('apple', tx.fetch_data(:foo))
+        assert_equal(nil,     tx.fetch_data(:bar))
+        assert_equal(nil,     tx.fetch_data(:baz))
       }
 
       @tman.transaction{|tx|
