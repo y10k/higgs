@@ -207,6 +207,12 @@ module Higgs
         @logger.info("storage data hash type: #{@data_hash_type}")
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
 
+        @logger.info("properties cache type: #{@properties_cache.class}")
+        @p_cache = SharedWorkCache.new(@properties_cache) {|cnum_key_pair|
+          cnum, key = cnum_key_pair
+          value = read_record_body(cnum, key, :p) and decode_properties(key, value)
+        }
+
         unless (read_only) then
           begin
             w_io = File.open(@tar_name, File::WRONLY | File::CREAT | File::EXCL, 0660)
@@ -1159,7 +1165,8 @@ module Higgs
 
     # should be called in a block of transaction method.
     def internal_fetch_properties(cnum, key)
-      value = read_record_body(cnum, key, :p) and decode_properties(key, value)
+      cnum_key_pair = [ cnum, key ]
+      @p_cache[cnum_key_pair]   # see initialize.
     end
     private :internal_fetch_properties
 
