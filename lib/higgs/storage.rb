@@ -58,6 +58,7 @@ module Higgs
       #                       if Higgs::Storage#switch_to_write is called in standby mode then
       #                       state of storage changes from standby mode to read-write mode.
       # [<tt>:properties_cache</tt>] read-cache for properties. default is a new instance of Higgs::LRUCache.
+      # [<tt>:data_cache</tt>] read-cache for data. default is a new instance of Higgs::LRUCache.
       # [<tt>:data_hash_type</tt>] hash type (<tt>:SUM16</tt>, <tt>:MD5</tt>, <tt>:RMD160</tt>,
       #                            <tt>:SHA1</tt>, <tt>:SHA256</tt>, <tt>:SHA384</tt> or <tt>:SHA512</tt>)
       #                            for data check. default is <tt>:MD5</tt>.
@@ -84,6 +85,12 @@ module Higgs
           @properties_cache = options[:properties_cache]
         else
           @properties_cache = LRUCache.new
+        end
+
+        if (options.key? :data_cache) then
+          @data_cache = options[:data_cache]
+        else
+          @data_cache = LRUCache.new
         end
 
         @data_hash_type = options[:data_hash_type] || :MD5
@@ -212,6 +219,12 @@ module Higgs
         @p_cache = SharedWorkCache.new(@properties_cache) {|cnum_key_pair|
           cnum, key = cnum_key_pair
           value = read_record_body(cnum, key, :p) and decode_properties(key, value)
+        }
+
+        @logger.info("data cache type: #{@data_cache.class}")
+        @d_cache = SharedWorkCache.new(@data_cache) {|cnum_key_pair|
+          cnum, key = cnum_key_pair
+          value = read_data(cnum, key) and value.freeze
         }
 
         unless (read_only) then
@@ -1179,14 +1192,7 @@ module Higgs
     private :internal_fetch_properties
 
     # should be called in a block of transaction method.
-    def fetch_properties(cnum, key)
-      check_read
-      internal_fetch_properties(cnum, key)
-    end
-
-    # should be called in a block of transaction method.
-    def fetch_data(cnum, key)
-      check_read
+    def read_data(cnum, key)
       value = read_record_body(cnum, key, :d) or return
       unless (properties = internal_fetch_properties(cnum, key)) then
         @state_lock.synchronize{ @panic = true }
@@ -1206,6 +1212,20 @@ module Higgs
         raise PanicError, "mismatch hash value at #{key}"
       end
       value
+    end
+    private :read_data
+
+    # should be called in a block of transaction method.
+    def fetch_properties(cnum, key)
+      check_read
+      internal_fetch_properties(cnum, key)
+    end
+
+    # should be called in a block of transaction method.
+    def fetch_data(cnum, key)
+      check_read
+      cnum_key_pair = [ cnum, key ]
+      @d_cache[cnum_key_pair]
     end
 
     def change_number
@@ -1287,7 +1307,7 @@ module Higgs
             if (out && verbose_level >= 1) then
               out << "check #{key}\n"
             end
-            data = fetch_data(cnum, key) or raise PanicError, "not exist data at key: #{key}"
+            data = read_data(cnum, key) or raise PanicError, "not exist data at key: #{key}"
             if (out && verbose_level >= 2) then
               out << "  #{data.bytesize} bytes\n"
               properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"
