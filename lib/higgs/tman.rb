@@ -114,11 +114,6 @@ module Higgs
   class TransactionContext
     include Enumerable
 
-    def deep_copy(obj)
-      Marshal.load(Marshal.dump(obj))
-    end
-    private :deep_copy
-
     def string_only(key)
       properties = @st_hndl.fetch_properties(key) and
         properties['system_properties']['string_only']
@@ -142,7 +137,7 @@ module Higgs
 
       @local_properties_cache = Hash.new{|hash, key|
         if (props = @st_hndl.fetch_properties(key)) then
-          hash[key] = deep_copy(props)
+          hash[key] = props.dup
         else
           hash[key] = { 'system_properties' => {}, 'custom_properties' => {} }
         end
@@ -300,12 +295,14 @@ module Higgs
       case (name)
       when String
         properties = @local_properties_cache[key]['custom_properties']
+        properties = properties.dup if properties.frozen?
         properties[name] = value
-        @update_custom_properties[key] = properties
+        @local_properties_cache[key]['custom_properties'] = @update_custom_properties[key] = properties
       when :string_only
         properties = @local_properties_cache[key]['system_properties']
+        properties = properties.dup if properties.frozen?
         properties['string_only'] = value
-        @update_system_properties[key] = properties
+        @local_properties_cache[key]['system_properties'] = @update_system_properties[key] = properties
       else
         raise TypeError, "can't convert #{name.class} (name) to String"
       end
@@ -321,8 +318,9 @@ module Higgs
       end
       properties = @local_properties_cache[key]['custom_properties']
       if (properties.key? name) then
+        properties = properties.dup if properties.frozen?
         value = properties.delete(name)
-        @update_custom_properties[key] = properties
+        @local_properties_cache[key]['custom_properties'] = @update_custom_properties[key] = properties
         return value
       end
       nil

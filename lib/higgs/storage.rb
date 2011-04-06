@@ -5,6 +5,7 @@ require 'forwardable'
 require 'higgs/block'
 require 'higgs/cache'
 require 'higgs/flock'
+require 'higgs/freeze'
 require 'higgs/index'
 require 'higgs/jlog'
 require 'higgs/tar'
@@ -1054,6 +1055,8 @@ module Higgs
           if (properties = update_properties[key]) then
             # nothing to do.
           elsif (properties = internal_fetch_properties(cnum, key)) then
+            properties = properties.dup
+            properties['system_properties'] = properties['system_properties'].dup
             update_properties[key] = properties
           else
             # new properties
@@ -1083,6 +1086,8 @@ module Higgs
           if (properties = update_properties[key]) then
             # nothing to do.
           elsif (properties = internal_fetch_properties(cnum, key)) then
+            properties = properties.dup
+            properties['system_properties'] = properties['system_properties'].dup
             update_properties[key] = properties
           else
             raise IndexError, "not exist properties at key: #{key}"
@@ -1159,7 +1164,7 @@ module Higgs
         @logger.error("panic: mismatch properties cksum at #{key}")
         raise PanicError, "mismatch properties cksum at #{key}"
       end
-      YAML.load(body)
+      YAML.load(body).higgs_deep_freeze
     end
     private :decode_properties
 
