@@ -1108,7 +1108,10 @@ module Higgs
         end
       end
 
+      next_cnum = @index.change_number.succ
       for key, properties in update_properties
+        cnum_key_pair = [ next_cnum, key ]
+        @p_cache[cnum_key_pair] = properties.higgs_deep_freeze
         raw_write_list << [ :write, key, :p, "#{key}.p", encode_properties(properties) ]
       end
 
