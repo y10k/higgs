@@ -57,6 +57,48 @@ class Struct
   end
 end
 
+class NilClass
+  # no freeze immutable object.
+  def higgs_deep_freeze
+    self
+  end
+end
+
+class TrueClass
+  # no freeze immutable object.
+  def higgs_deep_freeze
+    self
+  end
+end
+
+class FalseClass
+  # no freeze immutable object.
+  def higgs_deep_freeze
+    self
+  end
+end
+
+class Symbol
+  # no freeze immutable object.
+  def higgs_deep_freeze
+    self
+  end
+end
+
+class Module
+  # no freeze immutable object.
+  def higgs_deep_freeze
+    self
+  end
+end
+
+class Numeric
+  # no freeze immutable object.
+  def higgs_deep_freeze
+    self
+  end
+end
+
 # Local Variables:
 # mode: Ruby
 # indent-tabs-mode: nil
