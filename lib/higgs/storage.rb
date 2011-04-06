@@ -1053,6 +1053,7 @@ module Higgs
     def write_and_commit(cnum, write_list, commit_time=Time.now)
       check_read_write
 
+      next_cnum = @index.change_number.succ
       raw_write_list = []
       deleted_entries = {}
       update_properties = {}
@@ -1063,6 +1064,8 @@ module Higgs
           unless (value.kind_of? String) then
             raise TypeError, "can't convert #{value.class} (value) to String"
           end
+          cnum_key_pair = [ next_cnum, key ]
+          @d_cache[cnum_key_pair] = value.freeze
           raw_write_list << [ :write, key, :d, key.to_s, value ]
           deleted_entries[key] = false
           if (properties = update_properties[key]) then
@@ -1121,7 +1124,6 @@ module Higgs
         end
       end
 
-      next_cnum = @index.change_number.succ
       for key, properties in update_properties
         cnum_key_pair = [ next_cnum, key ]
         @p_cache[cnum_key_pair] = properties.higgs_deep_freeze
