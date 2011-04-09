@@ -58,7 +58,9 @@ module Higgs
       #                       if Higgs::Storage#switch_to_write is called in standby mode then
       #                       state of storage changes from standby mode to read-write mode.
       # [<tt>:properties_cache</tt>] read-cache for properties. default is a new instance of Higgs::LRUCache.
+      # [<tt>:properties_cache_size</tt>] size of default properties cache of Higgs::LRUCache.
       # [<tt>:data_cache</tt>] read-cache for data. default is a new instance of Higgs::LRUCache.
+      # [<tt>:data_cache_size</tt>] size of default data cache of Higgs::LRUCache.
       # [<tt>:data_hash_type</tt>] hash type (<tt>:SUM16</tt>, <tt>:MD5</tt>, <tt>:RMD160</tt>,
       #                            <tt>:SHA1</tt>, <tt>:SHA256</tt>, <tt>:SHA384</tt> or <tt>:SHA512</tt>)
       #                            for data check. default is <tt>:MD5</tt>.
@@ -84,13 +86,21 @@ module Higgs
         if (options.key? :properties_cache) then
           @properties_cache = options[:properties_cache]
         else
-          @properties_cache = LRUCache.new
+          if (options.key? :properties_cache_size) then
+            @properties_cache = LRUCache.new(options[:properties_cache_size])
+          else
+            @properties_cache = LRUCache.new
+          end
         end
 
         if (options.key? :data_cache) then
           @data_cache = options[:data_cache]
         else
-          @data_cache = LRUCache.new
+          if (options.key? :data_cache_size) then
+            @data_cache = LRUCache.new(options[:data_cache_size])
+          else
+            @data_cache = LRUCache.new
+          end
         end
 
         @data_hash_type = options[:data_hash_type] || :MD5
