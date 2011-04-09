@@ -228,13 +228,13 @@ module Higgs
         @logger.info("properties cache type: #{@properties_cache.class}")
         @p_cache = SharedWorkCache.new(@properties_cache) {|cnum_key_pair|
           cnum, key = cnum_key_pair
-          value = read_record_body(cnum, key, :p) and decode_properties(key, value)
+          read_properties(cnum, key, true)
         }
 
         @logger.info("data cache type: #{@data_cache.class}")
         @d_cache = SharedWorkCache.new(@data_cache) {|cnum_key_pair|
           cnum, key = cnum_key_pair
-          value = read_data(cnum, key) and value.freeze
+          read_data(cnum, key, true)
         }
 
         unless (read_only) then
@@ -1080,7 +1080,7 @@ module Higgs
           deleted_entries[key] = false
           if (properties = update_properties[key]) then
             # nothing to do.
-          elsif (properties = internal_fetch_properties(cnum, key)) then
+          elsif (properties = read_properties(cnum, key)) then
             properties = properties.dup
             properties['system_properties'] = properties['system_properties'].dup
             update_properties[key] = properties
@@ -1111,7 +1111,7 @@ module Higgs
           end
           if (properties = update_properties[key]) then
             # nothing to do.
-          elsif (properties = internal_fetch_properties(cnum, key)) then
+          elsif (properties = read_properties(cnum, key)) then
             properties = properties.dup
             properties['system_properties'] = properties['system_properties'].dup
             update_properties[key] = properties
@@ -1197,16 +1197,24 @@ module Higgs
     private :decode_properties
 
     # should be called in a block of transaction method.
-    def internal_fetch_properties(cnum, key)
-      cnum_key_pair = [ cnum, key ]
-      @p_cache[cnum_key_pair]   # see initialize.
+    def read_properties(cnum, key, no_cache=false)
+      unless (no_cache) then
+        cnum_key_pair = [ cnum, key ]
+        return @p_cache[cnum_key_pair] # see initialize.
+      end
+      value = read_record_body(cnum, key, :p) and decode_properties(key, value)
     end
-    private :internal_fetch_properties
+    private :read_properties
 
     # should be called in a block of transaction method.
-    def read_data(cnum, key)
+    def read_data(cnum, key, no_cache=false)
+      unless (no_cache) then
+        cnum_key_pair = [ cnum, key ]
+        return @d_cache[cnum_key_pair] # see initialize.
+      end
+
       value = read_record_body(cnum, key, :d) or return
-      unless (properties = internal_fetch_properties(cnum, key)) then
+      unless (properties = read_properties(cnum, key, no_cache == :verbose)) then
         @state_lock.synchronize{ @panic = true }
         @logger.error("panic: failed to read properties: #{key}")
         raise PanicError, "failed to read properties: #{key}"
@@ -1223,21 +1231,20 @@ module Higgs
         @logger.error("panic: mismatch hash value at #{key}")
         raise PanicError, "mismatch hash value at #{key}"
       end
-      value
+      value.freeze
     end
     private :read_data
 
     # should be called in a block of transaction method.
     def fetch_properties(cnum, key)
       check_read
-      internal_fetch_properties(cnum, key)
+      read_properties(cnum, key)
     end
 
     # should be called in a block of transaction method.
     def fetch_data(cnum, key)
       check_read
-      cnum_key_pair = [ cnum, key ]
-      @d_cache[cnum_key_pair]
+      read_data(cnum, key)
     end
 
     def change_number
@@ -1319,7 +1326,7 @@ module Higgs
             if (out && verbose_level >= 1) then
               out << "check #{key}\n"
             end
-            data = read_data(cnum, key) or raise PanicError, "not exist data at key: #{key}"
+            data = read_data(cnum, key, :verbose) or raise PanicError, "not exist data at key: #{key}"
             if (out && verbose_level >= 2) then
               out << "  #{data.bytesize} bytes\n"
               properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"
