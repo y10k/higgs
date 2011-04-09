@@ -175,6 +175,19 @@ module Higgs
       options
     end
 
+    # attributes for data-read: <tt>idx_cnum</tt>, <tt>idx_key</tt>.
+    # attributes for cache-store: <tt>idx_key</tt>, <tt>dat_cnum</tt>.
+    CacheKey = Struct.new(:idx_cnum, :idx_key, :dat_cnum)
+    class CacheKey
+      def hash
+        idx_key.hash ^ dat_cnum.hash
+      end
+
+      def eql?(other)
+        idx_key.eql?(other.idx_key) && dat_cnum.eql?(other.dat_cnum)
+      end
+    end
+
     # <tt>name</tt> is storage name.
     # see Higgs::Storage::InitOptions for <tt>options</tt>.
     #
@@ -226,15 +239,13 @@ module Higgs
         @logger.info("storage properties cksum type: #{PROPERTIES_CKSUM_TYPE}")
 
         @logger.info("properties cache type: #{@properties_cache.class}")
-        @p_cache = SharedWorkCache.new(@properties_cache) {|cnum_key_pair|
-          cnum, key = cnum_key_pair
-          read_properties(cnum, key, true)
+        @p_cache = SharedWorkCache.new(@properties_cache) {|c_key|
+          read_properties(c_key.idx_cnum, c_key.idx_key, true)
         }
 
         @logger.info("data cache type: #{@data_cache.class}")
-        @d_cache = SharedWorkCache.new(@data_cache) {|cnum_key_pair|
-          cnum, key = cnum_key_pair
-          read_data(cnum, key, true)
+        @d_cache = SharedWorkCache.new(@data_cache) {|c_key|
+          read_data(c_key.idx_cnum, c_key.idx_key, true)
         }
 
         unless (read_only) then
@@ -1074,8 +1085,8 @@ module Higgs
           unless (value.kind_of? String) then
             raise TypeError, "can't convert #{value.class} (value) to String"
           end
-          cnum_key_pair = [ next_cnum, key ]
-          @d_cache[cnum_key_pair] = value.freeze
+          c_key = CacheKey.new(next_cnum, key, next_cnum)
+          @d_cache[c_key] = value.freeze
           raw_write_list << [ :write, key, :d, key.to_s, value ]
           deleted_entries[key] = false
           if (properties = update_properties[key]) then
@@ -1135,8 +1146,8 @@ module Higgs
       end
 
       for key, properties in update_properties
-        cnum_key_pair = [ next_cnum, key ]
-        @p_cache[cnum_key_pair] = properties.higgs_deep_freeze
+        c_key = CacheKey.new(next_cnum, key, next_cnum)
+        @p_cache[c_key] = properties.higgs_deep_freeze
         raw_write_list << [ :write, key, :p, "#{key}.p", encode_properties(properties) ]
       end
 
@@ -1199,9 +1210,11 @@ module Higgs
     # should be called in a block of transaction method.
     def read_properties(cnum, key, no_cache=false)
       unless (no_cache) then
-        cnum_key_pair = [ cnum, key ]
-        return @p_cache[cnum_key_pair] # see initialize.
+        p_cnum = properties_change_number(cnum, key)
+        c_key = CacheKey.new(cnum, key, p_cnum)
+        return @p_cache[c_key]  # see initialize.
       end
+
       value = read_record_body(cnum, key, :p) and decode_properties(key, value)
     end
     private :read_properties
@@ -1209,8 +1222,9 @@ module Higgs
     # should be called in a block of transaction method.
     def read_data(cnum, key, no_cache=false)
       unless (no_cache) then
-        cnum_key_pair = [ cnum, key ]
-        return @d_cache[cnum_key_pair] # see initialize.
+        d_cnum = data_change_number(cnum, key)
+        c_key = CacheKey.new(cnum, key, d_cnum)
+        return @d_cache[c_key]  # see initialize.
       end
 
       value = read_record_body(cnum, key, :d) or return
