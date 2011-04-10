@@ -6,6 +6,11 @@ require 'test/unit'
 
 class HiggsDeepFreezeTest < Test::Unit::TestCase
   class ObjectData
+    def initialize(foo=nil, bar=nil)
+      @foo = foo
+      @bar = bar
+    end
+
     attr_accessor :foo
     attr_accessor :bar
   end
@@ -90,6 +95,54 @@ class HiggsDeepFreezeTest < Test::Unit::TestCase
     n = 1.0
     assert_instance_of(Float, n)
     assert_equal(false, n.frozen?)
+  end
+
+  def test_freeze_object_tree
+    k = Object.new
+    o_tree = [ 
+      { :object => ObjectData.new([ 'in_object' ], :bar),
+        :array => [ 'in_array' ],
+        :hash => { k => [ 'in_hash' ] },
+        :struct => StructData.new([ 'in_struct' ], :bar),
+        :nil => nil,
+        :true => true,
+        :false => false,
+        :symbol => :foo,
+        :module => Module.new,
+        :class => Class.new,
+        :fixnum => 0,
+        :bignum => 10**23,
+        :float => 1.0
+      }
+    ]
+    o_tree.higgs_deep_freeze
+
+    assert_equal(true, o_tree.frozen?)
+    assert_equal(true, o_tree[0].frozen?)
+    assert_equal(true, o_tree[0][:object].frozen?)
+    assert_equal(true, o_tree[0][:object].foo.frozen?)
+    assert_equal(true, o_tree[0][:object].foo[0].frozen?)
+    assert_equal(true, o_tree[0][:array].frozen?)
+    assert_equal(true, o_tree[0][:array][0].frozen?)
+    assert_equal(true, o_tree[0][:hash].frozen?)
+    assert_equal(true, o_tree[0][:hash].keys[0].frozen?)
+    assert_equal(true, o_tree[0][:hash].values[0].frozen?)
+    assert_equal(true, o_tree[0][:hash].values[0][0].frozen?)
+    assert_equal(true, o_tree[0][:struct].frozen?)
+    assert_equal(true, o_tree[0][:struct].foo.frozen?)
+    assert_equal(true, o_tree[0][:struct].foo[0].frozen?)
+    assert_equal(false, o_tree[0][:nil].frozen?)
+    assert_equal(false, o_tree[0][:true].frozen?)
+    assert_equal(false, o_tree[0][:false].frozen?)
+    assert_equal(false, o_tree[0][:symbol].frozen?)
+    assert_equal(false, o_tree[0][:module].frozen?)
+    assert_equal(false, o_tree[0][:class].frozen?)
+    assert_instance_of(Fixnum, o_tree[0][:fixnum])
+    assert_equal(false, o_tree[0][:fixnum].frozen?)
+    assert_instance_of(Bignum, o_tree[0][:bignum])
+    assert_equal(false, o_tree[0][:bignum].frozen?)
+    assert_instance_of(Float, o_tree[0][:float])
+    assert_equal(false, o_tree[0][:float].frozen?)
   end
 end
 
