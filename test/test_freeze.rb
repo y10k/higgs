@@ -144,6 +144,16 @@ class HiggsDeepFreezeTest < Test::Unit::TestCase
     assert_instance_of(Float, o_tree[0][:float])
     assert_equal(false, o_tree[0][:float].frozen?)
   end
+
+  def test_object_cycle
+    a = ObjectData.new
+    b = StructData.new
+    a.foo = b
+    b.foo = a
+    a.higgs_deep_freeze
+    assert_equal(true, a.frozen?)
+    assert_equal(true, b.frozen?)
+  end
 end
 
 # Local Variables:
