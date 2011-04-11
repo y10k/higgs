@@ -3,10 +3,12 @@
 class Object
   # freeze object tree.
   def higgs_deep_freeze
-    for name in instance_variables
-      instance_variable_get(name).higgs_deep_freeze
+    unless (frozen?) then
+      freeze
+      for name in instance_variables
+        instance_variable_get(name).higgs_deep_freeze
+      end
     end
-    freeze
 
     self
   end
@@ -15,34 +17,43 @@ end
 class Array
   # freeze object tree.
   def higgs_deep_freeze
-    for i in self
-      i.higgs_deep_freeze
+    unless (frozen?) then
+      super
+      for i in self
+        i.higgs_deep_freeze
+      end
     end
 
-    super
+    self
   end
 end
 
 class Hash
   # freeze object tree.
   def higgs_deep_freeze
-    for k, v in self
-      k.higgs_deep_freeze
-      v.higgs_deep_freeze
+    unless (frozen?) then
+      super
+      for k, v in self
+        k.higgs_deep_freeze
+        v.higgs_deep_freeze
+      end
     end
 
-    super
+    self
   end
 end
 
 class Struct
   # freeze object tree.
   def higgs_deep_freeze
-    for i in self
-      i.higgs_deep_freeze
+    unless (frozen?) then
+      super
+      for i in self
+        i.higgs_deep_freeze
+      end
     end
 
-    super
+    self
   end
 end
 
