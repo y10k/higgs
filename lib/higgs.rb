@@ -12,6 +12,8 @@ require 'higgs/jcompat' if (RUBY_PLATFORM == 'java')
 # * data can have meta-data called `property'.
 # * consistency of storage contents is always checked by hash value.
 # * read-write transaction and read-only transaction are supported.
+# * multi-version concurrency control. a read-write transaction
+#   doesn't conflict with read-only transactions.
 # * online-backup is supported.
 # 
 # == main classes
