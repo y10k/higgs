@@ -66,7 +66,7 @@ module Higgs
   #
   # === 7. read-only transaction
   #
-  #   irb(main):025:0> st.transaction{|tx|
+  #   irb(main):025:0> st.transaction(true) {|tx|
   #   irb(main):026:1*   p tx[:foo]
   #   irb(main):027:1>   p tx.property(:foo, 'list')
   #   irb(main):028:1>   p tx['bar']
