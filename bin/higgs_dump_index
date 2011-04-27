@@ -23,7 +23,7 @@ opts.on_tail('-h', '--help') {
 }
 opts.parse!
 
-index = Higgs::Index.new
+index = Higgs::MVCCIndex.new
 index.load(ARGV[0])
 
 case (output_format)
