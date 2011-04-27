@@ -1343,7 +1343,7 @@ module Higgs
             data = read_data(cnum, key, :verbose) or raise PanicError, "not exist data at key: #{key}"
             if (out && verbose_level >= 2) then
               out << "  #{data.bytesize} bytes\n"
-              properties = fetch_properties(key) or raise PanicError, "not exist properties at key: #{key}"
+              properties = fetch_properties(cnum, key) or raise PanicError, "not exist properties at key: #{key}"
               for key, format in VERIFY_VERBOSE_LIST
                 value = properties['system_properties'][key]
                 out << '  ' << key << ': ' << format.call(value) << "\n"
