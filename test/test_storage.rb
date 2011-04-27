@@ -401,7 +401,10 @@ module Higgs::Test
       @st.transaction{|tx|
         tx.write_and_commit([ [ :write, 'foo', "Hello world.\n" ] ])
       }
-      @st.verify
+
+      str_out = ''
+      verbose_level = 3
+      @st.verify(str_out, verbose_level)
     end
 
     def test_verify_BrokenError_mismatch_content_hash
@@ -422,7 +425,9 @@ module Higgs::Test
         w.write(0xFF.chr * Tar::Block::BLKSIZ)
       }
       assert_raise(Storage::PanicError) {
-        @st.verify
+        str_out = ''
+        verbose_level = 3
+        @st.verify(str_out, verbose_level)
       }
     end
 
@@ -447,7 +452,9 @@ module Higgs::Test
         t.close(false)
       }
       assert_raise(Storage::PanicError) {
-        @st.verify
+        str_out = ''
+        verbose_level = 3
+        @st.verify(str_out, verbose_level)
       }
     end
 
@@ -470,7 +477,9 @@ module Higgs::Test
         t.close(false)
       }
       assert_raise(Storage::PanicError) {
-        @st.verify
+        str_out = ''
+        verbose_level = 3
+        @st.verify(str_out, verbose_level)
       }
     end
 
