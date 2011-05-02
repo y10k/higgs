@@ -19,11 +19,16 @@ opts.on_tail('-h', '--help') {
   puts 'Output format:'
   print opts.summary_indent, :pretty, "\n"
   print opts.summary_indent, :yaml, "\n"
-  exit(1)
+  exit 1
 }
 opts.parse!
 
-index = Higgs::Index.new
+if (ARGV.empty?) then
+  puts opts
+  exit 1
+end
+
+index = Higgs::MVCCIndex.new
 index.load(ARGV[0])
 
 case (output_format)
