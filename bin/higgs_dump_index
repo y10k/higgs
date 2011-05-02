@@ -19,7 +19,7 @@ opts.on_tail('-h', '--help') {
   puts 'Output format:'
   print opts.summary_indent, :pretty, "\n"
   print opts.summary_indent, :yaml, "\n"
-  exit(1)
+  exit 1
 }
 opts.parse!
 
