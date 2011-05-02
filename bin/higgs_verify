@@ -20,7 +20,13 @@ opts.on('--verbose-level=LEVEL', Integer) {|level|
 }
 
 opts.parse!
-higgs_name = ARGV.shift or raise 'requried HIGGS_PATH'
+
+if (ARGV.empty?) then
+  puts opts
+  exit 1
+end
+
+higgs_name = ARGV.shift or raise 'requried HIGGS_NAME'
 
 st = Higgs::Storage.new(higgs_name, :read_only => true)
 begin
