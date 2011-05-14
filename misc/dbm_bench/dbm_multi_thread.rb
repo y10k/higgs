@@ -11,8 +11,11 @@ require 'thread'
 loop_count = (ARGV.shift || '100').to_i
 transaction_count = (ARGV.shift || '100').to_i
 thread_count = (ARGV.shift || '10').to_i
-puts "#{$0}: LOOP:#{loop_count}, TRANSACTION:#{transaction_count}, THREAD:#{thread_count}"
+dat_len = (ENV['DATA_LENGTH'] || '1').to_i
+puts "#{$0}: LOOP:#{loop_count}, TRANSACTION:#{transaction_count}, THREAD:#{thread_count}, DATA_LENGTH:#{dat_len}"
 puts ''
+
+data_cache = Hash.new{|h, k| h[k] = k.to_s * dat_len }
 
 name = File.join(File.dirname($0), 'foo')
 conf_path = File.join(File.dirname($0), '.strc')
@@ -22,9 +25,9 @@ options.update(Higgs::Storage.load_conf(conf_path)) if (File.exist? conf_path)
 
 Higgs::DBM.open(name, options) {|dbm|
   dbm.transaction{|tx|
-    tx[:foo] = 'a'
+    tx[:foo] = data_cache['a']
     thread_count.times do |i|
-      tx[i] = i.to_s
+      tx[i] = data_cache[i]
     end
   }
 
@@ -65,7 +68,7 @@ Higgs::DBM.open(name, options) {|dbm|
       (thread_count * transaction_count).times do
         dbm.transaction{|tx|
           loop_count.times do
-            tx[:foo] = 'a'
+            tx[:foo] = data_cache['a']
           end
         }
       end
@@ -79,7 +82,7 @@ Higgs::DBM.open(name, options) {|dbm|
         transaction_count.times do
           dbm.transaction{|tx|
             loop_count.times do
-              tx[:foo] = 'a'
+              tx[:foo] = data_cache['a']
             end
           }
         end
@@ -96,7 +99,7 @@ Higgs::DBM.open(name, options) {|dbm|
     x.report('   sparse write') {
       thread_count.times do |i|
         key = i
-        value = i.to_s
+        value = data_cache[i]
         transaction_count.times do
           dbm.transaction{|tx|
             loop_count.times do
@@ -111,7 +114,7 @@ Higgs::DBM.open(name, options) {|dbm|
     th_grp = ThreadGroup.new
     thread_count.times do |i|
       key = i
-      value = i.to_s
+      value = data_cache[i]
       th_grp.add Thread.new{
         barrier.wait
         transaction_count.times do
@@ -142,7 +145,7 @@ Higgs::DBM.open(name, options) {|dbm|
       transaction_count.times do
         dbm.transaction{|tx|
           loop_count.times do
-            tx[:foo] = 'a'
+            tx[:foo] = data_cache['a']
           end
         }
       end
@@ -167,7 +170,7 @@ Higgs::DBM.open(name, options) {|dbm|
       transaction_count.times do
         dbm.transaction{|tx|
           loop_count.times do
-            tx[:foo] = 'a'
+            tx[:foo] = data_cache['a']
           end
         }
       end
