@@ -3,7 +3,7 @@
 require 'higgs/sman'
 
 module Higgs
-  # = storage like pstore
+  # storage like pstore
   # == tutorial
   #
   # === 1. open a new store
@@ -29,7 +29,6 @@ module Higgs
   #   => #<Object:0xb7a3b1e8>
   #
   # === 4. custom property
-  #
   # custom property name shuold be a string.
   #
   #   irb(main):009:0> st.transaction{|tx|
@@ -42,7 +41,6 @@ module Higgs
   #   => ["apple", "banana", "orange"]
   #
   # === 4. write a string with <tt>:string_only</tt> property
-  # 
   # <tt>:string_only</tt> is system property.
   # system property name should be a symbol.
   #
@@ -68,7 +66,7 @@ module Higgs
   #
   # === 7. read-only transaction
   #
-  #   irb(main):025:0> st.transaction{|tx|
+  #   irb(main):025:0> st.transaction(true) {|tx|
   #   irb(main):026:1*   p tx[:foo]
   #   irb(main):027:1>   p tx.property(:foo, 'list')
   #   irb(main):028:1>   p tx['bar']
@@ -141,7 +139,6 @@ module Higgs
   #     string_only: false
   #
   # === 12. string with <tt>:string_only</tt> property
-  #
   # `bar' is a string
   #
   #   % ls -ln bar
@@ -171,13 +168,11 @@ module Higgs
   #     string_only: true
   #
   # === 13. other operations
-  #
   # <tt>tx</tt> of block argument is an instance of
   # Higgs::TransactionContext. see Higgs::TransactionContext for all
   # operations of transaction.
   #
   # == sample script
-  #
   # sample/count.rb
   #   :include: sample/count.rb
   #

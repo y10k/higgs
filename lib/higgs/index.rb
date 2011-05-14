@@ -8,7 +8,6 @@ require 'thread'
 module Higgs
   # = new MVCC storage index
   class MVCCIndex
-    # :stopdoc:
     module EditUtils
       def get_entry(cnum, entry_alist)
         if (entry_pair = entry_alist.find{|c, e| c <= cnum}) then
@@ -46,7 +45,6 @@ module Higgs
       module_function :make_update_entry
     end
     include EditUtils
-    # :startdoc:
 
     include Synchronized
 
