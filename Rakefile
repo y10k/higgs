@@ -32,7 +32,11 @@ task :test do
 end
 
 rdoc_dir = 'api'
-rdoc_opts = [ '-SNa', '-m', 'Higgs', '-t', 'pure ruby transactional storage compatible with unix TAR format' ]
+rdoc_opts = [
+  '-a',
+  '-m', 'Higgs',
+  '-t', 'pure ruby transactional storage compatible with unix TAR format'
+]
 
 desc 'make document.'
 task :rdoc do
