@@ -1,6 +1,7 @@
 #!/usr/local/bin/ruby
 # -*- coding: utf-8 -*-
 
+require 'date'
 require 'higgs/freeze'
 require 'test/unit'
 
@@ -153,6 +154,17 @@ class HiggsDeepFreezeTest < Test::Unit::TestCase
     a.higgs_deep_freeze
     assert_equal(true, a.frozen?)
     assert_equal(true, b.frozen?)
+  end
+end
+
+class HiggsDeepFreezeDateTest < Test::Unit::TestCase
+  def setup
+    @d = Date.new(1975, 11, 19)
+  end
+
+  def test_strftime
+    @d.higgs_deep_freeze
+    assert_equal('1975-11-19', @d.strftime('%Y-%m-%d'))
   end
 end
 

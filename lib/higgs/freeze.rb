@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+require 'date'
+
 class Object
   # freeze object tree.
   def higgs_deep_freeze
@@ -95,6 +97,20 @@ end
 class Numeric
   # no freeze immutable object.
   def higgs_deep_freeze
+    self
+  end
+end
+
+class Date
+  # freeze object tree.
+  def higgs_deep_freeze
+    unless (frozen?) then
+      freeze
+      for name in instance_variables.reject{|n| n == :@__ca__ }
+        instance_variable_get(name).higgs_deep_freeze
+      end
+    end
+
     self
   end
 end
