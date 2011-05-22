@@ -305,6 +305,8 @@ module Higgs
           @logger.info("save storage id: #{@index.storage_id}")
           @index.save(@idx_name)
         end
+        @logger.info("index type version: #{@index.index_type}")
+
         if (JournalLogger.need_for_recovery? @jlog_name) then
           recover
         end
