@@ -5,15 +5,15 @@ require 'higgs/store'
 require 'higgs/version'
 require 'higgs/jcompat' if (RUBY_PLATFORM == 'java')
 
-# pure ruby transactional storage compatible with unix TAR format
+# embedded key-value storage compatible with unit TAR format
 #
 # == features
+# * pure ruby implementation (need for ruby 1.9).
 # * data format is compatible with unix TAR format.
-# * data can have meta-data called `property'.
-# * consistency of storage contents is always checked by hash value.
 # * read-write transaction and read-only transaction are supported.
 # * multi-version concurrency control. a read-write transaction
 #   doesn't conflict with read-only transactions.
+# * all data of key-value storage is verified by checksum.
 # * online-backup is supported.
 # 
 # == main classes
@@ -21,7 +21,7 @@ require 'higgs/jcompat' if (RUBY_PLATFORM == 'java')
 # [Higgs::DBM] storage like dbm
 # [Higgs::Utils::BackupManager] online backup utility (body of <tt>higgs_backup</tt> command)
 #
-# == robustness
+# == storage robustness
 # === case of no backup
 # [REQUIREMENTS] default
 # [NORMAL SHUTDOWN] OK, no recovery
