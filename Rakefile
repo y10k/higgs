@@ -22,6 +22,20 @@ def cd_v(dir)
   }
 end
 
+def rdoc_title
+  File.open('lib/higgs.rb', 'r:utf-8') {|read_io|
+    read_io.gets
+    for line in read_io
+      if (line =~ /^#/) then
+        s = $'
+        s.strip!
+        return s
+      end
+    end
+  }
+  nil
+end
+
 task :default
 
 desc 'unit-test.'
@@ -35,7 +49,7 @@ rdoc_dir = 'api'
 rdoc_opts = [
   '-a',
   '-m', 'Higgs',
-  '-t', 'pure ruby transactional storage compatible with unix TAR format'
+  '-t', rdoc_title
 ]
 
 desc 'make document.'
