@@ -23,7 +23,7 @@ module Higgs
     # online-backup is controlled by <tt>higgs_backup</tt> command that
     # is the front end of Higgs::Utils::BackupManager.
     #
-    # simple online-backup is like this...
+    # simple online-backup form <tt>foo.*</tt> to <tt>backup_dir/foo.*</tt> is like this...
     #
     #   % higgs_backup -v -f foo -t backup_dir -u druby://localhost:17320
     #   2007-11-21 22:33:08.127 [18215]: **** START BACKUP SCENARIO ****
@@ -60,9 +60,9 @@ module Higgs
     #
     # == restore from online-backup
     #
-    # simple restore is like this...
+    # simple restore from <tt>backup_dir/foo.*</tt> to <tt>foo.*</tt> is like this...
     #
-    #   % higgs_backup -f images -t ~/misc/photon/dat/1 -v restore
+    #   % higgs_backup -v -f foo -t backup_dir restore
     #   2007-10-08 20:56:07.048 [18133]: **** START RESTORE SCENARIO ****
     #   2007-10-08 20:56:07.066 [18133]: start storage files restore.
     #   2007-10-08 21:09:49.614 [18133]: completed storage files restore.
