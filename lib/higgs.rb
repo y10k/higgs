@@ -42,6 +42,28 @@ require 'higgs/jcompat' if (RUBY_PLATFORM == 'java')
 #   :include:LICENSE
 #
 module Higgs
+  def self.load_conf(path)
+    require 'yaml'
+    options = YAML.load_file(path)
+
+    # see Higgs::Storage#initialize.
+    if (log_level = options['logging_level']) then
+      require 'logger'
+      level = case(log_level)
+              when 'debug', 'info', 'warn', 'error', 'fatal'
+                Logger.const_get(options['logging_level'].upcase)
+              else
+                raise "unknown logging level: #{log_level}"
+              end
+      options[:logger] = proc{|path|
+        logger = Logger.new(path, 1)
+        logger.level = level
+        logger
+      }
+    end
+
+    options
+  end
 end
 
 # Local Variables:
