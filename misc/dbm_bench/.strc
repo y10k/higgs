@@ -1,4 +1,3 @@
-# $Id$
 number_of_read_io: 2
 data_cksum_type: MD5
 jlog_sync: false
