@@ -4,7 +4,7 @@
 $:.unshift File.join(File.dirname($0), '..', '..', 'lib')
 
 require 'benchmark'
-require 'higgs/storage'
+require 'higgs'
 
 puts $0
 

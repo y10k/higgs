@@ -4,8 +4,7 @@
 $:.unshift File.join(File.dirname($0), '..', '..', 'lib')
 
 require 'benchmark'
-require 'higgs/dbm'
-require 'higgs/thread'
+require 'higgs'
 require 'thread'
 
 loop_count = (ARGV.shift || '100').to_i
@@ -21,7 +20,7 @@ name = File.join(File.dirname($0), 'foo')
 conf_path = File.join(File.dirname($0), '.strc')
 
 options = {}
-options.update(Higgs::Storage.load_conf(conf_path)) if (File.exist? conf_path)
+options.update(Higgs.load_conf(conf_path)) if (File.exist? conf_path)
 
 Higgs::DBM.open(name, options) {|dbm|
   dbm.transaction{|tx|
