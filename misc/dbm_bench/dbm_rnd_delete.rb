@@ -11,7 +11,7 @@ data_count = (ARGV.shift || '10').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}"
 
 name = File.join(File.dirname($0), 'foo')
-conf_path = File.join(File.dirname($0), '.strc')
+conf_path = File.join(File.dirname($0), 'option.yml')
 
 options = {}
 options.update(Higgs.load_conf(conf_path)) if (File.exist? conf_path)

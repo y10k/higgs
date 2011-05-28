@@ -17,7 +17,7 @@ puts ''
 data_cache = Hash.new{|h, k| h[k] = k.to_s * dat_len }
 
 name = File.join(File.dirname($0), 'foo')
-conf_path = File.join(File.dirname($0), '.strc')
+conf_path = File.join(File.dirname($0), 'option.yml')
 
 options = {}
 options.update(Higgs.load_conf(conf_path)) if (File.exist? conf_path)

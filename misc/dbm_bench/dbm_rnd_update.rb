@@ -12,7 +12,7 @@ max_dat_len = (ARGV.shift || '32768').to_i
 puts "#{$0}: LOOP:#{loop_count}, DATA:#{data_count}, MAX_DAT_LEN:#{max_dat_len}"
 
 name = File.join(File.dirname($0), 'foo')
-conf_path = File.join(File.dirname($0), '.strc')
+conf_path = File.join(File.dirname($0), 'option.yml')
 
 options = {}
 options.update(Higgs.load_conf(conf_path)) if (File.exist? conf_path)
