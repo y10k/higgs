@@ -145,36 +145,6 @@ module Higgs
     end
     include InitOptions
 
-    def self.load_conf(path)
-      conf = YAML.load(IO.read(path))
-      options = {}
-      for name, value in conf
-        case (name)
-        when 'data_hash_type', 'jlog_hash_type'
-          value = value.to_sym
-        when 'properties_cache_limit_size', 'master_cache_limit_size'
-          name = name.sub(/_limit_size$/, '')
-          value = LRUCache.new(value)
-        when 'logging_level'
-          require 'logger'
-          name = 'logger'
-          level = case (value)
-                  when 'debug', 'info', 'warn', 'error', 'fatal'
-                    Logger.const_get(value.upcase)
-                  else
-                    raise "unknown logging level: #{value}"
-                  end
-          value = proc{|path|
-            logger = Logger.new(path, 1)
-            logger.level = level
-            logger
-          }
-        end
-        options[name.to_sym] = value
-      end
-      options
-    end
-
     # attributes for data-read: <tt>idx_cnum</tt>, <tt>idx_key</tt>.
     # attributes for cache-store: <tt>idx_key</tt>, <tt>dat_cnum</tt>.
     CacheKey = Struct.new(:idx_cnum, :idx_key, :dat_cnum)
