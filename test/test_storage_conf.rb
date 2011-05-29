@@ -21,13 +21,13 @@ module Higgs::Test
 
     def test_read_only
       File.open(@conf_path, 'w') {|w|
-	w << "read_only: true\n"
+        w << "read_only: true\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(true, options[:read_only])
 
       File.open(@conf_path, 'w') {|w|
-	w << "read_only: false\n"
+        w << "read_only: false\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(false, options[:read_only])
@@ -35,7 +35,7 @@ module Higgs::Test
 
     def test_number_of_io
       File.open(@conf_path, 'w') {|w|
-	w << "number_of_io: 4\n"
+        w << "number_of_io: 4\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(4, options[:number_of_io])
@@ -43,7 +43,7 @@ module Higgs::Test
 
     def test_data_hash_type
       File.open(@conf_path, 'w') {|w|
-	w << "data_hash_type: SHA512\n"
+        w << "data_hash_type: SHA512\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(:SHA512, options[:data_hash_type])
@@ -51,13 +51,13 @@ module Higgs::Test
 
     def test_jlog_sync
       File.open(@conf_path, 'w') {|w|
-	w << "jlog_sync: true\n"
+        w << "jlog_sync: true\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(true, options[:jlog_sync])
 
       File.open(@conf_path, 'w') {|w|
-	w << "jlog_sync: false\n"
+        w << "jlog_sync: false\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(false, options[:jlog_sync])
@@ -65,7 +65,7 @@ module Higgs::Test
 
     def test_jlog_hash_type
       File.open(@conf_path, 'w') {|w|
-	w << "jlog_hash_type: SHA512\n"
+        w << "jlog_hash_type: SHA512\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(:SHA512, options[:jlog_hash_type])
@@ -73,7 +73,7 @@ module Higgs::Test
 
     def test_jlog_rotate_size
       File.open(@conf_path, 'w') {|w|
-	w << "jlog_rotate_size: 33554432\n"
+        w << "jlog_rotate_size: 33554432\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(33554432, options[:jlog_rotate_size])
@@ -81,7 +81,7 @@ module Higgs::Test
 
     def test_jlog_rotate_max
       File.open(@conf_path, 'w') {|w|
-	w << "jlog_rotate_max: 0\n"
+        w << "jlog_rotate_max: 0\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_equal(0, options[:jlog_rotate_max])
@@ -89,7 +89,7 @@ module Higgs::Test
 
     def test_properties_cache_limit_size
       File.open(@conf_path, 'w') {|w|
-	w << "properties_cache_limit_size: 256\n"
+        w << "properties_cache_limit_size: 256\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_instance_of(LRUCache, options[:properties_cache]) # autoload `higgs/cache'
@@ -98,7 +98,7 @@ module Higgs::Test
 
     def test_master_cache_limit_size
       File.open(@conf_path, 'w') {|w|
-	w << "master_cache_limit_size: 256\n"
+        w << "master_cache_limit_size: 256\n"
       }
       options = Storage.load_conf(@conf_path)
       assert_instance_of(LRUCache, options[:master_cache]) # autoload `higgs/cache'
@@ -107,80 +107,80 @@ module Higgs::Test
 
     def test_logging_level_debug
       File.open(@conf_path, 'w') {|w|
-	w << "logging_level: debug\n"
+        w << "logging_level: debug\n"
       }
       options = Storage.load_conf(@conf_path)
       logger = options[:logger].call(@log_path)
       begin
-	assert_instance_of(Logger, logger) # autoload `logger'
-	assert_equal(Logger::DEBUG, logger.level)
+        assert_instance_of(Logger, logger) # autoload `logger'
+        assert_equal(Logger::DEBUG, logger.level)
       ensure
-	logger.close
+        logger.close
       end
     end
 
     def test_logging_level_info
       File.open(@conf_path, 'w') {|w|
-	w << "logging_level: info\n"
+        w << "logging_level: info\n"
       }
       options = Storage.load_conf(@conf_path)
       logger = options[:logger].call(@log_path)
       begin
-	assert_instance_of(Logger, logger) # autoload `logger'
-	assert_equal(Logger::INFO, logger.level)
+        assert_instance_of(Logger, logger) # autoload `logger'
+        assert_equal(Logger::INFO, logger.level)
       ensure
-	logger.close
+        logger.close
       end
     end
 
     def test_logging_level_warn
       File.open(@conf_path, 'w') {|w|
-	w << "logging_level: warn\n"
+        w << "logging_level: warn\n"
       }
       options = Storage.load_conf(@conf_path)
       logger = options[:logger].call(@log_path)
       begin
-	assert_instance_of(Logger, logger) # autoload `logger'
-	assert_equal(Logger::WARN, logger.level)
+        assert_instance_of(Logger, logger) # autoload `logger'
+        assert_equal(Logger::WARN, logger.level)
       ensure
-	logger.close
+        logger.close
       end
     end
 
     def test_logging_level_error
       File.open(@conf_path, 'w') {|w|
-	w << "logging_level: error\n"
+        w << "logging_level: error\n"
       }
       options = Storage.load_conf(@conf_path)
       logger = options[:logger].call(@log_path)
       begin
-	assert_instance_of(Logger, logger) # autoload `logger'
-	assert_equal(Logger::ERROR, logger.level)
+        assert_instance_of(Logger, logger) # autoload `logger'
+        assert_equal(Logger::ERROR, logger.level)
       ensure
-	logger.close
+        logger.close
       end
     end
 
     def test_logging_level_fatal
       File.open(@conf_path, 'w') {|w|
-	w << "logging_level: fatal\n"
+        w << "logging_level: fatal\n"
       }
       options = Storage.load_conf(@conf_path)
       logger = options[:logger].call(@log_path)
       begin
-	assert_instance_of(Logger, logger) # autoload `logger'
-	assert_equal(Logger::FATAL, logger.level)
+        assert_instance_of(Logger, logger) # autoload `logger'
+        assert_equal(Logger::FATAL, logger.level)
       ensure
-	logger.close
+        logger.close
       end
     end
 
     def test_logging_level_unknown
       File.open(@conf_path, 'w') {|w|
-	w << "logging_level: foo\n"
+        w << "logging_level: foo\n"
       }
       assert_raise(RuntimeError) {
-	Storage.load_conf(@conf_path)
+        Storage.load_conf(@conf_path)
       }
     end
   end
